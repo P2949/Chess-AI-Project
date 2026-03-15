@@ -103,6 +103,15 @@ CONTEMPT    = 60
 def _contempt_score() -> float:
     return -CONTEMPT if _ROOT_COLOR == chess.WHITE else CONTEMPT
 
+    def _chebyshev(sq1: int, sq2: int) -> int:
+        return max(abs(chess.square_file(sq1) - chess.square_file(sq2)),
+                   abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
+
+
+    def _manhattan(sq1: int, sq2: int) -> int:
+        return (abs(chess.square_file(sq1) - chess.square_file(sq2))
+                + abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
+
 
 def _endgame_factor(board: chess.Board) -> float:
     phase = 0
@@ -450,6 +459,47 @@ def _king_proximity_mop_up(board: chess.Board, eg: float, material_score: float)
     bk = board.king(chess.BLACK)
     if wk is None or bk is None:
         return 0.0
+    if material_score > 200:
+            bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
+            edge_dist   = min(bkf, 7 - bkf, bkr, 7 - bkr)
+            corner_dist = min(bkf + bkr, (7-bkf) + bkr, bkf + (7-bkr), (7-bkf) + (7-bkr))
+            result += eg * edge_dist   * 20
+            result += eg * corner_dist * 12
+            result += eg * (14 - _chebyshev(wk, bk)) * 7
+
+            for q_sq in board.pieces(chess.QUEEN, chess.WHITE):
+                result += eg * (7 - _chebyshev(q_sq, bk)) * 6
+
+            for r_sq in board.pieces(chess.ROOK, chess.WHITE):
+                rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+                if rf == bkf or rr == bkr:
+                    result += eg * 40
+                result += eg * (14 - _manhattan(r_sq, bk)) * 3
+
+            for pt in (chess.BISHOP, chess.KNIGHT):
+                for sq in board.pieces(pt, chess.WHITE):
+                    result += eg * (7 - _chebyshev(sq, bk)) * 2
+
+    elif material_score < -200:
+            wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
+            edge_dist   = min(wkf, 7 - wkf, wkr, 7 - wkr)
+            corner_dist = min(wkf + wkr, (7-wkf) + wkr, wkf + (7-wkr), (7-wkf) + (7-wkr))
+            result -= eg * edge_dist   * 20
+            result -= eg * corner_dist * 12
+            result -= eg * (14 - _chebyshev(wk, bk)) * 7
+
+            for q_sq in board.pieces(chess.QUEEN, chess.BLACK):
+                result -= eg * (7 - _chebyshev(q_sq, wk)) * 6
+
+            for r_sq in board.pieces(chess.ROOK, chess.BLACK):
+                rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+                if rf == wkf or rr == wkr:
+                    result -= eg * 40
+                result -= eg * (14 - _manhattan(r_sq, wk)) * 3
+
+            for pt in (chess.BISHOP, chess.KNIGHT):
+                for sq in board.pieces(pt, chess.BLACK):
+                    result -= eg * (7 - _chebyshev(sq, wk)) * 2
     wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
     bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
     king_dist = abs(wkf - bkf) + abs(wkr - bkr)
@@ -473,6 +523,80 @@ _KA_WEIGHTS = {
     chess.ROOK:   3,
     chess.QUEEN:  5,
 }
+
+def _rule_of_square(board: chess.Board, eg: float) -> float:
+    if eg < 0.55:
+        return 0.0
+    score = 0.0
+    for color in (chess.WHITE, chess.BLACK):
+        sign  = 1 if color == chess.WHITE else -1
+        enemy = not color
+        ek    = board.king(enemy)
+        if ek is None:
+            continue
+        enemy_has_pieces = any(
+            len(board.pieces(pt, enemy)) > 0
+            for pt in (chess.QUEEN, chess.ROOK, chess.BISHOP, chess.KNIGHT)
+        )
+        if enemy_has_pieces:
+            continue
+        for sq in board.pieces(chess.PAWN, color):
+            f    = chess.square_file(sq)
+            rank = chess.square_rank(sq)
+            passed = True
+            for esq in board.pieces(chess.PAWN, enemy):
+                ef = chess.square_file(esq)
+                er = chess.square_rank(esq)
+                if abs(ef - f) <= 1:
+                    if color == chess.WHITE and er >= rank:
+                        passed = False; break
+                    if color == chess.BLACK and er <= rank:
+                        passed = False; break
+            if not passed:
+                continue
+            promo_rank = 7 if color == chess.WHITE else 0
+            promo_sq   = chess.square(f, promo_rank)
+            steps      = abs(promo_rank - rank)
+            king_dist  = _chebyshev(ek, promo_sq)
+            steps_adj  = steps if board.turn == color else steps + 1
+            if king_dist > steps_adj:
+                bonus = min(400 + (7 - steps) * 60, 800)
+                score += sign * bonus * eg
+    return score
+
+
+def _king_activity_endgame(board: chess.Board, eg: float) -> float:
+    if eg < 0.45:
+        return 0.0
+    score = 0.0
+    for color in (chess.WHITE, chess.BLACK):
+        sign = 1 if color == chess.WHITE else -1
+        ksq  = board.king(color)
+        if ksq is None:
+            continue
+        kf, kr = chess.square_file(ksq), chess.square_rank(ksq)
+        center_dist = abs(kf - 3.5) + abs(kr - 3.5)
+        score += sign * (7 - center_dist) * 5 * eg
+    return score
+
+
+def _king_opposition(board: chess.Board, eg: float) -> float:
+    if eg < 0.60:
+        return 0.0
+    wk = board.king(chess.WHITE)
+    bk = board.king(chess.BLACK)
+    if wk is None or bk is None:
+        return 0.0
+    wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
+    bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
+    score = 0.0
+    if wkf == bkf and abs(wkr - bkr) == 2:
+        bonus = 30 * eg
+        score += bonus if board.turn == chess.BLACK else -bonus
+    elif wkr == bkr and abs(wkf - bkf) == 2:
+        bonus = 30 * eg
+        score += bonus if board.turn == chess.BLACK else -bonus
+    return score
 
 def _king_attack_zone(board: chess.Board, eg: float) -> float:
     if eg > 0.80:
@@ -627,7 +751,9 @@ def evaluate(board: chess.Board) -> float:
     score += _trapped_pieces(board)
     score += _queen_tropism(board, eg)
     score += _fifty_move_pressure(board)
-
+    score += _rule_of_square(board, eg)
+    score += _king_activity_endgame(board, eg)
+    score += _king_opposition(board, eg)
     score += 15 if board.turn == chess.WHITE else -15
 
     if board.is_check():
