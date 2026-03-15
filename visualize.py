@@ -571,7 +571,7 @@ def main():
 
     try:
         team_creepers = importlib.import_module("team_creepers")
-        team_goraieb  = importlib.import_module("team_goraieb")
+        team_goraieb  = importlib.import_module("team_aaaaaaaaaaaaaaa")
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
         print("Make sure team_creepers.py and team_goraieb.py are in the same folder as visualize.py")

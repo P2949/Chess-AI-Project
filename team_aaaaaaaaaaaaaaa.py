@@ -1225,6 +1225,7 @@ def _root_search_single_thread(board: chess.Board, target_depth: int, color: che
 
     for d in range(1, target_depth + 1):
         alpha, beta = -inf, inf
+        asp_delta = 40
         if d >= 4:
             asp_delta = 40
             alpha = prev_score - asp_delta
