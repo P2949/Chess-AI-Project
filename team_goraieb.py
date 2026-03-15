@@ -103,15 +103,12 @@ CONTEMPT    = 60
 def _contempt_score() -> float:
     return -CONTEMPT if _ROOT_COLOR == chess.WHITE else CONTEMPT
 
-    def _chebyshev(sq1: int, sq2: int) -> int:
-        return max(abs(chess.square_file(sq1) - chess.square_file(sq2)),
-                   abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
+def _chebyshev(sq1: int, sq2: int) -> int:
+    return max(abs(chess.square_file(sq1) - chess.square_file(sq2)),abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
 
 
-    def _manhattan(sq1: int, sq2: int) -> int:
-        return (abs(chess.square_file(sq1) - chess.square_file(sq2))
-                + abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
-
+def _manhattan(sq1: int, sq2: int) -> int:
+    return (abs(chess.square_file(sq1) - chess.square_file(sq2)) + abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
 
 def _endgame_factor(board: chess.Board) -> float:
     phase = 0
@@ -399,10 +396,6 @@ def _hanging_pieces(board: chess.Board) -> float:
 
 
 def _fork_evaluation(board: chess.Board) -> float:
-    """
-    Detects active forks (one piece attacks 2+ valuable enemy pieces simultaneously)
-    and potential knight fork threats one move ahead.  Positive = good for White.
-    """
     score = 0.0
     FORK_PIECES = {chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN}
     VALUABLE    = {chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN, chess.KING}
@@ -455,65 +448,69 @@ def _fork_evaluation(board: chess.Board) -> float:
 def _king_proximity_mop_up(board: chess.Board, eg: float, material_score: float) -> float:
     if eg < 0.4:
         return 0.0
+    result = 0.0
+    
     wk = board.king(chess.WHITE)
     bk = board.king(chess.BLACK)
     if wk is None or bk is None:
         return 0.0
+
     if material_score > 200:
-            bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
-            edge_dist   = min(bkf, 7 - bkf, bkr, 7 - bkr)
-            corner_dist = min(bkf + bkr, (7-bkf) + bkr, bkf + (7-bkr), (7-bkf) + (7-bkr))
-            result += eg * edge_dist   * 20
-            result += eg * corner_dist * 12
-            result += eg * (14 - _chebyshev(wk, bk)) * 7
+        bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
+        edge_dist   = min(bkf, 7 - bkf, bkr, 7 - bkr)
+        corner_dist = min(bkf + bkr, (7-bkf) + bkr, bkf + (7-bkr), (7-bkf) + (7-bkr))
+        result += eg * edge_dist   * 20
+        result += eg * corner_dist * 12
+        result += eg * (14 - _chebyshev(wk, bk)) * 7
 
-            for q_sq in board.pieces(chess.QUEEN, chess.WHITE):
-                result += eg * (7 - _chebyshev(q_sq, bk)) * 6
+        for q_sq in board.pieces(chess.QUEEN, chess.WHITE):
+            result += eg * (7 - _chebyshev(q_sq, bk)) * 6
 
-            for r_sq in board.pieces(chess.ROOK, chess.WHITE):
-                rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
-                if rf == bkf or rr == bkr:
-                    result += eg * 40
-                result += eg * (14 - _manhattan(r_sq, bk)) * 3
+        for r_sq in board.pieces(chess.ROOK, chess.WHITE):
+            rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+            if rf == bkf or rr == bkr:
+                result += eg * 40
+            result += eg * (14 - _manhattan(r_sq, bk)) * 3
 
-            for pt in (chess.BISHOP, chess.KNIGHT):
-                for sq in board.pieces(pt, chess.WHITE):
-                    result += eg * (7 - _chebyshev(sq, bk)) * 2
+        for pt in (chess.BISHOP, chess.KNIGHT):
+            for sq in board.pieces(pt, chess.WHITE):
+                result += eg * (7 - _chebyshev(sq, bk)) * 2
 
     elif material_score < -200:
-            wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
-            edge_dist   = min(wkf, 7 - wkf, wkr, 7 - wkr)
-            corner_dist = min(wkf + wkr, (7-wkf) + wkr, wkf + (7-wkr), (7-wkf) + (7-wkr))
-            result -= eg * edge_dist   * 20
-            result -= eg * corner_dist * 12
-            result -= eg * (14 - _chebyshev(wk, bk)) * 7
+        wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
+        edge_dist   = min(wkf, 7 - wkf, wkr, 7 - wkr)
+        corner_dist = min(wkf + wkr, (7-wkf) + wkr, wkf + (7-wkr), (7-wkf) + (7-wkr))
+        result -= eg * edge_dist   * 20
+        result -= eg * corner_dist * 12
+        result -= eg * (14 - _chebyshev(wk, bk)) * 7
 
-            for q_sq in board.pieces(chess.QUEEN, chess.BLACK):
-                result -= eg * (7 - _chebyshev(q_sq, wk)) * 6
+        for q_sq in board.pieces(chess.QUEEN, chess.BLACK):
+            result -= eg * (7 - _chebyshev(q_sq, wk)) * 6
 
-            for r_sq in board.pieces(chess.ROOK, chess.BLACK):
-                rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
-                if rf == wkf or rr == wkr:
-                    result -= eg * 40
-                result -= eg * (14 - _manhattan(r_sq, wk)) * 3
+        for r_sq in board.pieces(chess.ROOK, chess.BLACK):
+            rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+            if rf == wkf or rr == wkr:
+                result -= eg * 40
+            result -= eg * (14 - _manhattan(r_sq, wk)) * 3
 
-            for pt in (chess.BISHOP, chess.KNIGHT):
-                for sq in board.pieces(pt, chess.BLACK):
-                    result -= eg * (7 - _chebyshev(sq, wk)) * 2
+        for pt in (chess.BISHOP, chess.KNIGHT):
+            for sq in board.pieces(pt, chess.BLACK):
+                result -= eg * (7 - _chebyshev(sq, wk)) * 2
+
     wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
     bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
     king_dist = abs(wkf - bkf) + abs(wkr - bkr)
 
-    def corner_dist(f, r):
+    def get_corner_dist(f, r):
         return min(f + r, (7 - f) + r, f + (7 - r), (7 - f) + (7 - r))
 
-    result = 0.0
     if material_score > 300:
         result += eg * (14 - king_dist) * 4
-        result += eg * corner_dist(bkf, bkr) * 8
+        result += eg * get_corner_dist(bkf, bkr) * 8
     elif material_score < -300:
         result -= eg * (14 - king_dist) * 4
-        result -= eg * corner_dist(wkf, wkr) * 8
+        result -= eg * get_corner_dist(wkf, wkr) * 8
+        
     return result
 
 
@@ -771,7 +768,7 @@ TT_EXACT = 0
 TT_LOWER = 1
 TT_UPPER = 2
 
-TARGET_DEPTH = 8
+TARGET_DEPTH = 30
 
 _FUTILITY_MARGINS = {1: 120, 2: 300, 3: 500}
 _LMP_CUTOFFS      = {1: 8, 2: 12, 3: 20}
@@ -1211,6 +1208,8 @@ def get_next_move(board: chess.Board,
                 chess.polyglot.zobrist_hash(board),
                 d, TT_EXACT, prev_score, best_move,
             )
+            
+        print(f"Depth {d}/{target} complete. Best move: {best_move}, Score: {prev_score:.2f}")
 
     return best_move
 
@@ -1230,3 +1229,4 @@ if __name__ == '__main__':
         move    = get_next_move(b, chess.WHITE, depth=d)
         elapsed = time.time() - t0
         print(f"[team_goraieb] depth={d:2d}: {b.san(move):6s}  ({elapsed:.2f}s)")
+
