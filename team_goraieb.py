@@ -1,22 +1,3 @@
-"""
-Chess Bot — Goraieb Championship Edition v5
-============================================
-Minimax + Alpha-Beta with iterative deepening, aspiration windows, PVS, null-move
-pruning (R=2/3), reverse futility pruning, futility pruning, late-move pruning (LMP),
-late-move reductions (log-log LMR), internal iterative reduction (IIR), quiescence
-search with delta pruning, and a persistent transposition table (prefer-depth policy).
-
-Evaluation covers: material + phased PST, pawn structure (doubled/isolated/backward/
-passed+protected/chain), mobility, king safety + pawn shield, castling rights, bishop
-pair, rook open files, knight outposts, rook on 7th, connected rooks, hanging pieces,
-king attack zone, space advantage, trapped pieces, queen tropism, endgame king
-proximity mop-up, and an anti-repetition complexity bonus.
-
-Draw avoidance: a CONTEMPT constant makes every draw type (stalemate, threefold
-repetition, fifty-move rule, insufficient material) score slightly negative for the
-root player, so the bot avoids draws unless objectively behind by more than CONTEMPT cp.
-"""
-
 import chess
 import chess.polyglot
 from math import log as _log
@@ -116,11 +97,21 @@ _PST_MAP = {
 }
 
 _ROOT_COLOR = chess.WHITE
-CONTEMPT    = 40
+CONTEMPT    = 150
 
 
 def _contempt_score() -> float:
     return -CONTEMPT if _ROOT_COLOR == chess.WHITE else CONTEMPT
+
+
+def _chebyshev(sq1: int, sq2: int) -> int:
+    return max(abs(chess.square_file(sq1) - chess.square_file(sq2)),
+               abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
+
+
+def _manhattan(sq1: int, sq2: int) -> int:
+    return (abs(chess.square_file(sq1) - chess.square_file(sq2))
+            + abs(chess.square_rank(sq1) - chess.square_rank(sq2)))
 
 
 def _endgame_factor(board: chess.Board) -> float:
@@ -183,7 +174,7 @@ def _pawn_structure(board: chess.Board) -> float:
 
             if passed:
                 advancement = rank if color == chess.WHITE else (7 - rank)
-                base_bonus  = 20 + advancement * 10
+                base_bonus  = 20 + advancement * 12
                 prot_rank = rank - 1 if color == chess.WHITE else rank + 1
                 if 0 <= prot_rank <= 7:
                     for df in (-1, 1):
@@ -260,9 +251,11 @@ def _king_safety(board: chess.Board, eg: float) -> float:
             if 0 <= shield_r <= 7:
                 p = board.piece_at(chess.square(f, shield_r))
                 if p and p.piece_type == chess.PAWN and p.color == color:
-                    score += sign * 10 * mg_weight
+                    score += sign * 12 * mg_weight
+                else:
+                    score += sign * (-18) * mg_weight
             if not any(chess.square_file(s) == f for s in board.pieces(chess.PAWN, color)):
-                score += sign * (-10) * mg_weight
+                score += sign * (-15) * mg_weight
     return score
 
 
@@ -278,7 +271,6 @@ def _pawn_storm(board: chess.Board, eg: float) -> float:
         if ek_sq is None:
             continue
         ekf = chess.square_file(ek_sq)
-        ekr = chess.square_rank(ek_sq)
         for sq in board.pieces(chess.PAWN, color):
             pf = chess.square_file(sq)
             pr = chess.square_rank(sq)
@@ -410,26 +402,57 @@ def _hanging_pieces(board: chess.Board) -> float:
 
 
 def _king_proximity_mop_up(board: chess.Board, eg: float, material_score: float) -> float:
-    if eg < 0.4:
+    if eg < 0.35:
         return 0.0
     wk = board.king(chess.WHITE)
     bk = board.king(chess.BLACK)
     if wk is None or bk is None:
         return 0.0
-    wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
-    bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
-    king_dist = abs(wkf - bkf) + abs(wkr - bkr)
-
-    def corner_dist(f, r):
-        return min(f + r, (7 - f) + r, f + (7 - r), (7 - f) + (7 - r))
 
     result = 0.0
-    if material_score > 300:
-        result += eg * (14 - king_dist) * 4
-        result += eg * corner_dist(bkf, bkr) * 8
-    elif material_score < -300:
-        result -= eg * (14 - king_dist) * 4
-        result -= eg * corner_dist(wkf, wkr) * 8
+
+    if material_score > 200:
+        bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
+        edge_dist   = min(bkf, 7 - bkf, bkr, 7 - bkr)
+        corner_dist = min(bkf + bkr, (7-bkf) + bkr, bkf + (7-bkr), (7-bkf) + (7-bkr))
+        result += eg * edge_dist   * 20
+        result += eg * corner_dist * 12
+        result += eg * (14 - _chebyshev(wk, bk)) * 7
+
+        for q_sq in board.pieces(chess.QUEEN, chess.WHITE):
+            result += eg * (7 - _chebyshev(q_sq, bk)) * 6
+
+        for r_sq in board.pieces(chess.ROOK, chess.WHITE):
+            rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+            if rf == bkf or rr == bkr:
+                result += eg * 40
+            result += eg * (14 - _manhattan(r_sq, bk)) * 3
+
+        for pt in (chess.BISHOP, chess.KNIGHT):
+            for sq in board.pieces(pt, chess.WHITE):
+                result += eg * (7 - _chebyshev(sq, bk)) * 2
+
+    elif material_score < -200:
+        wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
+        edge_dist   = min(wkf, 7 - wkf, wkr, 7 - wkr)
+        corner_dist = min(wkf + wkr, (7-wkf) + wkr, wkf + (7-wkr), (7-wkf) + (7-wkr))
+        result -= eg * edge_dist   * 20
+        result -= eg * corner_dist * 12
+        result -= eg * (14 - _chebyshev(wk, bk)) * 7
+
+        for q_sq in board.pieces(chess.QUEEN, chess.BLACK):
+            result -= eg * (7 - _chebyshev(q_sq, wk)) * 6
+
+        for r_sq in board.pieces(chess.ROOK, chess.BLACK):
+            rf, rr = chess.square_file(r_sq), chess.square_rank(r_sq)
+            if rf == wkf or rr == wkr:
+                result -= eg * 40
+            result -= eg * (14 - _manhattan(r_sq, wk)) * 3
+
+        for pt in (chess.BISHOP, chess.KNIGHT):
+            for sq in board.pieces(pt, chess.BLACK):
+                result -= eg * (7 - _chebyshev(sq, wk)) * 2
+
     return result
 
 
@@ -553,19 +576,97 @@ def _fifty_move_pressure(board: chess.Board) -> float:
     hmc = board.halfmove_clock
     if hmc < 30:
         return 0.0
-    pressure = (hmc - 30) * 2
+    pressure = (hmc - 30) * 3
     return -pressure if _ROOT_COLOR == chess.WHITE else pressure
+
+
+def _rule_of_square(board: chess.Board, eg: float) -> float:
+    if eg < 0.55:
+        return 0.0
+    score = 0.0
+    for color in (chess.WHITE, chess.BLACK):
+        sign  = 1 if color == chess.WHITE else -1
+        enemy = not color
+        ek    = board.king(enemy)
+        if ek is None:
+            continue
+        enemy_has_pieces = any(
+            len(board.pieces(pt, enemy)) > 0
+            for pt in (chess.QUEEN, chess.ROOK, chess.BISHOP, chess.KNIGHT)
+        )
+        if enemy_has_pieces:
+            continue
+        for sq in board.pieces(chess.PAWN, color):
+            f    = chess.square_file(sq)
+            rank = chess.square_rank(sq)
+            passed = True
+            for esq in board.pieces(chess.PAWN, enemy):
+                ef = chess.square_file(esq)
+                er = chess.square_rank(esq)
+                if abs(ef - f) <= 1:
+                    if color == chess.WHITE and er >= rank:
+                        passed = False; break
+                    if color == chess.BLACK and er <= rank:
+                        passed = False; break
+            if not passed:
+                continue
+            promo_rank = 7 if color == chess.WHITE else 0
+            promo_sq   = chess.square(f, promo_rank)
+            steps      = abs(promo_rank - rank)
+            king_dist  = _chebyshev(ek, promo_sq)
+            steps_adj  = steps if board.turn == color else steps + 1
+            if king_dist > steps_adj:
+                bonus = min(400 + (7 - steps) * 60, 800)
+                score += sign * bonus * eg
+    return score
+
+
+def _king_activity_endgame(board: chess.Board, eg: float) -> float:
+    if eg < 0.45:
+        return 0.0
+    score = 0.0
+    for color in (chess.WHITE, chess.BLACK):
+        sign = 1 if color == chess.WHITE else -1
+        ksq  = board.king(color)
+        if ksq is None:
+            continue
+        kf, kr = chess.square_file(ksq), chess.square_rank(ksq)
+        center_dist = abs(kf - 3.5) + abs(kr - 3.5)
+        score += sign * (7 - center_dist) * 5 * eg
+    return score
+
+
+def _king_opposition(board: chess.Board, eg: float) -> float:
+    if eg < 0.60:
+        return 0.0
+    wk = board.king(chess.WHITE)
+    bk = board.king(chess.BLACK)
+    if wk is None or bk is None:
+        return 0.0
+    wkf, wkr = chess.square_file(wk), chess.square_rank(wk)
+    bkf, bkr = chess.square_file(bk), chess.square_rank(bk)
+    score = 0.0
+    if wkf == bkf and abs(wkr - bkr) == 2:
+        bonus = 30 * eg
+        score += bonus if board.turn == chess.BLACK else -bonus
+    elif wkr == bkr and abs(wkf - bkf) == 2:
+        bonus = 30 * eg
+        score += bonus if board.turn == chess.BLACK else -bonus
+    return score
 
 
 def evaluate(board: chess.Board) -> float:
     if board.is_checkmate():
         return -99_999 if board.turn == chess.WHITE else 99_999
 
-    if (board.is_stalemate()
-            or board.is_insufficient_material()
-            or board.is_repetition(3)
-            or board.is_fifty_moves()):
+    if board.is_stalemate() or board.is_insufficient_material():
         return _contempt_score()
+
+    if board.is_repetition(3) or board.is_fifty_moves():
+        return _contempt_score()
+
+    if board.is_repetition(2):
+        return _contempt_score() * 0.7
 
     eg  = _endgame_factor(board)
     mat = _material_and_pst(board, eg)
@@ -589,6 +690,9 @@ def evaluate(board: chess.Board) -> float:
     score += _trapped_pieces(board)
     score += _queen_tropism(board, eg)
     score += _fifty_move_pressure(board)
+    score += _rule_of_square(board, eg)
+    score += _king_activity_endgame(board, eg)
+    score += _king_opposition(board, eg)
 
     score += 15 if board.turn == chess.WHITE else -15
 
@@ -607,7 +711,7 @@ TT_EXACT = 0
 TT_LOWER = 1
 TT_UPPER = 2
 
-TARGET_DEPTH = 7
+TARGET_DEPTH = 10
 
 _FUTILITY_MARGINS = {1: 120, 2: 300, 3: 500}
 _LMP_CUTOFFS      = {1: 8, 2: 12, 3: 20}
@@ -954,8 +1058,8 @@ def get_next_move(board: chess.Board,
 
         retry_limit = 0
         while True:
-            h_root      = chess.polyglot.zobrist_hash(b)
-            tt_root     = _tt_probe(h_root)
+            h_root       = chess.polyglot.zobrist_hash(b)
+            tt_root      = _tt_probe(h_root)
             root_tt_move = None
             if tt_root is not None:
                 _, _, _, root_tt_move = tt_root
