@@ -26,7 +26,7 @@ import sys
 import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DEPTH       = 2          # search depth — keep at 2 for fast moves; raise for stronger play
+DEPTH       = 3        # search depth — keep at 2 for fast moves; raise for stronger play
 MOVE_DELAY  = 1.2        # seconds between moves just for visualising
 SQUARE_SIZE = 72         # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
@@ -65,7 +65,7 @@ PIECE_UNICODE = {
 # ─────────────────────────────────────────────────────────────────────────────
 class ChessGUI:
     def __init__(self, root: tk.Tk, bot_white, bot_black,
-                 name_white: str = "team_alpha", name_black: str = "team_goraieb"):
+                 name_white: str = "team_creepers", name_black: str = "team_goraieb"):
         self.root       = root
         self.bot_white  = bot_white   # module with get_next_move()
         self.bot_black  = bot_black
@@ -570,15 +570,15 @@ def main():
         sys.path.insert(0, script_dir)
 
     try:
-        team_alpha = importlib.import_module("team_alpha")
+        team_creepers = importlib.import_module("team_creepers")
         team_goraieb  = importlib.import_module("team_goraieb")
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
-        print("Make sure team_alpha.py and team_goraieb.py are in the same folder as visualize.py")
+        print("Make sure team_creepers.py and team_goraieb.py are in the same folder as visualize.py")
         sys.exit(1)
 
     root = tk.Tk()
-    ColorDrawScreen(root, team_alpha, team_goraieb, "team_alpha", "team_goraieb")
+    ColorDrawScreen(root, team_creepers, team_goraieb, "team_creepers", "team_goraieb")
     root.mainloop()
 
 
