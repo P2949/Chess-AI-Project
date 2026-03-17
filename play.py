@@ -14,8 +14,8 @@ Run:
 
 The following files must be in the same directory:
     visualize.py
-    team_alpha.py
-    team_goraieb.py
+    team_creepers.py
+    team_aaaaaaaaaaaaaaa.py
 
 Each bot module must expose:
     get_next_move(board, color, depth) -> chess.Move
@@ -31,7 +31,7 @@ import sys
 import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DEPTH       = 2       # bot search depth  (keep ≤3 for sub-second moves)
+DEPTH       = 3       # bot search depth  (keep ≤3 for sub-second moves)
 MOVE_DELAY  = 1200    # ms pause after each bot move so you can see the board
 SQUARE_SIZE = 72      # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
@@ -356,13 +356,13 @@ class ChessGUI:
     def _ask_promotion(self) -> int:
         """Modal dialog — returns the chosen piece type (chess.QUEEN etc.)."""
         result = [chess.QUEEN]
-        color  = self.board.turn
+        color = self.board.turn
 
         dlg = tk.Toplevel(self.root)
         dlg.title("Promote Pawn")
         dlg.configure(bg=BG)
         dlg.resizable(False, False)
-        dlg.grab_set()
+        dlg.transient(self.root)
         dlg.lift()
 
         tk.Label(dlg, text="Promote to:", bg=BG, fg=TEXT_COL,
@@ -374,8 +374,10 @@ class ChessGUI:
             (chess.BISHOP, PIECE_UNICODE[(chess.BISHOP, color)], "Bishop"),
             (chess.KNIGHT, PIECE_UNICODE[(chess.KNIGHT, color)], "Knight"),
         ]
+
         bf = tk.Frame(dlg, bg=BG)
         bf.pack(padx=24, pady=(0, 20))
+
         for pt, sym, name in options:
             tk.Button(
                 bf, text=f"{sym}\n{name}",
@@ -385,6 +387,9 @@ class ChessGUI:
                 command=lambda p=pt: [result.__setitem__(0, p), dlg.destroy()]
             ).pack(side=tk.LEFT, padx=4)
 
+        dlg.update_idletasks()
+        dlg.wait_visibility()
+        dlg.grab_set()
         dlg.wait_window()
         return result[0]
 
@@ -749,17 +754,17 @@ def main():
         sys.path.insert(0, script_dir)
 
     try:
-        team_alpha   = importlib.import_module("team_alpha")
-        team_goraieb = importlib.import_module("team_goraieb")
+        team_creepers   = importlib.import_module("team_creepers")
+        team_aaaaaaaaaaaaaaa = importlib.import_module("team_aaaaaaaaaaaaaaa")
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
-        print("Make sure team_alpha.py and team_goraieb.py are "
+        print("Make sure team_creepers.py and team_aaaaaaaaaaaaaaa.py are "
               "in the same folder as visualize.py")
         sys.exit(1)
 
     mods = {
-        "team_alpha":   team_alpha,
-        "team_goraieb": team_goraieb,
+        "team_creepers":   team_creepers,
+        "team_aaaaaaaaaaaaaaa": team_aaaaaaaaaaaaaaa,
     }
     root = tk.Tk()
     ModeSelectScreen(root, mods, list(mods.keys()))
