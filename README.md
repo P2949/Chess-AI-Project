@@ -16,4 +16,6 @@ and then a draw agains level 17 (repetead moves) but we had the better position 
 
 
 Use `pip install python-chess` to install deps.  
-Run with `py play.py`.
+Run with `py play.py`, or `py visualize.py`
+
+If you have a venv, activate it first using `source .venv/bin/activate`
