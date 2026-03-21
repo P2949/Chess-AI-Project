@@ -5,6 +5,11 @@ A framework for finding optimal parameter values for any program or function.
 Supports multiple search strategies: grid search, genetic/evolutionary,
 random search, hill climbing, and linear sweep.
 
+All strategies evaluate candidates in parallel using ThreadPoolExecutor.
+On Python 3.14t (free-threaded) this gives true parallelism with no GIL.
+On older CPython the threads still help if the fitness function releases
+the GIL (e.g. subprocess calls, I/O, C extensions).
+
 Usage (inline Python function):
 
     from optimizer import Parameter, Optimizer
@@ -46,6 +51,7 @@ from __future__ import annotations
 
 import copy
 import math
+import os
 import random
 import re
 import statistics
@@ -53,9 +59,37 @@ import subprocess
 import sys
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+
+_DEFAULT_WORKERS = os.cpu_count() or 1
+
+
+
+def _batch_evaluate(
+    candidates: list,       # list[Candidate] — forward ref
+    fitness_fn: Callable[[dict[str, float]], float],
+    n_workers: int,
+) -> None:
+    """Evaluate all candidates with fitness=None in parallel, mutating in place."""
+    to_eval = [c for c in candidates if c.fitness is None]
+    if not to_eval:
+        return
+
+    if n_workers <= 1:
+        for c in to_eval:
+            c.fitness = fitness_fn(c.values)
+        return
+
+    with ThreadPoolExecutor(max_workers=n_workers) as pool:
+        future_to_candidate = {
+            pool.submit(fitness_fn, c.values): c for c in to_eval
+        }
+        for future in as_completed(future_to_candidate):
+            c = future_to_candidate[future]
+            c.fitness = future.result()
 
 
 
@@ -124,7 +158,6 @@ class Candidate:
 
 
 
-
 @dataclass
 class Report:
     best: Candidate
@@ -179,7 +212,6 @@ class Report:
 
 
 
-
 class Strategy(ABC):
     """Base class for all search strategies."""
 
@@ -192,6 +224,7 @@ class Strategy(ABC):
         fitness_fn: Callable[[dict[str, float]], float],
         *,
         verbose: bool = False,
+        n_workers: int = _DEFAULT_WORKERS,
     ) -> Report: ...
 
 
@@ -200,7 +233,7 @@ class GridSearch(Strategy):
 
     name = "grid"
 
-    def run(self, params, fitness_fn, *, verbose=False) -> Report:
+    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
         import itertools
 
         grids = [p.all_values() for p in params]
@@ -209,25 +242,22 @@ class GridSearch(Strategy):
 
         total = len(combos)
         if verbose:
-            print(f"[grid] {total} combinations to evaluate")
+            print(f"[grid] {total} combinations to evaluate ({n_workers} workers)")
 
-        evaluated: list[Candidate] = []
+        # Build all candidates, evaluate in parallel
+        candidates = [Candidate(values=dict(zip(names, combo))) for combo in combos]
+        _batch_evaluate(candidates, fitness_fn, n_workers)
+
         best: Candidate | None = None
-
-        for i, combo in enumerate(combos):
-            values = dict(zip(names, combo))
-            fitness = fitness_fn(values)
-            c = Candidate(values=values, fitness=fitness)
-            evaluated.append(c)
-
-            if best is None or fitness > best.fitness:
+        for c in candidates:
+            if best is None or c.fitness > best.fitness:
                 best = c.copy()
 
-            if verbose and (i + 1) % max(1, total // 20) == 0:
-                print(f"  [{i + 1}/{total}] current best={best.fitness:.4f}")
+        if verbose:
+            print(f"  [{total}/{total}] best={best.fitness:.4f}")
 
         history = [{"label": "full_sweep", "best_fitness": best.fitness}]
-        return Report(best=best, all_evaluated=evaluated, history=history, strategy_name="Grid Search")
+        return Report(best=best, all_evaluated=candidates, history=history, strategy_name="Grid Search")
 
 
 class LinearSweep(Strategy):
@@ -235,7 +265,7 @@ class LinearSweep(Strategy):
 
     name = "sweep"
 
-    def run(self, params, fitness_fn, *, verbose=False) -> Report:
+    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
         evaluated: list[Candidate] = []
         history: list[dict] = []
         global_best: Candidate | None = None
@@ -250,15 +280,15 @@ class LinearSweep(Strategy):
             if verbose:
                 print(f"[sweep] sweeping {param.name}: {param.min_val} → {param.max_val} (step={param.step})")
 
-            best_for_param: Candidate | None = None
+            # Build batch for this param, evaluate in parallel
+            sweep_candidates = []
             for val in param.all_values():
                 values = {**midpoints, param.name: val}
-                fitness = fitness_fn(values)
-                c = Candidate(values=values, fitness=fitness)
-                evaluated.append(c)
+                sweep_candidates.append(Candidate(values=values))
+            _batch_evaluate(sweep_candidates, fitness_fn, n_workers)
+            evaluated.extend(sweep_candidates)
 
-                if best_for_param is None or fitness > best_for_param.fitness:
-                    best_for_param = c.copy()
+            best_for_param = max(sweep_candidates, key=lambda c: c.fitness)
 
             history.append({
                 "label": f"sweep_{param.name}",
@@ -283,23 +313,22 @@ class RandomSearch(Strategy):
     def __init__(self, n_samples: int = 200):
         self.n_samples = n_samples
 
-    def run(self, params, fitness_fn, *, verbose=False) -> Report:
-        evaluated: list[Candidate] = []
+    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+        if verbose:
+            print(f"[random] sampling {self.n_samples} random points ({n_workers} workers)")
+
+        # Build all candidates, evaluate in parallel
+        candidates = []
+        for _ in range(self.n_samples):
+            values = {p.name: p.random_value() for p in params}
+            candidates.append(Candidate(values=values))
+        _batch_evaluate(candidates, fitness_fn, n_workers)
+
         best: Candidate | None = None
         history: list[dict] = []
-
-        if verbose:
-            print(f"[random] sampling {self.n_samples} random points")
-
-        for i in range(self.n_samples):
-            values = {p.name: p.random_value() for p in params}
-            fitness = fitness_fn(values)
-            c = Candidate(values=values, fitness=fitness)
-            evaluated.append(c)
-
-            if best is None or fitness > best.fitness:
+        for i, c in enumerate(candidates):
+            if best is None or c.fitness > best.fitness:
                 best = c.copy()
-
             if verbose and (i + 1) % max(1, self.n_samples // 10) == 0:
                 history.append({
                     "label": f"sample_{i + 1}",
@@ -307,11 +336,15 @@ class RandomSearch(Strategy):
                 })
                 print(f"  [{i + 1}/{self.n_samples}] best so far={best.fitness:.4f}")
 
-        return Report(best=best, all_evaluated=evaluated, history=history, strategy_name="Random Search")
+        return Report(best=best, all_evaluated=candidates, history=history, strategy_name="Random Search")
 
 
 class HillClimb(Strategy):
-    """Stochastic hill climbing with optional restarts."""
+    """Stochastic hill climbing with optional restarts.
+
+    Each restart runs sequentially (step N+1 depends on step N),
+    but independent restarts are run in parallel.
+    """
 
     name = "hillclimb"
 
@@ -319,47 +352,58 @@ class HillClimb(Strategy):
         self.iterations = iterations
         self.restarts = restarts
 
-    def run(self, params, fitness_fn, *, verbose=False) -> Report:
-        evaluated: list[Candidate] = []
-        global_best: Candidate | None = None
+    def _single_restart(self, params, fitness_fn):
+        """Run one full restart, return (best, all_evaluated)."""
+        evaluated = []
+        current_vals = {p.name: p.random_value() for p in params}
+        current_fitness = fitness_fn(current_vals)
+        current = Candidate(values=current_vals, fitness=current_fitness)
+        evaluated.append(current.copy())
+        best = current.copy()
+
+        for _ in range(self.iterations):
+            p = random.choice(params)
+            direction = random.choice([-1, 1])
+            new_val = p.clamp(current.values[p.name] + direction * p.step)
+            new_vals = {**current.values, p.name: new_val}
+            new_fitness = fitness_fn(new_vals)
+            neighbor = Candidate(values=new_vals, fitness=new_fitness)
+            evaluated.append(neighbor.copy())
+
+            if new_fitness > current.fitness:
+                current = neighbor
+            if new_fitness > best.fitness:
+                best = neighbor.copy()
+
+        return best, evaluated
+
+    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+        if verbose:
+            print(f"[hillclimb] {self.restarts} restarts × {self.iterations} iters ({n_workers} workers)")
+
+        all_evaluated: list[Candidate] = []
         history: list[dict] = []
+        global_best: Candidate | None = None
 
-        for restart in range(self.restarts):
-            # random start
-            current_vals = {p.name: p.random_value() for p in params}
-            current_fitness = fitness_fn(current_vals)
-            current = Candidate(values=current_vals, fitness=current_fitness)
-            evaluated.append(current.copy())
+        # Run independent restarts in parallel
+        with ThreadPoolExecutor(max_workers=min(n_workers, self.restarts)) as pool:
+            futures = [
+                pool.submit(self._single_restart, params, fitness_fn)
+                for _ in range(self.restarts)
+            ]
+            for i, future in enumerate(as_completed(futures)):
+                best, evaluated = future.result()
+                all_evaluated.extend(evaluated)
+                if global_best is None or best.fitness > global_best.fitness:
+                    global_best = best.copy()
+                history.append({
+                    "label": f"restart_{i + 1}",
+                    "best_fitness": global_best.fitness,
+                })
+                if verbose:
+                    print(f"  restart {i + 1}/{self.restarts} done, best={global_best.fitness:.4f}")
 
-            if global_best is None or current_fitness > global_best.fitness:
-                global_best = current.copy()
-
-            if verbose:
-                print(f"[hillclimb] restart {restart + 1}/{self.restarts}, start fitness={current_fitness:.4f}")
-
-            for it in range(self.iterations):
-                # pick a random param and nudge it by ±step
-                p = random.choice(params)
-                direction = random.choice([-1, 1])
-                new_val = p.clamp(current.values[p.name] + direction * p.step)
-
-                new_vals = {**current.values, p.name: new_val}
-                new_fitness = fitness_fn(new_vals)
-                neighbor = Candidate(values=new_vals, fitness=new_fitness)
-                evaluated.append(neighbor.copy())
-
-                if new_fitness > current.fitness:
-                    current = neighbor
-
-                if new_fitness > global_best.fitness:
-                    global_best = neighbor.copy()
-
-            history.append({
-                "label": f"restart_{restart + 1}",
-                "best_fitness": global_best.fitness,
-            })
-
-        return Report(best=global_best, all_evaluated=evaluated, history=history, strategy_name="Hill Climbing")
+        return Report(best=global_best, all_evaluated=all_evaluated, history=history, strategy_name="Hill Climbing")
 
 
 class Genetic(Strategy):
@@ -414,7 +458,7 @@ class Genetic(Strategy):
                 vals[p.name] = p.clamp(vals[p.name] + direction * magnitude * p.step)
         return Candidate(values=vals)
 
-    def run(self, params, fitness_fn, *, verbose=False) -> Report:
+    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
         # initialise random population
         population: list[Candidate] = []
         for _ in range(self.population_size):
@@ -426,12 +470,15 @@ class Genetic(Strategy):
         global_best: Candidate | None = None
         n_elite = max(1, int(self.population_size * self.elite_ratio))
 
+        if verbose:
+            print(f"[genetic] pop={self.population_size} gen={self.generations} ({n_workers} workers)")
+
         for gen in range(self.generations):
-            # evaluate
-            for c in population:
-                if c.fitness is None:
-                    c.fitness = fitness_fn(c.values)
-                    all_evaluated.append(c.copy())
+            # evaluate unevaluated candidates in parallel
+            unevaluated_before = [c for c in population if c.fitness is None]
+            _batch_evaluate(population, fitness_fn, n_workers)
+            for c in unevaluated_before:
+                all_evaluated.append(c.copy())
 
             # sort by fitness descending
             population.sort(key=lambda c: c.fitness or float("-inf"), reverse=True)
@@ -509,11 +556,15 @@ class Optimizer:
         The tunable parameter definitions.
     fitness_fn : callable
         A function that takes dict[str, float] and returns a float (higher = better).
+        MUST be thread-safe — it will be called from multiple threads concurrently.
     strategy : str or Strategy instance
         One of "grid", "sweep", "random", "hillclimb", "genetic",
         or a pre-configured Strategy object.
     verbose : bool
         Print progress during optimisation.
+    n_workers : int
+        Number of threads for parallel fitness evaluation.
+        Defaults to os.cpu_count().
     **strategy_kwargs
         Extra keyword arguments passed to the strategy constructor
         (e.g. population_size=100 for genetic).
@@ -525,11 +576,13 @@ class Optimizer:
         fitness_fn: Callable[[dict[str, float]], float],
         strategy: str | Strategy = "genetic",
         verbose: bool = True,
+        n_workers: int = _DEFAULT_WORKERS,
         **strategy_kwargs,
     ):
         self.params = params
         self.fitness_fn = fitness_fn
         self.verbose = verbose
+        self.n_workers = n_workers
 
         if isinstance(strategy, str):
             if strategy not in STRATEGIES:
@@ -548,6 +601,7 @@ class Optimizer:
         timeout: float = 60.0,
         verbose: bool = True,
         invert: bool = False,
+        n_workers: int = _DEFAULT_WORKERS,
         **strategy_kwargs,
     ) -> Optimizer:
         """
@@ -580,17 +634,20 @@ class Optimizer:
             val = float(match.group(1))
             return -val if invert else val
 
-        return cls(params, fitness_fn, strategy=strategy, verbose=verbose, **strategy_kwargs)
+        return cls(params, fitness_fn, strategy=strategy, verbose=verbose,
+                   n_workers=n_workers, **strategy_kwargs)
 
     def run(self) -> Report:
         """Execute the optimisation and return a Report."""
         t0 = time.perf_counter()
-        report = self.strategy.run(self.params, self.fitness_fn, verbose=self.verbose)
+        report = self.strategy.run(
+            self.params, self.fitness_fn,
+            verbose=self.verbose, n_workers=self.n_workers,
+        )
         report.elapsed = time.perf_counter() - t0
         return report
 
 
-# ─── Demo / self-test ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     # demo: find x, y that maximise -(x-7)^2 - (y+3)^2  (optimum at x=7, y=-3)
@@ -602,6 +659,8 @@ if __name__ == "__main__":
     def demo_fitness(values: dict[str, float]) -> float:
         x, y = values["x"], values["y"]
         return -((x - 7) ** 2) - ((y + 3) ** 2)
+
+    print(f"Using {_DEFAULT_WORKERS} worker threads\n")
 
     print("=== Genetic ===")
     opt = Optimizer(params, demo_fitness, strategy="genetic", population_size=40, generations=30)

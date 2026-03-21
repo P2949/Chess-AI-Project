@@ -1,6 +1,10 @@
 """
 tune_engine.py — Tune team_goraieb eval weights with the generic optimizer.
 
+Thread-safe: each worker thread gets its own engine module instance via
+threading.local(), so there is zero shared mutable state between evaluations.
+On Python 3.14t (free-threaded) this gives true CPU parallelism.
+
 Three fitness modes:
   1. self_play  — candidate plays N games vs the engine with default weights
   2. test_suite — score on a set of EPD positions (does the engine find the best move?)
@@ -18,25 +22,51 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
+import importlib
+import importlib.util
 import math
+import os
 import random
 import sys
+import threading
 import time
 
 import chess
 import chess.polyglot
 
-# ── Import the engine and optimizer ───────────────────────────────────────────
-import team_goraieb as engine
+import team_goraieb as _engine_template
 from optimizer import Parameter, Optimizer
 
-# ── Snapshot the default weights so the reference engine is always the same ───
-DEFAULT_WEIGHTS = dict(engine.WEIGHTS)
+DEFAULT_WEIGHTS = dict(_engine_template.WEIGHTS)
+
+N_WORKERS = os.cpu_count() or 1
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  PARAMETER DEFINITIONS — edit ranges/steps here
-# ═══════════════════════════════════════════════════════════════════════════════
+_thread_local = threading.local()
+
+
+def _get_engine():
+    """Return a per-thread engine module instance.
+
+    First call per thread: loads a fresh copy of team_goraieb with its own
+    globals (WEIGHTS, TT, killers, history).  Subsequent calls on the same
+    thread return the cached instance.
+    """
+    if not hasattr(_thread_local, "engine"):
+        spec = importlib.util.find_spec("team_goraieb")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _thread_local.engine = mod
+    return _thread_local.engine
+
+
+def _reset_engine(eng) -> None:
+    """Clear TT / killers / history on an engine instance."""
+    eng.TRANSPOSITION_TABLE.clear()
+    eng._HISTORY.clear()
+    eng._KILLERS[:] = [[None, None] for _ in range(64)]
+
+
 
 def build_params(coarse: bool = False) -> list[Parameter]:
     """
@@ -48,7 +78,6 @@ def build_params(coarse: bool = False) -> list[Parameter]:
     s = 2 if coarse else 1  # step multiplier
 
     return [
-        # ── Piece values ──────────────────────────────────────────────────
         # Pawn is the unit; we can still wiggle it slightly.
         Parameter("pawn",             80,  120,  step=5*s,   dtype=int),
         Parameter("knight",          270,  370,  step=10*s,  dtype=int),
@@ -66,124 +95,47 @@ def build_params(coarse: bool = False) -> list[Parameter]:
     ]
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  WEIGHT INJECTION
-# ═══════════════════════════════════════════════════════════════════════════════
 
-def inject_weights(values: dict[str, float]):
-    """Patch engine.WEIGHTS with the candidate values (keeps untuned keys)."""
-    for k, v in values.items():
-        engine.WEIGHTS[k] = v
-
-def reset_weights():
-    """Restore engine to its default configuration."""
-    engine.WEIGHTS.update(DEFAULT_WEIGHTS)
-
-def reset_engine_state():
-    """Clear TT / killers / history so each evaluation starts clean."""
-    engine.TRANSPOSITION_TABLE.clear()
-    engine._HISTORY.clear()
-    engine._KILLERS[:] = [[None, None] for _ in range(64)]
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FITNESS MODE 1: Self-play
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def play_game(depth: int = 3, max_moves: int = 120) -> float:
-    """
-    Play one game: candidate (WHITE) vs default weights (BLACK).
-    Returns 1.0 for win, 0.5 for draw, 0.0 for loss.
-
-    The trick: we swap engine.WEIGHTS between moves so the same module
-    serves both sides.
-    """
+def _play_one_game(candidate_w: dict, candidate_is_white: bool,
+                   depth: int, max_moves: int = 100) -> float:
+    """Play one game on a thread-local engine. Returns score for candidate."""
+    eng = _get_engine()
     board = chess.Board()
-    candidate_weights = dict(engine.WEIGHTS)  # snapshot current (candidate)
 
-    for move_num in range(max_moves):
+    for _ in range(max_moves):
         if board.is_game_over():
             break
-
-        if board.turn == chess.WHITE:
-            # candidate's turn
-            inject_weights(candidate_weights)
-        else:
-            # reference's turn
-            reset_weights()
-
-        reset_engine_state()
-        move = engine.get_next_move(board, board.turn, depth=depth)
+        # Inject the right weights for whoever's turn it is
+        is_candidate_turn = (board.turn == chess.WHITE) == candidate_is_white
+        eng.WEIGHTS.update(candidate_w if is_candidate_turn else DEFAULT_WEIGHTS)
+        _reset_engine(eng)
+        move = eng.get_next_move(board, board.turn, depth=depth)
         board.push(move)
 
-    # score the result from WHITE's (candidate's) perspective
-    result = board.result(claim_draw=True)
-    if result == "1-0":     return 1.0
-    elif result == "0-1":   return 0.0
-    else:                   return 0.5
+    r = board.result(claim_draw=True)
+    if candidate_is_white:
+        return 1.0 if r == "1-0" else (0.0 if r == "0-1" else 0.5)
+    else:
+        return 1.0 if r == "0-1" else (0.0 if r == "1-0" else 0.5)
 
 
 def selfplay_fitness(values: dict[str, float],
                      games: int = 20,
                      depth: int = 2) -> float:
     """
-    Fitness = win rate over N games as white, then N as black.
-    We alternate colors to remove first-move bias.
+    Fitness = win rate over N games, alternating colors.
+    Fully thread-safe — uses only thread-local engine state.
     """
-    inject_weights(values)
-    candidate_w = dict(engine.WEIGHTS)
+    # Build the candidate weight dict (merge with defaults for untuned keys)
+    candidate_w = {**DEFAULT_WEIGHTS, **values}
 
     total = 0.0
     for i in range(games):
-        # even games: candidate is white; odd: candidate is black
-        if i % 2 == 0:
-            inject_weights(candidate_w)
-            score = play_one_game_candidate_white(candidate_w, depth)
-            total += score
-        else:
-            score = play_one_game_candidate_black(candidate_w, depth)
-            total += score
-
+        candidate_is_white = (i % 2 == 0)
+        total += _play_one_game(candidate_w, candidate_is_white, depth)
     return total / games
 
 
-def play_one_game_candidate_white(candidate_w: dict, depth: int,
-                                   max_moves: int = 100) -> float:
-    board = chess.Board()
-    for _ in range(max_moves):
-        if board.is_game_over(): break
-        if board.turn == chess.WHITE:
-            engine.WEIGHTS.update(candidate_w)
-        else:
-            engine.WEIGHTS.update(DEFAULT_WEIGHTS)
-        reset_engine_state()
-        move = engine.get_next_move(board, board.turn, depth=depth)
-        board.push(move)
-
-    r = board.result(claim_draw=True)
-    return 1.0 if r == "1-0" else (0.0 if r == "0-1" else 0.5)
-
-
-def play_one_game_candidate_black(candidate_w: dict, depth: int,
-                                   max_moves: int = 100) -> float:
-    board = chess.Board()
-    for _ in range(max_moves):
-        if board.is_game_over(): break
-        if board.turn == chess.BLACK:
-            engine.WEIGHTS.update(candidate_w)
-        else:
-            engine.WEIGHTS.update(DEFAULT_WEIGHTS)
-        reset_engine_state()
-        move = engine.get_next_move(board, board.turn, depth=depth)
-        board.push(move)
-
-    r = board.result(claim_draw=True)
-    return 1.0 if r == "0-1" else (0.0 if r == "1-0" else 0.5)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FITNESS MODE 2: Test suite (EPD positions)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def load_epd_suite(path: str) -> list[tuple[str, str]]:
     """
@@ -196,11 +148,9 @@ def load_epd_suite(path: str) -> list[tuple[str, str]]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            # standard EPD: fen bm <move>;
             if " bm " in line:
                 fen_part, rest = line.split(" bm ", 1)
                 bm = rest.split(";")[0].strip()
-                # EPD FEN has 4 fields; extend to full FEN
                 fields = fen_part.strip().split()
                 if len(fields) == 4:
                     fen_part = fen_part.strip() + " 0 1"
@@ -211,22 +161,20 @@ def load_epd_suite(path: str) -> list[tuple[str, str]]:
 def testsuite_fitness(values: dict[str, float],
                       positions: list[tuple[str, str]],
                       depth: int = 3) -> float:
-    """Fitness = fraction of positions where the engine finds the best move."""
-    inject_weights(values)
+    """Fitness = fraction of positions where engine finds the best move."""
+    eng = _get_engine()
+    eng.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
     correct = 0
     for fen, expected_san in positions:
         board = chess.Board(fen)
-        reset_engine_state()
-        move = engine.get_next_move(board, board.turn, depth=depth)
+        _reset_engine(eng)
+        move = eng.get_next_move(board, board.turn, depth=depth)
         if board.san(move) == expected_san:
             correct += 1
-    reset_weights()
     return correct / max(1, len(positions))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FITNESS MODE 3: Texel tuning
-# ═══════════════════════════════════════════════════════════════════════════════
+
 
 def load_texel_data(path: str) -> list[tuple[str, float]]:
     """
@@ -255,57 +203,44 @@ def texel_fitness(values: dict[str, float],
     Fitness = -MSE between sigmoid(static_eval) and game result.
     Negative because the optimizer maximises and we want to minimise error.
     """
-    inject_weights(values)
+    eng = _get_engine()
+    eng.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
     total_error = 0.0
     for fen, result in data:
         board = chess.Board(fen)
-        raw_eval = engine.evaluate(board)
-        # eval is from white's perspective
+        raw_eval = eng.evaluate(board)
         predicted = _sigmoid(raw_eval, K)
         total_error += (predicted - result) ** 2
-    reset_weights()
     return -(total_error / max(1, len(data)))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  QUICK DEMO (built-in test positions — no external files needed)
-# ═══════════════════════════════════════════════════════════════════════════════
 
-# A handful of well-known tactical/positional test positions with known best moves.
 BUILTIN_POSITIONS = [
-    # Lucena position — Rook endgame, white to play and win
     ("1K1k4/1P6/8/8/8/8/r7/2R5 w - - 0 1", "Rc4"),
-    # Simple fork: knight forks king and rook
     ("r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1", "Qxf7+"),
-    # Back rank mate threat
     ("6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1", "Re8+"),
-    # Pin the knight to the queen
     ("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", "e5"),
-    # Starting position (test opening preference)
     ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "e4"),
 ]
 
 
 def demo_testsuite_fitness(values: dict[str, float], depth: int = 3) -> float:
     """Use the built-in positions as a mini test suite."""
-    inject_weights(values)
+    eng = _get_engine()
+    eng.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
     correct = 0
     for fen, expected_san in BUILTIN_POSITIONS:
         board = chess.Board(fen)
-        reset_engine_state()
+        _reset_engine(eng)
         try:
-            move = engine.get_next_move(board, board.turn, depth=depth)
+            move = eng.get_next_move(board, board.turn, depth=depth)
             if board.san(move) == expected_san:
                 correct += 1
         except Exception:
             pass
-    reset_weights()
     return correct / len(BUILTIN_POSITIONS)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  MAIN
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
     ap = argparse.ArgumentParser(description="Tune chess engine eval weights")
@@ -327,11 +262,13 @@ def main():
                     help="Generations (genetic)")
     ap.add_argument("--coarse", action="store_true",
                     help="Use wider step sizes for fast first pass")
+    ap.add_argument("--workers", type=int, default=N_WORKERS,
+                    help=f"Number of threads (default: {N_WORKERS} = all CPUs)")
     args = ap.parse_args()
 
+    n_workers = args.workers
     params = build_params(coarse=args.coarse)
 
-    # ── Build the fitness function ────────────────────────────────────────
     if args.mode == "self_play":
         games, depth = args.games, args.depth
         def fitness(values):
@@ -362,7 +299,6 @@ def main():
         def fitness(values):
             return demo_testsuite_fitness(values, depth=depth)
 
-    # ── Build strategy kwargs ─────────────────────────────────────────────
     strat_kwargs = {}
     if args.strategy == "genetic":
         strat_kwargs = {"population_size": args.pop, "generations": args.gen, "mutation_rate": 0.2}
@@ -371,20 +307,44 @@ def main():
     elif args.strategy == "random":
         strat_kwargs = {"n_samples": args.pop * args.gen}
 
-    # ── Estimate total time ──────────────────────────────────────────────
-    # Benchmark one fitness call, then multiply by expected total evaluations.
-    print("Benchmarking one fitness evaluation...", end=" ", flush=True)
-    _bench_vals = {p.name: p.clamp((p.min_val + p.max_val) / 2) for p in params}
+    # Benchmark a real parallel batch so the estimate reflects actual
+    # contention (cache pressure, hyperthreading, memory bandwidth).
+    from concurrent.futures import ThreadPoolExecutor
+
+    # How many evals run in one parallel batch during the real optimisation
+    if args.strategy in ("genetic", "random", "grid", "sweep"):
+        bench_batch = min(n_workers, args.pop)
+    else:  # hillclimb — restarts are parallel
+        bench_batch = min(n_workers, 3)
+
+    print(f"Threads: {n_workers}")
+    print(f"Benchmarking {bench_batch} parallel evaluations...", end=" ", flush=True)
+
+    # Generate distinct midpoint-ish parameter vectors for the batch
+    _bench_candidates = []
+    for i in range(bench_batch):
+        vals = {}
+        for p in params:
+            # spread across the range so we don't all hit the same TT/positions
+            frac = (i + 1) / (bench_batch + 1)
+            vals[p.name] = p.clamp(p.min_val + frac * (p.max_val - p.min_val))
+        _bench_candidates.append(vals)
+
     _t0 = time.perf_counter()
-    fitness(_bench_vals)
-    cost_per_eval = time.perf_counter() - _t0
-    print(f"{cost_per_eval:.2f}s")
+    if bench_batch <= 1:
+        fitness(_bench_candidates[0])
+    else:
+        with ThreadPoolExecutor(max_workers=n_workers) as pool:
+            list(pool.map(fitness, _bench_candidates))
+    batch_wall_time = time.perf_counter() - _t0
+    cost_per_eval = batch_wall_time / bench_batch
+    print(f"{batch_wall_time:.2f}s  ({cost_per_eval:.2f}s/eval effective)")
 
     # Estimate total evaluations for each strategy
     if args.strategy == "genetic":
         total_evals = args.pop * args.gen
     elif args.strategy == "hillclimb":
-        total_evals = (args.pop * args.gen) * 3 + 3  # iterations*restarts + starts
+        total_evals = (args.pop * args.gen) * 3 + 3
     elif args.strategy == "random":
         total_evals = args.pop * args.gen
     elif args.strategy == "grid":
@@ -396,31 +356,31 @@ def main():
     else:
         total_evals = args.pop * args.gen
 
-    eta_secs = total_evals * cost_per_eval
-    if eta_secs < 60:
-        eta_str = f"{eta_secs:.0f}s"
-    elif eta_secs < 3600:
-        eta_str = f"{int(eta_secs // 60)}m {int(eta_secs % 60)}s"
-    else:
-        h, m = int(eta_secs // 3600), int((eta_secs % 3600) // 60)
-        eta_str = f"{h}h {m}m"
-    print(f"\n  ~{total_evals} evaluations × {cost_per_eval:.2f}s each ≈ {eta_str}")
+    # Estimate: how many batches × wall-clock per batch
+    total_batches = math.ceil(total_evals / max(1, bench_batch))
+    eta_secs = total_batches * batch_wall_time
+
+    def _fmt_time(secs):
+        if secs < 60:   return f"{secs:.0f}s"
+        if secs < 3600:  return f"{int(secs // 60)}m {int(secs % 60)}s"
+        h, m = int(secs // 3600), int((secs % 3600) // 60)
+        return f"{h}h {m}m"
+
+    print(f"\n  ~{total_evals} evaluations in ~{total_batches} batches of {bench_batch}")
+    print(f"  Estimated wall time: ~{_fmt_time(eta_secs)}")
     if args.strategy == "grid" and total_evals > 50000:
         print(f"  WARNING: grid search has {total_evals} combos — consider genetic instead")
     print()
 
-    # ── Run ───────────────────────────────────────────────────────────────
     print(f"Strategy: {args.strategy}  |  Mode: {args.mode}  |  Depth: {args.depth}")
-    print(f"Parameters: {len(params)}  |  Tuning...\n")
+    print(f"Parameters: {len(params)}  |  Workers: {n_workers}  |  Tuning...\n")
 
-    opt = Optimizer(params, fitness, strategy=args.strategy, verbose=True, **strat_kwargs)
+    opt = Optimizer(params, fitness, strategy=args.strategy, verbose=True,
+                    n_workers=n_workers, **strat_kwargs)
     report = opt.run()
 
-    # restore default weights before printing
-    reset_weights()
     report.show(top_n=10)
 
-    # ── Print a copy-pasteable WEIGHTS dict ───────────────────────────────
     print("  Copy-paste into your engine:")
     print("  WEIGHTS = {")
     merged = {**DEFAULT_WEIGHTS, **report.best.values}
