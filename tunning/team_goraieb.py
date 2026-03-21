@@ -1,25 +1,53 @@
 """
-team_goraieb.py
-Base: the working 1700-ELO code, search untouched.
-Additions (eval and ordering only — zero search logic changed):
-  • score_move: TT best-move hint + killer moves + history heuristic
-  • evaluate:   + bishop pair bonus
-                + pawn structure (passed/doubled/isolated)
-                + rook on open/semi-open file
-  • minimax:    stores best_move in TT (4-tuple); records killers+history on cutoff
-  • get_next_move: resets killers each call; ages history dict
-  • Everything else: byte-for-byte identical to original
+team_goraieb.py  (tunable edition)
+
+Identical logic to the original — only change is that every magic number
+in evaluate() has been lifted into the WEIGHTS dict at module level.
+The optimizer patches WEIGHTS before each fitness evaluation.
+
+To verify equivalence: the default WEIGHTS values reproduce the exact same
+eval scores as the original hardcoded version.
 """
 import chess
 import chess.polyglot
 
-# ── Piece values ───────────────────────────────────────────────────────────────
-PIECE_VALUES = {
-    chess.PAWN: 100, chess.KNIGHT: 320, chess.BISHOP: 330,
-    chess.ROOK: 500, chess.QUEEN: 900,  chess.KING: 20000,
+# The optimizer writes into this dict directly.  Keys are stable identifiers.
+WEIGHTS = {
+    # piece values
+    "pawn":             100,
+    "knight":           320,
+    "bishop":           330,
+    "rook":             500,
+    "queen":            900,
+    "king":           20000,
+
+    # eval terms
+    "mobility":          1.5,    # per legal-move delta
+    "bishop_pair":      30.0,    # bonus for having 2+ bishops
+    "doubled_penalty":  20.0,    # penalty per doubled pawn
+    "isolated_penalty": 15.0,    # penalty per isolated pawn
+    "rook_open_file":   25.0,    # rook on fully open file
+    "rook_semi_open":   12.0,    # rook on semi-open file
+
+    # passed pawn bonuses by rank (index 0=rank1 .. 7=rank8)
+    "passed_r1":  0,  "passed_r2": 10, "passed_r3": 20, "passed_r4": 35,
+    "passed_r5": 60,  "passed_r6": 90, "passed_r7": 130, "passed_r8": 0,
 }
 
-# ── PeSTO tables (unchanged) ───────────────────────────────────────────────────
+def _piece_values():
+    return {
+        chess.PAWN:   WEIGHTS["pawn"],
+        chess.KNIGHT: WEIGHTS["knight"],
+        chess.BISHOP: WEIGHTS["bishop"],
+        chess.ROOK:   WEIGHTS["rook"],
+        chess.QUEEN:  WEIGHTS["queen"],
+        chess.KING:   WEIGHTS["king"],
+    }
+
+def _passed_table():
+    return [WEIGHTS[f"passed_r{i}"] for i in range(1, 9)]
+
+
 PST_MG = {
     chess.PAWN: [
           0,   0,   0,   0,   0,   0,   0,   0,
@@ -145,24 +173,21 @@ PST_EG = {
     ],
 }
 
-# ── Globals ────────────────────────────────────────────────────────────────────
 TRANSPOSITION_TABLE = {}
 TT_EXACT, TT_LOWER, TT_UPPER = 0, 1, 2
-# New: killer slots + history (both only affect move ordering, never scores)
-_KILLERS = [[None, None] for _ in range(64)]   # 2 killers per ply
-_HISTORY  = {}                                  # (from, to) → int bonus
+_KILLERS = [[None, None] for _ in range(64)]
+_HISTORY = {}
 
 _SQ_FILE = [chess.square_file(s) for s in chess.SQUARES]
 _SQ_RANK = [chess.square_rank(s) for s in chess.SQUARES]
-_PASSED  = [0, 10, 20, 35, 60, 90, 130, 0]    # rank bonus for passed pawn
 
 
-# ── Pawn structure helper (new) ────────────────────────────────────────────────
 def _pawn_bonus(board: chess.Board, color: chess.Color) -> float:
     pawns = list(board.pieces(chess.PAWN, color))
     if not pawns:
         return 0.0
     opp   = list(board.pieces(chess.PAWN, not color))
+    passed_table = _passed_table()
 
     fcnt = {}
     for sq in pawns:
@@ -175,9 +200,9 @@ def _pawn_bonus(board: chess.Board, color: chess.Color) -> float:
     score = 0.0
     for sq in pawns:
         f, r = _SQ_FILE[sq], _SQ_RANK[sq]
-        if fcnt[f] > 1:   score -= 20          # doubled
+        if fcnt[f] > 1:   score -= WEIGHTS["doubled_penalty"]
         if not ((f > 0 and f-1 in fcnt) or (f < 7 and f+1 in fcnt)):
-            score -= 15                          # isolated
+            score -= WEIGHTS["isolated_penalty"]
         passed = True
         for df in (-1, 0, 1):
             for or_ in opp_f.get(f + df, []):
@@ -185,17 +210,18 @@ def _pawn_bonus(board: chess.Board, color: chess.Color) -> float:
                 if color == chess.BLACK and or_ < r: passed = False; break
             if not passed: break
         if passed:
-            score += _PASSED[r if color == chess.WHITE else 7 - r]
+            score += passed_table[r if color == chess.WHITE else 7 - r]
     return score
 
 
-# ── Evaluation ─────────────────────────────────────────────────────────────────
 def evaluate(board: chess.Board) -> float:
     if board.is_checkmate():
         return -99999.0 if board.turn == chess.WHITE else 99999.0
     if (board.is_stalemate() or board.is_insufficient_material() or
             board.is_repetition(3) or board.is_fifty_moves()):
         return 0.0
+
+    pv = _piece_values()
 
     mg_score = eg_score = 0.0
     game_phase = 0
@@ -204,7 +230,7 @@ def evaluate(board: chess.Board) -> float:
         if piece is None: continue
         sign    = 1 if piece.color == chess.WHITE else -1
         pst_idx = chess.square_mirror(sq) if piece.color == chess.WHITE else sq
-        val     = PIECE_VALUES[piece.piece_type]
+        val     = pv[piece.piece_type]
         mg_score += sign * (val + PST_MG[piece.piece_type][pst_idx])
         eg_score += sign * (val + PST_EG[piece.piece_type][pst_idx])
         pt = piece.piece_type
@@ -216,51 +242,54 @@ def evaluate(board: chess.Board) -> float:
     mg_phase = 1.0 - eg_phase
     score    = mg_score * mg_phase + eg_score * eg_phase
 
-    # ── Original mobility (preserved byte-for-byte) ───────────────────────────
+    # mobility
+    mob = WEIGHTS["mobility"]
     if board.turn == chess.WHITE:
-        score += len(list(board.legal_moves)) * 1.5
+        score += len(list(board.legal_moves)) * mob
         board.turn = chess.BLACK
-        score -= len(list(board.legal_moves)) * 1.5
+        score -= len(list(board.legal_moves)) * mob
         board.turn = chess.WHITE
     else:
-        score -= len(list(board.legal_moves)) * 1.5
+        score -= len(list(board.legal_moves)) * mob
         board.turn = chess.WHITE
-        score += len(list(board.legal_moves)) * 1.5
+        score += len(list(board.legal_moves)) * mob
         board.turn = chess.BLACK
 
-    # ── New eval terms ────────────────────────────────────────────────────────
-    # Bishop pair
-    if len(board.pieces(chess.BISHOP, chess.WHITE)) >= 2: score += 30.0
-    if len(board.pieces(chess.BISHOP, chess.BLACK)) >= 2: score -= 30.0
+    # bishop pair
+    bp = WEIGHTS["bishop_pair"]
+    if len(board.pieces(chess.BISHOP, chess.WHITE)) >= 2: score += bp
+    if len(board.pieces(chess.BISHOP, chess.BLACK)) >= 2: score -= bp
 
-    # Pawn structure
+    # pawn structure
     score += _pawn_bonus(board, chess.WHITE)
     score -= _pawn_bonus(board, chess.BLACK)
 
-    # Rook on open / semi-open file
+    # rook on open / semi-open file
+    rof = WEIGHTS["rook_open_file"]
+    rsf = WEIGHTS["rook_semi_open"]
     wpf = {_SQ_FILE[s] for s in board.pieces(chess.PAWN, chess.WHITE)}
     bpf = {_SQ_FILE[s] for s in board.pieces(chess.PAWN, chess.BLACK)}
     for sq in board.pieces(chess.ROOK, chess.WHITE):
         f = _SQ_FILE[sq]
-        score += 25.0 if (f not in wpf and f not in bpf) else (12.0 if f not in wpf else 0)
+        score += rof if (f not in wpf and f not in bpf) else (rsf if f not in wpf else 0)
     for sq in board.pieces(chess.ROOK, chess.BLACK):
         f = _SQ_FILE[sq]
-        score -= 25.0 if (f not in bpf and f not in wpf) else (12.0 if f not in bpf else 0)
+        score -= rof if (f not in bpf and f not in wpf) else (rsf if f not in bpf else 0)
 
     return score
 
 
-# ── Move ordering (original + TT hint + killers + history) ────────────────────
 def score_move(board: chess.Board, move: chess.Move,
                ply: int = 0, tt_move=None) -> int:
+    pv = _piece_values()
     if tt_move and move == tt_move:           return 20_000
     if board.is_capture(move):
         victim   = board.piece_at(move.to_square)
         attacker = board.piece_at(move.from_square)
-        v = PIECE_VALUES.get(victim.piece_type,   100) if victim   else 100
-        a = PIECE_VALUES.get(attacker.piece_type, 100) if attacker else 100
+        v = pv.get(victim.piece_type,   100) if victim   else 100
+        a = pv.get(attacker.piece_type, 100) if attacker else 100
         return 10_000 + v * 10 - a
-    if move.promotion:                        return 9_000 + PIECE_VALUES.get(move.promotion, 0)
+    if move.promotion:                        return 9_000 + pv.get(move.promotion, 0)
     if move == _KILLERS[ply][0]:              return 8_000
     if move == _KILLERS[ply][1]:              return 7_000
     return _HISTORY.get((move.from_square, move.to_square), 0)
@@ -271,7 +300,6 @@ def order_moves(board: chess.Board, moves: list,
     return sorted(moves, key=lambda m: score_move(board, m, ply, tt_move), reverse=True)
 
 
-# ── Quiescence (unchanged from original) ──────────────────────────────────────
 def qsearch(board: chess.Board, alpha: float, beta: float, maximizing: bool) -> float:
     stand_pat = evaluate(board)
     if maximizing:
@@ -296,7 +324,6 @@ def qsearch(board: chess.Board, alpha: float, beta: float, maximizing: bool) -> 
     return alpha if maximizing else beta
 
 
-# ── Minimax (original logic; adds ply tracking, TT best-move, killers/history) ─
 def minimax(board: chess.Board, depth: int, alpha: float, beta: float,
             maximizing: bool, ply: int = 0) -> float:
 
@@ -360,14 +387,13 @@ def minimax(board: chess.Board, depth: int, alpha: float, beta: float,
     return best_score
 
 
-# ── Core API (unchanged from original except global resets) ───────────────────
-def get_next_move(board: chess.Board, color: chess.Color, depth: int) -> chess.Move:
+def get_next_move(board: chess.Board, color: chess.Color, depth: int = 3) -> chess.Move:
     global TRANSPOSITION_TABLE, _KILLERS, _HISTORY
 
     if len(TRANSPOSITION_TABLE) > 500_000:
         TRANSPOSITION_TABLE.clear()
     if len(_HISTORY) > 100_000:
-        _HISTORY.clear()                       # clear; history is a nice-to-have
+        _HISTORY.clear()
     _KILLERS[:] = [[None, None] for _ in range(64)]
 
     best_move  = None

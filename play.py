@@ -31,7 +31,7 @@ import sys
 import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DEPTH       = 3       # bot search depth  (keep ≤3 for sub-second moves)
+DEPTH       = 6       # bot search depth  (keep ≤3 for sub-second moves)
 MOVE_DELAY  = 1200    # ms pause after each bot move so you can see the board
 SQUARE_SIZE = 72      # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
