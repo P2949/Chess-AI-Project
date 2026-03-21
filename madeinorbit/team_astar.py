@@ -3,10 +3,11 @@ import math
 import chess
 import torch
 
-from train_nn import ChessEvaluator, board_to_vector, SCORE_CLAMP
+from madeinorbit.train_nn import ChessEvaluator, board_to_vector, SCORE_CLAMP
 
 model = ChessEvaluator()
-model.load_state_dict(torch.load("model.pt", map_location="cpu"))
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.load_state_dict(torch.load("madeinorbit/model.pt", map_location=device))
 model.eval()
 
 # ── Piece values (centipawns) ─────────────────────────────────────────────────

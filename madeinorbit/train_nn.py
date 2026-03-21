@@ -12,15 +12,17 @@ import torch.nn as nn
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent
 STOCKFISH_PATH = "/usr/bin/stockfish"
-PGN_FILE= "/run/media/arsenicu/DATA/Development/Chess-AI-Project/madeinorbit/db.pgn"
-NUM_POSITIONS = 100000
-POSITIONS_PER_GAME = 8      # random sample per game; avoids over-representing long games
-SKIP_OPENING_PLY = 10     # skip first N half-moves (opening theory != useful eval signal)
+PGN_FILE = str(BASE_DIR / "db.pgn")
+NUM_POSITIONS = 512000
+POSITIONS_PER_GAME = 32      # random sample per game; avoids over-representing long games
+SKIP_OPENING_PLY = 2     # skip first N half-moves (opening theory != useful eval signal)
 EVAL_DEPTH = 12
 BATCH_SIZE = 512
-EPOCHS = 25
+EPOCHS = 35
 LR = 1e-3
 MODEL_PATH = "model.pt"
 SCORE_CLAMP = 1500   #centipawns; +-1500 is already a decisive advantage

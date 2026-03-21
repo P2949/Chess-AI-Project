@@ -17,6 +17,9 @@ All three files must be in the same directory:
     team_goraieb.py
 """
 
+team_a = "madeinorbit.team_astar"
+team_b = "team_aaaaaaaaaaaaaaa"
+
 import tkinter as tk
 from tkinter import font as tkfont
 import chess
@@ -26,8 +29,8 @@ import sys
 import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DEPTH       = 3        # search depth — keep at 2 for fast moves; raise for stronger play
-MOVE_DELAY  = 1.2        # seconds between moves just for visualising
+DEPTH       = 2        # search depth — keep at 2 for fast moves; raise for stronger play
+MOVE_DELAY  = 0.1        # seconds between moves just for visualising
 SQUARE_SIZE = 72         # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
 
@@ -65,7 +68,7 @@ PIECE_UNICODE = {
 # ─────────────────────────────────────────────────────────────────────────────
 class ChessGUI:
     def __init__(self, root: tk.Tk, bot_white, bot_black,
-                 name_white: str = "team_creepers", name_black: str = "team_goraieb"):
+                 name_white: str = team_b, name_black: str = team_a):
         self.root       = root
         self.bot_white  = bot_white   # module with get_next_move()
         self.bot_black  = bot_black
@@ -570,15 +573,15 @@ def main():
         sys.path.insert(0, script_dir)
 
     try:
-        team_creepers = importlib.import_module("team_creepers")
-        team_goraieb  = importlib.import_module("team_aaaaaaaaaaaaaaa")
+        team_a_mod = importlib.import_module(team_a)
+        team_b_mod  = importlib.import_module(team_b)
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
         print("Make sure team_creepers.py and team_goraieb.py are in the same folder as visualize.py")
         sys.exit(1)
 
     root = tk.Tk()
-    ColorDrawScreen(root, team_creepers, team_goraieb, "team_creepers", "team_goraieb")
+    ColorDrawScreen(root, team_a_mod, team_b_mod, team_a, team_b)
     root.mainloop()
 
 
