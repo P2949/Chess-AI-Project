@@ -81,8 +81,8 @@ SELF_PLAY_ROUNDS   = 5
 SELF_PLAY_GAMES    = 2000
 SELF_PLAY_DEPTH    = 3
 SELF_PLAY_EPOCHS   = 15
-CONCURRENT_GAMES   = 64
-GPU_EVAL_BATCH     = 16384
+CONCURRENT_GAMES   = 16
+GPU_EVAL_BATCH     = 4096
 
 RESULT_MAP = {"1-0": 1.0, "0-1": -1.0, "1/2-1/2": 0.0}
 
@@ -132,7 +132,7 @@ def augment_to_mmap(src_X_path, src_y_path, n, device,
     dst_y = np.memmap(dst_y_path, dtype=np.float32, mode='w+', shape=(n2,))
 
     perm = FLIP_PERM.to(device)
-    CHUNK = 500_000
+    CHUNK = 100_000
 
     for start in range(0, n, CHUNK):
         end = min(start + CHUNK, n)
@@ -209,8 +209,7 @@ class BatchedEvaluator:
         self.model = model
         self.device = device
         self._max_leaves = max_leaves
-        self._buffer = torch.zeros(max_leaves, 773, dtype=torch.float32,
-                                   pin_memory=True)
+        self._buffer = torch.zeros(max_leaves, 773, dtype=torch.float32)
         self._vec_count = 0
         self._scores = []
         self._entries = []
@@ -347,7 +346,7 @@ def play_games_batched_mmap(model, device, num_games, depth,
     """
     max_moves = 200
     max_positions = num_games * max_moves  # upper bound
-    max_leaves = min(concurrent * (35 ** depth) + 10000, 2_000_000)
+    max_leaves = min(concurrent * (35 ** depth) + 10000, 200_000)
 
     sp_X = np.memmap(sp_X_path, dtype=np.float32, mode='w+', shape=(max_positions, 773))
     sp_y = np.memmap(sp_y_path, dtype=np.float32, mode='w+', shape=(max_positions,))
@@ -647,17 +646,9 @@ if __name__ == "__main__":
     all_indices = list(range(n_train))
     random.shuffle(all_indices)
     split = int(0.9 * n_train)
-
-    train_loader = DataLoader(
-        MmapDataset(train_X_path, train_y_path, n_train, all_indices[:split]),
-        batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=4, pin_memory=True, persistent_workers=True
-    )
-    val_loader = DataLoader(
-        MmapDataset(train_X_path, train_y_path, n_train, all_indices[split:]),
-        batch_size=BATCH_SIZE,
-        num_workers=2, pin_memory=True, persistent_workers=True
-    )
+    
+    train_loader = DataLoader(MmapDataset(train_X_path, train_y_path, n_train, all_indices[:split]),batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    val_loader = DataLoader(MmapDataset(train_X_path, train_y_path, n_train, all_indices[split:]),batch_size=BATCH_SIZE, num_workers=0)
     del all_indices
     gc.collect()
 
