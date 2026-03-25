@@ -1,0 +1,4 @@
+#i don't want to upload the 300gb database
+*.pgn
+build/
+*.so

@@ -12,22 +12,24 @@ import chess
 import chess.polyglot
 
 # The optimizer writes into this dict directly.  Keys are stable identifiers.
+
+# got those values from a run of the optimizer.
 WEIGHTS = {
     # piece values
-    "pawn":             100,
-    "knight":           320,
-    "bishop":           330,
-    "rook":             500,
-    "queen":            900,
+    "pawn":             90,
+    "knight":           310,
+    "bishop":           280,
+    "rook":             450,
+    "queen":            940,
     "king":           20000,
 
     # eval terms
     "mobility":          1.5,    # per legal-move delta
-    "bishop_pair":      30.0,    # bonus for having 2+ bishops
-    "doubled_penalty":  20.0,    # penalty per doubled pawn
-    "isolated_penalty": 15.0,    # penalty per isolated pawn
-    "rook_open_file":   25.0,    # rook on fully open file
-    "rook_semi_open":   12.0,    # rook on semi-open file
+    "bishop_pair":      40.0,    # bonus for having 2+ bishops
+    "doubled_penalty":  29.0,    # penalty per doubled pawn
+    "isolated_penalty": 23.0,    # penalty per isolated pawn
+    "rook_open_file":   20.0,    # rook on fully open file
+    "rook_semi_open":   16.0,    # rook on semi-open file
 
     # passed pawn bonuses by rank (index 0=rank1 .. 7=rank8)
     "passed_r1":  0,  "passed_r2": 10, "passed_r3": 20, "passed_r4": 35,

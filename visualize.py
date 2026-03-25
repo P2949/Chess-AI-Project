@@ -17,7 +17,7 @@ All three files must be in the same directory:
     team_goraieb.py
 """
 
-team_a = "madeinorbit.team_astar"
+team_a = "goraieb.team_astar"
 team_b = "team_aaaaaaaaaaaaaaa"
 
 import tkinter as tk
@@ -29,7 +29,7 @@ import sys
 import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DEPTH       = 2        # search depth — keep at 2 for fast moves; raise for stronger play
+DEPTH       = 3        # search depth — keep at 3 for fast moves; raise for stronger play
 MOVE_DELAY  = 0.1        # seconds between moves just for visualising
 SQUARE_SIZE = 72         # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
