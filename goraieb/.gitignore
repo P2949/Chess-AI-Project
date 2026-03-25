@@ -2,3 +2,4 @@
 *.pgn
 build/
 *.so
+*.dat

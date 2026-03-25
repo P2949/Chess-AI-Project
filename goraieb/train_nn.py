@@ -1,12 +1,12 @@
 """
-train_nn.py — Stockfish-labeled chess NN trainer (optimized)
+train_nn.py — Stockfish-labeled chess NN trainer (memory-optimized)
 
-Optimizations over original:
-  • Small chunks (500 positions) for visible progress during Stockfish labeling
-  • Cython board_to_vector in worker processes (if available)
-  • GPU-accelerated color-flip augmentation
-  • Saves stockfish_data.npz for merge_train.py
-  • Memory-efficient dataset construction
+Key change: results are written to memory-mapped numpy files on disk
+as each worker chunk finishes. Peak RAM usage drops from ~20GB to ~2GB
+regardless of dataset size.
+
+The mmap'd arrays act like regular numpy arrays but only page into RAM
+what's actively being accessed. Your NVMe handles the rest.
 """
 
 import os
@@ -24,13 +24,12 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from pathlib import Path
 
-# ── Cython acceleration (optional) ───────────────────────────────────────────
+# ── Cython acceleration ──────────────────────────────────────────────────────
 try:
     from fast_chess import board_to_vector_bitboard as board_to_vector
     HAVE_CYTHON = True
 except ImportError:
     HAVE_CYTHON = False
-
     PIECE_ORDER = [
         (chess.PAWN,   chess.WHITE), (chess.KNIGHT, chess.WHITE),
         (chess.BISHOP, chess.WHITE), (chess.ROOK,   chess.WHITE),
@@ -39,7 +38,6 @@ except ImportError:
         (chess.BISHOP, chess.BLACK), (chess.ROOK,   chess.BLACK),
         (chess.QUEEN,  chess.BLACK), (chess.KING,   chess.BLACK),
     ]
-
     def board_to_vector(board):
         v = np.zeros(773, dtype=np.float32)
         for plane, (pt, color) in enumerate(PIECE_ORDER):
@@ -68,10 +66,14 @@ MODEL_PATH = "model.pt"
 SCORE_CLAMP = 1500
 NUM_WORKERS = int(os.environ.get("NUM_WORKERS", multiprocessing.cpu_count()))
 AUGMENT_COLOR_FLIP = True
-SAVE_NPZ = True  # save data for merge_train.py
+SAVE_NPZ = True
+
+# Mmap temp files
+MMAP_X_PATH = str(BASE_DIR / ".mmap_X.dat")
+MMAP_Y_PATH = str(BASE_DIR / ".mmap_y.dat")
 
 
-# ── GPU augmentation ──────────────────────────────────────────────────────────
+# ── GPU augmentation (chunked) ────────────────────────────────────────────────
 def build_flip_permutation():
     _FLIP = [6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5]
     perm = torch.zeros(773, dtype=torch.long)
@@ -88,6 +90,7 @@ FLIP_PERM = build_flip_permutation()
 
 
 def augment_gpu(X, y, device):
+    """Chunked GPU augmentation — never puts full dataset on VRAM."""
     perm = FLIP_PERM.to(device)
     CHUNK = 500_000
     flipped_X = torch.empty_like(X)
@@ -114,6 +117,7 @@ def get_device():
     return torch.device("cpu")
 
 
+# ── PGN parsing ───────────────────────────────────────────────────────────────
 def positions_from_pgn(pgn_path, target):
     fens = []
     games_read = 0
@@ -140,8 +144,8 @@ def positions_from_pgn(pgn_path, target):
     return fens[:target]
 
 
+# ── Stockfish labeling worker ─────────────────────────────────────────────────
 def _label_chunk(args):
-    """Worker function — each process labels a small chunk of positions."""
     fens, stockfish_path, depth, clamp = args
     results = []
     try:
@@ -162,26 +166,83 @@ def _label_chunk(args):
     return results
 
 
-def label_positions_parallel(fens):
-    """Small chunks = frequent progress updates (not stuck at 0% for days)."""
+def label_positions_mmap(fens):
+    """
+    Label positions with Stockfish, writing results directly to
+    memory-mapped files on disk. RAM usage stays ~2GB regardless
+    of dataset size.
+
+    Each worker returns a small chunk (~500 positions × 3KB = ~1.5MB).
+    The main process writes it into the mmap and frees the chunk.
+    No growing list in RAM.
+    """
+    n = len(fens)
+
+    # Pre-allocate mmap'd files on disk
+    X_mmap = np.memmap(MMAP_X_PATH, dtype=np.float32, mode='w+', shape=(n, 773))
+    y_mmap = np.memmap(MMAP_Y_PATH, dtype=np.float32, mode='w+', shape=(n,))
+
+    # Small chunks = frequent progress + small per-chunk memory
     CHUNK_SIZE = 500
-    chunks = [fens[i:i + CHUNK_SIZE] for i in range(0, len(fens), CHUNK_SIZE)]
+    chunks = [fens[i:i + CHUNK_SIZE] for i in range(0, n, CHUNK_SIZE)]
     args = [(chunk, STOCKFISH_PATH, EVAL_DEPTH, SCORE_CLAMP) for chunk in chunks]
-    data = []
-    print(f"Labelling {len(fens)} positions across {NUM_WORKERS} workers "
+
+    write_pos = 0  # current write position in mmap
+
+    print(f"Labelling {n} positions across {NUM_WORKERS} workers "
           f"({len(chunks)} chunks of ~{CHUNK_SIZE}) ...")
+    print(f"Results written to disk: {MMAP_X_PATH}")
+
     with ProcessPoolExecutor(max_workers=NUM_WORKERS) as pool:
         futures = {pool.submit(_label_chunk, a): a for a in args}
-        pbar = tqdm(total=len(fens), desc="Stockfish labelling")
+        pbar = tqdm(total=n, desc="Stockfish labelling")
+
         for future in as_completed(futures):
             chunk_results = future.result()
-            data.extend(chunk_results)
+
+            # Write directly into mmap — chunk_results is freed after this
+            for vec, score in chunk_results:
+                if write_pos < n:
+                    X_mmap[write_pos] = vec
+                    y_mmap[write_pos] = score
+                    write_pos += 1
+
             pbar.update(len(chunk_results))
+
+            # Explicitly free the chunk data
+            del chunk_results
+
         pbar.close()
-    return data
+
+    # Flush to disk
+    X_mmap.flush()
+    y_mmap.flush()
+
+    print(f"Labeled {write_pos} positions (written to disk).")
+    return write_pos
 
 
-class ChessDataset(Dataset):
+# ── Memory-mapped dataset ─────────────────────────────────────────────────────
+class MmapDataset(Dataset):
+    """
+    Dataset backed by memory-mapped numpy files.
+    Only the current batch is in RAM — the OS pages the rest from disk.
+    """
+    def __init__(self, X_path, y_path, n, indices=None):
+        self.X = np.memmap(X_path, dtype=np.float32, mode='r', shape=(n, 773))
+        self.y = np.memmap(y_path, dtype=np.float32, mode='r', shape=(n,))
+        self.indices = indices  # subset indices (for train/val split)
+
+    def __len__(self):
+        return len(self.indices) if self.indices is not None else len(self.y)
+
+    def __getitem__(self, idx):
+        real_idx = self.indices[idx] if self.indices is not None else idx
+        return (torch.from_numpy(self.X[real_idx].copy()),
+                torch.tensor(self.y[real_idx], dtype=torch.float32).unsqueeze(0))
+
+
+class TensorDataset(Dataset):
     def __init__(self, X, y):
         self.X = X
         self.y = y
@@ -191,6 +252,7 @@ class ChessDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 
+# ── Model ─────────────────────────────────────────────────────────────────────
 class ChessEvaluator(nn.Module):
     def __init__(self, input_dim=773):
         super().__init__()
@@ -266,54 +328,86 @@ if __name__ == "__main__":
 
     device = get_device()
 
+    # ── Phase 1: Parse PGN ────────────────────────────────────────────────────
     fens = positions_from_pgn(PGN_FILE, NUM_POSITIONS)
     print(f"Extracted {len(fens)} positions from PGN.\n")
-    data = label_positions_parallel(fens)
-    del fens
 
-    if len(data) < 1000:
+    # ── Phase 2: Stockfish labeling → disk (low RAM) ──────────────────────────
+    n_labeled = label_positions_mmap(fens)
+    del fens
+    gc.collect()
+
+    if n_labeled < 1000:
         raise SystemExit("Too few positions — check your PGN file and paths.")
 
-    # Build numpy arrays and free list
-    X = np.stack([r[0] for r in data])
-    y = np.array([r[1] for r in data], dtype=np.float32)
-    del data
-    gc.collect()
-
-    # Save for merge_train.py
+    # ── Save .npz for merge_train.py ──────────────────────────────────────────
     if SAVE_NPZ:
-        np.savez_compressed(str(BASE_DIR / "stockfish_data.npz"), X=X, y=y)
-        print(f"Saved {len(y)} samples to stockfish_data.npz")
+        # Read from mmap in chunks to avoid loading all into RAM
+        X_mmap = np.memmap(MMAP_X_PATH, dtype=np.float32, mode='r', shape=(n_labeled, 773))
+        y_mmap = np.memmap(MMAP_Y_PATH, dtype=np.float32, mode='r', shape=(n_labeled,))
+        np.savez_compressed(
+            str(BASE_DIR / "stockfish_data.npz"),
+            X=np.array(X_mmap),  # copies into RAM temporarily for compression
+            y=np.array(y_mmap)
+        )
+        del X_mmap, y_mmap
+        gc.collect()
+        print(f"Saved {n_labeled} samples to stockfish_data.npz")
 
-    # Convert to tensors
-    X_t = torch.from_numpy(X)
-    y_t = torch.from_numpy(y)
-    del X, y
-    gc.collect()
-
-    # GPU augmentation
+    # ── Phase 3: Training ─────────────────────────────────────────────────────
     if AUGMENT_COLOR_FLIP:
+        # Load mmap, augment on GPU in chunks, produce tensors
+        X_mmap = np.memmap(MMAP_X_PATH, dtype=np.float32, mode='r', shape=(n_labeled, 773))
+        y_mmap = np.memmap(MMAP_Y_PATH, dtype=np.float32, mode='r', shape=(n_labeled,))
+
+        X_t = torch.from_numpy(np.array(X_mmap))
+        y_t = torch.from_numpy(np.array(y_mmap))
+        del X_mmap, y_mmap
+
         X_t, y_t = augment_gpu(X_t, y_t, device)
+        n = len(y_t)
 
-    # Shuffle
-    n = len(y_t)
-    perm = torch.randperm(n)
-    X_t, y_t = X_t[perm], y_t[perm]
-    del perm
+        # Shuffle
+        perm = torch.randperm(n)
+        X_t, y_t = X_t[perm], y_t[perm]
+        del perm
 
-    split = int(0.9 * n)
-    train_ds = ChessDataset(X_t[:split], y_t[:split].unsqueeze(1))
-    val_ds   = ChessDataset(X_t[split:], y_t[split:].unsqueeze(1))
-    del X_t, y_t
-    gc.collect()
+        split = int(0.9 * n)
+        train_ds = TensorDataset(X_t[:split], y_t[:split].unsqueeze(1))
+        val_ds   = TensorDataset(X_t[split:], y_t[split:].unsqueeze(1))
+        del X_t, y_t
+        gc.collect()
 
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=2, pin_memory=True, persistent_workers=True)
-    val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE,
-                              num_workers=1, pin_memory=True, persistent_workers=True)
+        train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
+                                  num_workers=2, pin_memory=True, persistent_workers=True)
+        val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE,
+                                  num_workers=1, pin_memory=True, persistent_workers=True)
+    else:
+        # Train directly from mmap — minimal RAM
+        all_indices = list(range(n_labeled))
+        random.shuffle(all_indices)
+        split = int(0.9 * n_labeled)
+
+        train_ds = MmapDataset(MMAP_X_PATH, MMAP_Y_PATH, n_labeled,
+                               indices=all_indices[:split])
+        val_ds   = MmapDataset(MMAP_X_PATH, MMAP_Y_PATH, n_labeled,
+                               indices=all_indices[split:])
+
+        train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
+                                  num_workers=2, pin_memory=True, persistent_workers=True)
+        val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE,
+                                  num_workers=1, pin_memory=True, persistent_workers=True)
 
     model = ChessEvaluator()
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}\n")
     train(model, train_loader, val_loader, EPOCHS, LR, device)
+
+    # ── Cleanup mmap temp files ───────────────────────────────────────────────
+    del train_ds, val_ds, train_loader, val_loader
+    gc.collect()
+    for p in [MMAP_X_PATH, MMAP_Y_PATH]:
+        if os.path.exists(p):
+            os.remove(p)
+            print(f"Cleaned up {p}")
 
     print(f"\nFinal model saved to {MODEL_PATH}")

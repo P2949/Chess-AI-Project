@@ -1,12 +1,15 @@
 """
-train_nn_gpu.py — GPU + Cython accelerated chess NN trainer
+train_nn_gpu.py — GPU + Cython accelerated chess NN trainer (memory-optimized)
+
+Memory optimizations:
+  • Phase 1 PGN parsing writes directly to mmap'd files on NVMe (~500MB vs 6GB)
+  • GPU augmentation writes to a second mmap in chunks (~1.5GB VRAM vs 18GB)
+  • Training reads from mmap-backed Dataset (only current batch in RAM)
+  • Self-play writes results to mmap, not a growing Python list
+  • Peak RAM: ~2-3GB regardless of dataset size
 
 Build Cython first:
-    pip install cython
     python setup_cython.py build_ext --inplace
-
-Then run:
-    python train_nn_gpu.py
 """
 
 import os
@@ -83,9 +86,23 @@ GPU_EVAL_BATCH     = 16384
 
 RESULT_MAP = {"1-0": 1.0, "0-1": -1.0, "1/2-1/2": 0.0}
 
+# Mmap paths (temp files on NVMe)
+MMAP_X     = str(BASE_DIR / ".mmap_X.dat")
+MMAP_Y     = str(BASE_DIR / ".mmap_y.dat")
+MMAP_AUG_X = str(BASE_DIR / ".mmap_aug_X.dat")
+MMAP_AUG_Y = str(BASE_DIR / ".mmap_aug_y.dat")
+MMAP_SP_X  = str(BASE_DIR / ".mmap_sp_X.dat")
+MMAP_SP_Y  = str(BASE_DIR / ".mmap_sp_y.dat")
 
-# ── GPU augmentation ──────────────────────────────────────────────────────────
-def build_flip_permutation() -> torch.Tensor:
+
+def cleanup_mmaps():
+    for p in [MMAP_X, MMAP_Y, MMAP_AUG_X, MMAP_AUG_Y, MMAP_SP_X, MMAP_SP_Y]:
+        if os.path.exists(p):
+            os.remove(p)
+
+
+# ── GPU augmentation → mmap ───────────────────────────────────────────────────
+def build_flip_permutation():
     _FLIP = [6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5]
     perm = torch.zeros(773, dtype=torch.long)
     for src in range(12):
@@ -97,70 +114,131 @@ def build_flip_permutation() -> torch.Tensor:
     perm[772] = 772
     return perm
 
-
 FLIP_PERM = build_flip_permutation()
 
 
-def augment_gpu(X: torch.Tensor, y: torch.Tensor,
-                device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
-    """Chunked GPU augmentation — never puts the full dataset on VRAM."""
-    perm = FLIP_PERM.to(device)
-    CHUNK = 500_000  # process 500k at a time
+def augment_to_mmap(src_X_path, src_y_path, n, device,
+                    dst_X_path, dst_y_path):
+    """
+    Read from source mmap, flip on GPU in chunks, write original + flipped
+    to destination mmap. Peak RAM: ~1.5GB. Peak VRAM: ~1.5GB.
+    Returns count of augmented positions (2 * n).
+    """
+    src_X = np.memmap(src_X_path, dtype=np.float32, mode='r', shape=(n, 773))
+    src_y = np.memmap(src_y_path, dtype=np.float32, mode='r', shape=(n,))
 
+    n2 = n * 2
+    dst_X = np.memmap(dst_X_path, dtype=np.float32, mode='w+', shape=(n2, 773))
+    dst_y = np.memmap(dst_y_path, dtype=np.float32, mode='w+', shape=(n2,))
+
+    perm = FLIP_PERM.to(device)
+    CHUNK = 500_000
+
+    for start in range(0, n, CHUNK):
+        end = min(start + CHUNK, n)
+
+        # Copy originals to first half
+        dst_X[start:end] = src_X[start:end]
+        dst_y[start:end] = src_y[start:end]
+
+        # Flip on GPU, write to second half
+        chunk = torch.from_numpy(np.array(src_X[start:end])).to(device)
+        fl = chunk[:, perm]
+        fl[:, 772] = 1.0 - fl[:, 772]
+        dst_X[n + start:n + end] = fl.cpu().numpy()
+        dst_y[n + start:n + end] = -src_y[start:end]
+        del chunk, fl
+
+    dst_X.flush()
+    dst_y.flush()
+    torch.cuda.empty_cache()
+    print(f"[GPU augment → disk] {n} → {n2} positions.")
+    return n2
+
+
+def augment_gpu_tensors(X, y, device):
+    """Chunked GPU augmentation for in-memory tensors (used for small self-play data)."""
+    perm = FLIP_PERM.to(device)
+    CHUNK = 500_000
     flipped_X = torch.empty_like(X)
     for start in range(0, len(X), CHUNK):
         end = min(start + CHUNK, len(X))
         chunk = X[start:end].to(device)
-        flipped = chunk[:, perm]
-        flipped[:, 772] = 1.0 - flipped[:, 772]
-        flipped_X[start:end] = flipped.cpu()
-        del chunk, flipped
-
+        fl = chunk[:, perm]
+        fl[:, 772] = 1.0 - fl[:, 772]
+        flipped_X[start:end] = fl.cpu()
+        del chunk, fl
     torch.cuda.empty_cache()
-    X_aug = torch.cat([X, flipped_X], dim=0)
-    y_aug = torch.cat([y, -y], dim=0)
-    del flipped_X
-    print(f"[GPU augment] {len(y_aug) // 2} → {len(y_aug)} positions.")
-    return X_aug, y_aug
+    return torch.cat([X, flipped_X], dim=0), torch.cat([y, -y], dim=0)
+
+
+# ── Mmap-backed Dataset ──────────────────────────────────────────────────────
+class MmapDataset(Dataset):
+    """
+    Reads from memory-mapped files. Only the current batch pages into RAM.
+    Peak RAM contribution: ~12MB (one batch of 4096 × 773 × 4 bytes).
+    """
+    def __init__(self, X_path, y_path, n, indices):
+        self.X = np.memmap(X_path, dtype=np.float32, mode='r', shape=(n, 773))
+        self.y = np.memmap(y_path, dtype=np.float32, mode='r', shape=(n,))
+        self.indices = indices
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        i = self.indices[idx]
+        return (torch.from_numpy(self.X[i].copy()),
+                torch.tensor(self.y[i], dtype=torch.float32).unsqueeze(0))
+
+
+class TensorDataset(Dataset):
+    """For small in-memory data (self-play)."""
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+    def __len__(self):
+        return len(self.y)
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
 
 
 # ── Batched GPU evaluator ─────────────────────────────────────────────────────
 class BatchedEvaluator:
-    def __init__(self, model: nn.Module, device: torch.device,
-                 max_leaves: int = 500_000):
+    def __init__(self, model, device, max_leaves=500_000):
         self.model = model
         self.device = device
         self._max_leaves = max_leaves
         self._buffer = torch.zeros(max_leaves, 773, dtype=torch.float32,
                                    pin_memory=True)
         self._vec_count = 0
-        self._scores: list[float] = []
-        self._entries: list[tuple[str, int | float]] = []
+        self._scores = []
+        self._entries = []
 
     def reset(self):
         self._vec_count = 0
         self._scores.clear()
         self._entries.clear()
 
-    def enqueue(self, board) -> int:
+    def enqueue(self, board):
         idx = len(self._entries)
         if board.is_checkmate():
-            score = -99999.0 if board.turn == chess.WHITE else 99999.0
-            self._entries.append(('terminal', score))
+            s = -99999.0 if board.turn == chess.WHITE else 99999.0
+            self._entries.append(('terminal', s))
             return idx
         if (board.is_stalemate() or board.is_insufficient_material()
                 or board.is_fifty_moves() or board.is_repetition(3)):
             self._entries.append(('terminal', 0.0))
             return idx
-        vec_idx = self._vec_count
-        if vec_idx < self._max_leaves:
+        vi = self._vec_count
+        if vi < self._max_leaves:
             vec = board_to_vector(board)
-            self._buffer[vec_idx].copy_(torch.from_numpy(vec))
+            self._buffer[vi].copy_(torch.from_numpy(vec))
         self._vec_count += 1
-        self._entries.append(('gpu', vec_idx))
+        self._entries.append(('gpu', vi))
         return idx
 
-    def enqueue_batch(self, boards: list) -> list[int]:
+    def enqueue_batch(self, boards):
         indices = []
         non_terminal = []
         non_terminal_vi = []
@@ -179,7 +257,6 @@ class BatchedEvaluator:
                 self._entries.append(('gpu', vi))
                 non_terminal.append(board)
                 non_terminal_vi.append(vi)
-
         if non_terminal:
             if HAVE_CYTHON:
                 vecs = cy_batch_vectorize(non_terminal)
@@ -204,24 +281,19 @@ class BatchedEvaluator:
                 all_scores.extend(out)
         self._scores = [s * SCORE_CLAMP for s in all_scores]
 
-    def get_score(self, idx: int) -> float:
+    def get_score(self, idx):
         kind, val = self._entries[idx]
         if kind == 'terminal':
             return val
         return self._scores[val]
 
 
-# ── Pure Python fallback for tree expansion (when no Cython) ──────────────────
+# ── Python fallback tree ops ─────────────────────────────────────────────────
 class TreeNode:
     __slots__ = ['move', 'children', 'score', 'eval_idx', 'is_maximizing', 'is_leaf']
     def __init__(self, move, is_maximizing):
-        self.move = move
-        self.children = []
-        self.score = 0.0
-        self.eval_idx = -1
-        self.is_maximizing = is_maximizing
-        self.is_leaf = False
-
+        self.move = move; self.children = []; self.score = 0.0
+        self.eval_idx = -1; self.is_maximizing = is_maximizing; self.is_leaf = False
 
 def _py_expand_tree(board, depth, maximizing, evaluator):
     node = TreeNode(move=None, is_maximizing=maximizing)
@@ -240,29 +312,23 @@ def _py_expand_tree(board, depth, maximizing, evaluator):
         node.is_leaf = True
     return node
 
-
 def _py_propagate(node, evaluator):
     if node.is_leaf:
         node.score = evaluator.get_score(node.eval_idx)
         return node.score
     if node.is_maximizing:
         node.score = float('-inf')
-        for child in node.children:
-            node.score = max(node.score, _py_propagate(child, evaluator))
+        for c in node.children: node.score = max(node.score, _py_propagate(c, evaluator))
     else:
         node.score = float('inf')
-        for child in node.children:
-            node.score = min(node.score, _py_propagate(child, evaluator))
+        for c in node.children: node.score = min(node.score, _py_propagate(c, evaluator))
     return node.score
 
-
 def _py_outcome_weight(ply, total):
-    if total <= 0:
-        return 0.5
-    return (ply / total) ** 0.5
+    return 0.5 if total <= 0 else (ply / total) ** 0.5
 
 
-# ── Self-play ─────────────────────────────────────────────────────────────────
+# ── Self-play with mmap output ───────────────────────────────────────────────
 class GameState:
     __slots__ = ['board', 'positions', 'move_count', 'done']
     def __init__(self):
@@ -272,14 +338,24 @@ class GameState:
         self.done = False
 
 
-def play_games_batched(model, device, num_games, depth,
-                       concurrent=CONCURRENT_GAMES):
-    all_data = []
-    games_completed = 0
+def play_games_batched_mmap(model, device, num_games, depth,
+                            sp_X_path, sp_y_path,
+                            concurrent=CONCURRENT_GAMES):
+    """
+    Self-play with results written directly to mmap files.
+    Returns the number of positions written.
+    """
     max_moves = 200
+    max_positions = num_games * max_moves  # upper bound
     max_leaves = min(concurrent * (35 ** depth) + 10000, 2_000_000)
 
+    sp_X = np.memmap(sp_X_path, dtype=np.float32, mode='w+', shape=(max_positions, 773))
+    sp_y = np.memmap(sp_y_path, dtype=np.float32, mode='w+', shape=(max_positions,))
+    sp_count = 0
+
+    games_completed = 0
     pbar = tqdm(total=num_games, desc="Self-play (batched)")
+    ow = cy_outcome_weight if HAVE_CYTHON else _py_outcome_weight
 
     while games_completed < num_games:
         batch_size = min(concurrent, num_games - games_completed)
@@ -293,7 +369,6 @@ def play_games_batched(model, device, num_games, depth,
             evaluator = BatchedEvaluator(model, device, max_leaves=max_leaves)
 
             if HAVE_CYTHON:
-                # ── Cython path: flat C tree ──────────────────────────
                 game_trees = []
                 for game in active:
                     if game.board.is_game_over() or game.move_count >= max_moves:
@@ -311,10 +386,8 @@ def play_games_batched(model, device, num_games, depth,
                 if not game_trees:
                     break
 
-                # ONE GPU call
                 evaluator.flush()
 
-                # C-speed propagation + best move selection
                 for game, tree_wrapper, root_children, maximizing in game_trees:
                     best_move, _ = tree_wrapper.propagate_and_best_move(
                         evaluator, root_children, maximizing
@@ -330,9 +403,7 @@ def play_games_batched(model, device, num_games, depth,
                         game.done = True
 
                 del game_trees
-
             else:
-                # ── Python fallback path ──────────────────────────────
                 game_roots = []
                 for game in active:
                     if game.board.is_game_over() or game.move_count >= max_moves:
@@ -378,27 +449,38 @@ def play_games_batched(model, device, num_games, depth,
 
             del evaluator
 
-        # Harvest outcomes
-        ow = cy_outcome_weight if HAVE_CYTHON else _py_outcome_weight
+        # Harvest outcomes → write directly to mmap
         for game in games:
             result = game.board.result()
             outcome = RESULT_MAP.get(result, 0.0)
             total = len(game.positions)
             for i, vec in enumerate(game.positions):
-                all_data.append((vec, outcome * ow(i, total)))
+                if sp_count < max_positions:
+                    sp_X[sp_count] = vec
+                    sp_y[sp_count] = outcome * ow(i, total)
+                    sp_count += 1
+            # Free position vectors immediately
+            game.positions.clear()
             games_completed += 1
             pbar.update(1)
 
     pbar.close()
-    print(f"Generated {len(all_data)} positions from {num_games} games "
+    sp_X.flush()
+    sp_y.flush()
+
+    print(f"Generated {sp_count} positions from {num_games} games "
           f"({concurrent} concurrent, depth {depth})")
-    return all_data
+    return sp_count
 
 
-# ── Phase 1: PGN parsing ─────────────────────────────────────────────────────
-def positions_from_pgn(pgn_path, target):
-    X = np.zeros((target, 773), dtype=np.float32)
-    y = np.zeros(target, dtype=np.float32)
+# ── Phase 1: PGN parsing → mmap ──────────────────────────────────────────────
+def positions_from_pgn_mmap(pgn_path, target, X_path, y_path):
+    """
+    Parse PGN and write results directly to mmap files.
+    Peak RAM: ~500MB (game objects + temporary boards).
+    """
+    X = np.memmap(X_path, dtype=np.float32, mode='w+', shape=(target, 773))
+    y = np.memmap(y_path, dtype=np.float32, mode='w+', shape=(target,))
     count = 0
     games_read = 0
 
@@ -417,7 +499,6 @@ def positions_from_pgn(pgn_path, target):
             result = RESULT_MAP[result_str]
 
             if HAVE_CYTHON:
-                # Cython path: writes directly into X, y arrays
                 board = game.board()
                 written = cy_extract_game(
                     board, game.mainline_moves(), result,
@@ -427,7 +508,6 @@ def positions_from_pgn(pgn_path, target):
                 pbar.update(written)
                 count += written
             else:
-                # Python fallback
                 board = game.board()
                 boards = []
                 plies = []
@@ -440,7 +520,7 @@ def positions_from_pgn(pgn_path, target):
                 if not boards:
                     continue
 
-                total_plies = plies[-1] + 1
+                total_plies = plies[len(plies) - 1] + 1
                 if len(boards) > POSITIONS_PER_GAME:
                     indices = random.sample(range(len(boards)), POSITIONS_PER_GAME)
                 else:
@@ -457,20 +537,13 @@ def positions_from_pgn(pgn_path, target):
 
         pbar.close()
 
-    return X[:count], y[:count]
+    X.flush()
+    y.flush()
+    print(f"Wrote {count} positions to disk.")
+    return count
 
 
-# ── Dataset / Model ───────────────────────────────────────────────────────────
-class ChessDataset(Dataset):
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-    def __len__(self):
-        return len(self.y)
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
-
-
+# ── Model ─────────────────────────────────────────────────────────────────────
 class ChessEvaluator(nn.Module):
     def __init__(self, input_dim=773):
         super().__init__()
@@ -542,7 +615,12 @@ def train(model, train_loader, val_loader, epochs, lr, device,
 if __name__ == "__main__":
     device = get_device()
 
-    # ── Phase 1 ──────────────────────────────────────────────────────────────
+    # Clean any leftover mmap files from previous runs
+    cleanup_mmaps()
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  PHASE 1: PGN → mmap → augment on GPU → mmap → train from mmap
+    # ══════════════════════════════════════════════════════════════════════════
     print("=" * 60)
     print("PHASE 1: Game-outcome labeling from PGN")
     print("=" * 60)
@@ -550,48 +628,56 @@ if __name__ == "__main__":
     if not os.path.exists(PGN_FILE):
         raise SystemExit(f"PGN file not found: {PGN_FILE}")
 
-    X_np, y_np = positions_from_pgn(PGN_FILE, NUM_POSITIONS)
-    print(f"Extracted {len(y_np)} labeled positions.\n")
+    # Step 1a: Parse PGN → mmap (~500MB RAM, data goes to NVMe)
+    n_raw = positions_from_pgn_mmap(PGN_FILE, NUM_POSITIONS, MMAP_X, MMAP_Y)
 
-    if len(y_np) < 1000:
+    if n_raw < 1000:
         raise SystemExit("Too few positions — check your PGN file.")
 
-    X_t = torch.from_numpy(X_np)
-    y_t = torch.from_numpy(y_np)
-    del X_np, y_np
-    gc.collect()
-
+    # Step 1b: Augment on GPU → second mmap (~1.5GB VRAM peak)
     if AUGMENT_COLOR_FLIP:
-        X_t, y_t = augment_gpu(X_t, y_t, device)
+        n_train = augment_to_mmap(MMAP_X, MMAP_Y, n_raw, device,
+                                  MMAP_AUG_X, MMAP_AUG_Y)
+        train_X_path, train_y_path = MMAP_AUG_X, MMAP_AUG_Y
+    else:
+        n_train = n_raw
+        train_X_path, train_y_path = MMAP_X, MMAP_Y
 
-    n = len(y_t)
-    perm = torch.randperm(n)
-    X_t = X_t[perm]
-    y_t = y_t[perm]
-    del perm
+    # Step 1c: Build mmap-backed DataLoaders (~12MB RAM per batch)
+    all_indices = list(range(n_train))
+    random.shuffle(all_indices)
+    split = int(0.9 * n_train)
 
-    split = int(0.9 * n)
-    train_ds = ChessDataset(X_t[:split], y_t[:split].unsqueeze(1))
-    val_ds   = ChessDataset(X_t[split:], y_t[split:].unsqueeze(1))
-    del X_t, y_t
+    train_loader = DataLoader(
+        MmapDataset(train_X_path, train_y_path, n_train, all_indices[:split]),
+        batch_size=BATCH_SIZE, shuffle=True,
+        num_workers=4, pin_memory=True, persistent_workers=True
+    )
+    val_loader = DataLoader(
+        MmapDataset(train_X_path, train_y_path, n_train, all_indices[split:]),
+        batch_size=BATCH_SIZE,
+        num_workers=2, pin_memory=True, persistent_workers=True
+    )
+    del all_indices
     gc.collect()
 
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=2, pin_memory=True,
-                              persistent_workers=True)
-    val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE,
-                              num_workers=1, pin_memory=True,
-                              persistent_workers=True)
-
+    # Step 1d: Train
     model = ChessEvaluator()
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}\n")
     train(model, train_loader, val_loader, EPOCHS, LR, device)
 
-    del train_ds, val_ds, train_loader, val_loader
+    del train_loader, val_loader
     gc.collect()
     torch.cuda.empty_cache()
 
-    # ── Phase 2 ──────────────────────────────────────────────────────────────
+    # Clean Phase 1 mmaps (no longer needed)
+    for p in [MMAP_X, MMAP_Y, MMAP_AUG_X, MMAP_AUG_Y]:
+        if os.path.exists(p):
+            os.remove(p)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  PHASE 2: Self-play → mmap → augment → train
+    # ══════════════════════════════════════════════════════════════════════════
     if SELF_PLAY_ENABLED:
         print("\n" + "=" * 60)
         print("PHASE 2: Batched self-play refinement")
@@ -602,36 +688,52 @@ if __name__ == "__main__":
         for rnd in range(1, SELF_PLAY_ROUNDS + 1):
             print(f"\n── Self-play round {rnd}/{SELF_PLAY_ROUNDS} ──")
 
-            sp_data = play_games_batched(
-                model, device, SELF_PLAY_GAMES, SELF_PLAY_DEPTH, CONCURRENT_GAMES
+            # Step 2a: Self-play → mmap
+            sp_count = play_games_batched_mmap(
+                model, device, SELF_PLAY_GAMES, SELF_PLAY_DEPTH,
+                MMAP_SP_X, MMAP_SP_Y, CONCURRENT_GAMES
             )
 
-            if sp_data:
-                X_sp = np.stack([r[0] for r in sp_data])
-                y_sp = np.array([r[1] for r in sp_data], dtype=np.float32)
-                X_t = torch.from_numpy(X_sp)
-                y_t = torch.from_numpy(y_sp)
-                del X_sp, y_sp, sp_data
+            if sp_count < 100:
+                print(f"Too few self-play positions ({sp_count}), skipping round.")
+                continue
 
-                if AUGMENT_COLOR_FLIP:
-                    X_t, y_t = augment_gpu(X_t, y_t, device)
+            # Step 2b: Augment self-play data
+            if AUGMENT_COLOR_FLIP:
+                n_sp = augment_to_mmap(MMAP_SP_X, MMAP_SP_Y, sp_count, device,
+                                       MMAP_AUG_X, MMAP_AUG_Y)
+                sp_X_path, sp_y_path = MMAP_AUG_X, MMAP_AUG_Y
+            else:
+                n_sp = sp_count
+                sp_X_path, sp_y_path = MMAP_SP_X, MMAP_SP_Y
 
-                n = len(y_t)
-                perm = torch.randperm(n)
-                X_t, y_t = X_t[perm], y_t[perm]
-                split = int(0.9 * n)
+            # Step 2c: Train from mmap
+            sp_indices = list(range(n_sp))
+            random.shuffle(sp_indices)
+            sp_split = int(0.9 * n_sp)
 
-                sp_train = DataLoader(
-                    ChessDataset(X_t[:split], y_t[:split].unsqueeze(1)),
-                    batch_size=BATCH_SIZE, shuffle=True)
-                sp_val = DataLoader(
-                    ChessDataset(X_t[split:], y_t[split:].unsqueeze(1)),
-                    batch_size=BATCH_SIZE)
+            sp_train = DataLoader(
+                MmapDataset(sp_X_path, sp_y_path, n_sp, sp_indices[:sp_split]),
+                batch_size=BATCH_SIZE, shuffle=True
+            )
+            sp_val = DataLoader(
+                MmapDataset(sp_X_path, sp_y_path, n_sp, sp_indices[sp_split:]),
+                batch_size=BATCH_SIZE
+            )
 
-                train(model, sp_train, sp_val, SELF_PLAY_EPOCHS, LR * 0.3, device)
-                del X_t, y_t, sp_train, sp_val
-                gc.collect()
-                torch.cuda.empty_cache()
+            train(model, sp_train, sp_val, SELF_PLAY_EPOCHS, LR * 0.3, device)
+
+            del sp_train, sp_val, sp_indices
+            gc.collect()
+            torch.cuda.empty_cache()
+
+            # Clean round mmaps
+            for p in [MMAP_SP_X, MMAP_SP_Y, MMAP_AUG_X, MMAP_AUG_Y]:
+                if os.path.exists(p):
+                    os.remove(p)
+
+    # Final cleanup
+    cleanup_mmaps()
 
     print(f"\nFinal model saved to {MODEL_PATH}")
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
