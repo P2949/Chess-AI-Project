@@ -53,15 +53,9 @@ _model.eval()
 # Pre-allocate tensor buffer — reused every _nn_eval call, no allocation
 _nn_input = torch.zeros(1, 773, dtype=torch.float32)
 
-# JIT compile the model for faster CPU inference
-try:
-    _model = torch.jit.trace(_model, _nn_input)
-    _model = torch.jit.freeze(_model)
-    # Warm up JIT
-    for _ in range(3):
-        _model(_nn_input)
-except Exception:
-    pass  # JIT not available or failed, use eager mode
+# Warm up model
+with torch.no_grad():
+    _model(_nn_input)
 
 
 # ── Piece values (centipawns) ─────────────────────────────────────────────────

@@ -99,6 +99,22 @@ def batch_vectorize(boards: list) -> np.ndarray:
     return result
 
 
+def vectorize_into_buffer(board,
+                          np.ndarray[np.float32_t, ndim=2] buf,
+                          int row) -> int:
+    """
+    Write board vector directly into buf[row].
+    ZERO temp allocation — no intermediate numpy array.
+    Returns row on success, -1 on out-of-bounds.
+
+    At depth 4 this saves ~810k numpy array allocations per move.
+    """
+    if row < 0 or row >= buf.shape[0]:
+        return -1
+    _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)
+    return row
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  2. FLAT TREE: C-struct tree with bottom-up propagation
 # ══════════════════════════════════════════════════════════════════════════════

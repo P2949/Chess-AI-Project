@@ -15,7 +15,7 @@ Run:
 The following files must be in the same directory:
     visualize.py
     team_creepers.py
-    team_aaaaaaaaaaaaaaa.py
+    team_goraieb.py
 
 Each bot module must expose:
     get_next_move(board, color, depth) -> chess.Move
@@ -755,16 +755,16 @@ def main():
 
     try:
         team_creepers   = importlib.import_module("team_creepers")
-        team_aaaaaaaaaaaaaaa = importlib.import_module("team_aaaaaaaaaaaaaaa")
+        team_goraieb = importlib.import_module("goraieb.unified.team_goraieb")
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
-        print("Make sure team_creepers.py and team_aaaaaaaaaaaaaaa.py are "
+        print("Make sure team_creepers.py and team_goraieb.py are "
               "in the same folder as visualize.py")
         sys.exit(1)
 
     mods = {
         "team_creepers":   team_creepers,
-        "team_aaaaaaaaaaaaaaa": team_aaaaaaaaaaaaaaa,
+        "team_goraieb": team_goraieb,
     }
     root = tk.Tk()
     ModeSelectScreen(root, mods, list(mods.keys()))

@@ -1806,7 +1806,7 @@ static CYTHON_INLINE __pyx_t_long_double_complex __pyx_t_long_double_complex_fro
 struct __pyx_obj_10fast_chess_FlatTreeWrapper;
 struct __pyx_t_10fast_chess_FlatTree;
 
-/* "fast_chess.pyx":110
+/* "fast_chess.pyx":126
  * #  This means bottom-up propagation is a single reverse pass  no recursion.
  * 
  * cdef struct FlatTree:             # <<<<<<<<<<<<<<
@@ -1823,7 +1823,7 @@ struct __pyx_t_10fast_chess_FlatTree {
   int capacity;
 };
 
-/* "fast_chess.pyx":229
+/* "fast_chess.pyx":245
  * 
  * 
  * cdef class FlatTreeWrapper:             # <<<<<<<<<<<<<<
@@ -2332,6 +2332,9 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
     ((likely(__Pyx_IS_TYPE(obj, type) | (none_allowed && (obj == Py_None)))) ? 1 :\
         __Pyx__ArgTypeTest(obj, type, name, exact))
 
+/* pyint_simplify.proto */
+static CYTHON_INLINE int __Pyx_PyInt_FromNumber(PyObject **number_var, const char *argname, int accept_none);
+
 /* ListAppend.proto */
 #if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
 static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
@@ -2405,9 +2408,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyLong_AddObjC(PyObject *op1, PyObject *op2
 #if CYTHON_COMPILING_IN_PYPY && !defined(PyRange_Check)
   #define PyRange_Check(obj)  __Pyx_TypeCheck((obj), &PyRange_Type)
 #endif
-
-/* pyint_simplify.proto */
-static CYTHON_INLINE int __Pyx_PyInt_FromNumber(PyObject **number_var, const char *argname, int accept_none);
 
 /* AllocateExtensionType.proto */
 static PyObject *__Pyx_AllocateExtensionType(PyTypeObject *t, int is_final);
@@ -2990,17 +2990,18 @@ static const char __pyx_k_Cython_accelerated_chess_operat[] = "\nCython-accelera
 /* #### Code section: decls ### */
 static PyArrayObject *__pyx_pf_10fast_chess_board_to_vector_bitboard(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board); /* proto */
 static PyArrayObject *__pyx_pf_10fast_chess_2batch_vectorize(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_boards); /* proto */
+static PyObject *__pyx_pf_10fast_chess_4vectorize_into_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyArrayObject *__pyx_v_buf, int __pyx_v_row); /* proto */
 static int __pyx_pf_10fast_chess_15FlatTreeWrapper___cinit__(struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self); /* proto */
 static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_10node_count___get__(struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_move(struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self, PyObject *__pyx_v_evaluator, PyObject *__pyx_v_root_child_info, int __pyx_v_maximizing); /* proto */
 static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_6__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_8__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
-static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, int __pyx_v_max_depth, int __pyx_v_root_maximizing, PyObject *__pyx_v_evaluator); /* proto */
-static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_ply, int __pyx_v_total_plies); /* proto */
-static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_plies, int __pyx_v_total_plies); /* proto */
-static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_X); /* proto */
-static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyObject *__pyx_v_moves_iter, float __pyx_v_result, int __pyx_v_skip_ply, int __pyx_v_max_sample, PyArrayObject *__pyx_v_X_out, PyArrayObject *__pyx_v_y_out, int __pyx_v_write_offset); /* proto */
+static PyObject *__pyx_pf_10fast_chess_6expand_tree(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, int __pyx_v_max_depth, int __pyx_v_root_maximizing, PyObject *__pyx_v_evaluator); /* proto */
+static PyObject *__pyx_pf_10fast_chess_8outcome_weight(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_ply, int __pyx_v_total_plies); /* proto */
+static PyArrayObject *__pyx_pf_10fast_chess_10batch_outcome_weights(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_plies, int __pyx_v_total_plies); /* proto */
+static PyArrayObject *__pyx_pf_10fast_chess_12batch_flip_vectors(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_X); /* proto */
+static PyObject *__pyx_pf_10fast_chess_14extract_and_label_game(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyObject *__pyx_v_moves_iter, float __pyx_v_result, int __pyx_v_skip_ply, int __pyx_v_max_sample, PyArrayObject *__pyx_v_X_out, PyArrayObject *__pyx_v_y_out, int __pyx_v_write_offset); /* proto */
 static PyObject *__pyx_tp_new_10fast_chess_FlatTreeWrapper(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
@@ -3045,9 +3046,9 @@ typedef struct {
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values;
   __Pyx_CachedCFunction __pyx_umethod_PyList_Type_pop;
   PyObject *__pyx_tuple[1];
-  PyObject *__pyx_codeobj_tab[10];
-  PyObject *__pyx_string_tab[143];
-  PyObject *__pyx_number_tab[5];
+  PyObject *__pyx_codeobj_tab[11];
+  PyObject *__pyx_string_tab[147];
+  PyObject *__pyx_number_tab[6];
 /* #### Code section: module_state_contents ### */
 /* CommonTypesMetaclass.module_state_decls */
 PyTypeObject *__pyx_CommonTypesMetaclassType;
@@ -3119,123 +3120,128 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_n_u_board_list __pyx_string_tab[28]
 #define __pyx_n_u_board_to_vector_bitboard __pyx_string_tab[29]
 #define __pyx_n_u_boards __pyx_string_tab[30]
-#define __pyx_n_u_child_idx __pyx_string_tab[31]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[32]
-#define __pyx_n_u_copy __pyx_string_tab[33]
-#define __pyx_n_u_dst_plane __pyx_string_tab[34]
-#define __pyx_n_u_dtype __pyx_string_tab[35]
-#define __pyx_n_u_empty __pyx_string_tab[36]
-#define __pyx_n_u_enqueue_batch __pyx_string_tab[37]
-#define __pyx_n_u_enumerate __pyx_string_tab[38]
-#define __pyx_n_u_eval_scores __pyx_string_tab[39]
-#define __pyx_n_u_evaluator __pyx_string_tab[40]
-#define __pyx_n_u_expand_tree __pyx_string_tab[41]
-#define __pyx_n_u_extract_and_label_game __pyx_string_tab[42]
-#define __pyx_n_u_fast_chess __pyx_string_tab[43]
-#define __pyx_n_u_float __pyx_string_tab[44]
-#define __pyx_n_u_float32 __pyx_string_tab[45]
-#define __pyx_n_u_func __pyx_string_tab[46]
-#define __pyx_n_u_get_score __pyx_string_tab[47]
-#define __pyx_n_u_getstate __pyx_string_tab[48]
-#define __pyx_n_u_has_kingside_castling_rights __pyx_string_tab[49]
-#define __pyx_n_u_has_queenside_castling_rights __pyx_string_tab[50]
-#define __pyx_n_u_i __pyx_string_tab[51]
-#define __pyx_n_u_indices __pyx_string_tab[52]
-#define __pyx_n_u_inp __pyx_string_tab[53]
-#define __pyx_n_u_int __pyx_string_tab[54]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[55]
-#define __pyx_n_u_is_game_over __pyx_string_tab[56]
-#define __pyx_n_u_items __pyx_string_tab[57]
-#define __pyx_n_u_j __pyx_string_tab[58]
-#define __pyx_n_u_kings __pyx_string_tab[59]
-#define __pyx_n_u_knights __pyx_string_tab[60]
-#define __pyx_n_u_leaf_boards __pyx_string_tab[61]
-#define __pyx_n_u_leaf_idx __pyx_string_tab[62]
-#define __pyx_n_u_legal_moves __pyx_string_tab[63]
-#define __pyx_n_u_list __pyx_string_tab[64]
-#define __pyx_n_u_main __pyx_string_tab[65]
-#define __pyx_n_u_max_depth __pyx_string_tab[66]
-#define __pyx_n_u_max_sample __pyx_string_tab[67]
-#define __pyx_n_u_maximizing __pyx_string_tab[68]
-#define __pyx_n_u_module __pyx_string_tab[69]
-#define __pyx_n_u_move __pyx_string_tab[70]
-#define __pyx_n_u_moves_iter __pyx_string_tab[71]
-#define __pyx_n_u_n __pyx_string_tab[72]
-#define __pyx_n_u_n_cand __pyx_string_tab[73]
-#define __pyx_n_u_n_leaves __pyx_string_tab[74]
-#define __pyx_n_u_n_sample __pyx_string_tab[75]
-#define __pyx_n_u_name __pyx_string_tab[76]
-#define __pyx_n_u_np __pyx_string_tab[77]
-#define __pyx_n_u_numpy __pyx_string_tab[78]
-#define __pyx_n_u_occupied_co __pyx_string_tab[79]
-#define __pyx_n_u_off __pyx_string_tab[80]
-#define __pyx_n_u_out __pyx_string_tab[81]
-#define __pyx_n_u_outcome_weight __pyx_string_tab[82]
-#define __pyx_n_u_outp __pyx_string_tab[83]
-#define __pyx_n_u_pawns __pyx_string_tab[84]
-#define __pyx_n_u_plies __pyx_string_tab[85]
-#define __pyx_n_u_ply __pyx_string_tab[86]
-#define __pyx_n_u_ply_list __pyx_string_tab[87]
-#define __pyx_n_u_pop __pyx_string_tab[88]
-#define __pyx_n_u_pptr __pyx_string_tab[89]
-#define __pyx_n_u_propagate_and_best_move __pyx_string_tab[90]
-#define __pyx_n_u_push __pyx_string_tab[91]
-#define __pyx_n_u_pyx_state __pyx_string_tab[92]
-#define __pyx_n_u_pyx_vtable __pyx_string_tab[93]
-#define __pyx_n_u_qualname __pyx_string_tab[94]
-#define __pyx_n_u_queens __pyx_string_tab[95]
-#define __pyx_n_u_random __pyx_string_tab[96]
-#define __pyx_n_u_reduce __pyx_string_tab[97]
-#define __pyx_n_u_reduce_cython __pyx_string_tab[98]
-#define __pyx_n_u_reduce_ex __pyx_string_tab[99]
-#define __pyx_n_u_result __pyx_string_tab[100]
-#define __pyx_n_u_return __pyx_string_tab[101]
-#define __pyx_n_u_rooks __pyx_string_tab[102]
-#define __pyx_n_u_root_child_info __pyx_string_tab[103]
-#define __pyx_n_u_root_idx __pyx_string_tab[104]
-#define __pyx_n_u_root_maximizing __pyx_string_tab[105]
-#define __pyx_n_u_rptr __pyx_string_tab[106]
-#define __pyx_n_u_sample __pyx_string_tab[107]
-#define __pyx_n_u_self __pyx_string_tab[108]
-#define __pyx_n_u_set_name __pyx_string_tab[109]
-#define __pyx_n_u_setdefault __pyx_string_tab[110]
-#define __pyx_n_u_setstate __pyx_string_tab[111]
-#define __pyx_n_u_setstate_cython __pyx_string_tab[112]
-#define __pyx_n_u_skip_ply __pyx_string_tab[113]
-#define __pyx_n_u_sq __pyx_string_tab[114]
-#define __pyx_n_u_src_plane __pyx_string_tab[115]
-#define __pyx_n_u_t __pyx_string_tab[116]
-#define __pyx_n_u_test __pyx_string_tab[117]
-#define __pyx_n_u_total_plies __pyx_string_tab[118]
-#define __pyx_n_u_tp __pyx_string_tab[119]
-#define __pyx_n_u_tree __pyx_string_tab[120]
-#define __pyx_n_u_tuple __pyx_string_tab[121]
-#define __pyx_n_u_turn __pyx_string_tab[122]
-#define __pyx_n_u_v __pyx_string_tab[123]
-#define __pyx_n_u_values __pyx_string_tab[124]
-#define __pyx_n_u_weight __pyx_string_tab[125]
-#define __pyx_n_u_weights __pyx_string_tab[126]
-#define __pyx_n_u_wptr __pyx_string_tab[127]
-#define __pyx_n_u_write_offset __pyx_string_tab[128]
-#define __pyx_n_u_write_pos __pyx_string_tab[129]
-#define __pyx_n_u_written __pyx_string_tab[130]
-#define __pyx_n_u_xptr __pyx_string_tab[131]
-#define __pyx_n_u_y_out __pyx_string_tab[132]
-#define __pyx_n_u_yptr __pyx_string_tab[133]
-#define __pyx_kp_b_iso88591_0_3a_q_4q_t2WA __pyx_string_tab[134]
-#define __pyx_kp_b_iso88591_12_1_xuA_xuA_XYaq_U_1_4s_4t5_Q __pyx_string_tab[135]
-#define __pyx_kp_b_iso88591_AQ_4BfAS_b_xwa_V5_G1_3a_E_aq_a __pyx_string_tab[136]
-#define __pyx_kp_b_iso88591_B_56_4q_2S_S_1_6_A_E_aq_q_A_A_A __pyx_string_tab[137]
-#define __pyx_kp_b_iso88591_IQ_AQ_32V2S_PRRS_xvQ_U_1_q_Rr_9 __pyx_string_tab[138]
-#define __pyx_kp_b_iso88591_Q __pyx_string_tab[139]
-#define __pyx_kp_b_iso88591_a_0_ZvRq_haq_xs_U_1_b_auBe3hb_M __pyx_string_tab[140]
-#define __pyx_kp_b_iso88591_aq_A_E1Fc_Q_QgV_Q_4A_q_q_q_q __pyx_string_tab[141]
-#define __pyx_kp_b_iso88591_q_b_ay_b_1HAWA_1 __pyx_string_tab[142]
+#define __pyx_n_u_buf __pyx_string_tab[31]
+#define __pyx_n_u_child_idx __pyx_string_tab[32]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[33]
+#define __pyx_n_u_copy __pyx_string_tab[34]
+#define __pyx_n_u_dst_plane __pyx_string_tab[35]
+#define __pyx_n_u_dtype __pyx_string_tab[36]
+#define __pyx_n_u_empty __pyx_string_tab[37]
+#define __pyx_n_u_enqueue_batch __pyx_string_tab[38]
+#define __pyx_n_u_enumerate __pyx_string_tab[39]
+#define __pyx_n_u_eval_scores __pyx_string_tab[40]
+#define __pyx_n_u_evaluator __pyx_string_tab[41]
+#define __pyx_n_u_expand_tree __pyx_string_tab[42]
+#define __pyx_n_u_extract_and_label_game __pyx_string_tab[43]
+#define __pyx_n_u_fast_chess __pyx_string_tab[44]
+#define __pyx_n_u_float __pyx_string_tab[45]
+#define __pyx_n_u_float32 __pyx_string_tab[46]
+#define __pyx_n_u_func __pyx_string_tab[47]
+#define __pyx_n_u_get_score __pyx_string_tab[48]
+#define __pyx_n_u_getstate __pyx_string_tab[49]
+#define __pyx_n_u_has_kingside_castling_rights __pyx_string_tab[50]
+#define __pyx_n_u_has_queenside_castling_rights __pyx_string_tab[51]
+#define __pyx_n_u_i __pyx_string_tab[52]
+#define __pyx_n_u_indices __pyx_string_tab[53]
+#define __pyx_n_u_inp __pyx_string_tab[54]
+#define __pyx_n_u_int __pyx_string_tab[55]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[56]
+#define __pyx_n_u_is_game_over __pyx_string_tab[57]
+#define __pyx_n_u_items __pyx_string_tab[58]
+#define __pyx_n_u_j __pyx_string_tab[59]
+#define __pyx_n_u_kings __pyx_string_tab[60]
+#define __pyx_n_u_knights __pyx_string_tab[61]
+#define __pyx_n_u_leaf_boards __pyx_string_tab[62]
+#define __pyx_n_u_leaf_idx __pyx_string_tab[63]
+#define __pyx_n_u_legal_moves __pyx_string_tab[64]
+#define __pyx_n_u_list __pyx_string_tab[65]
+#define __pyx_n_u_main __pyx_string_tab[66]
+#define __pyx_n_u_max_depth __pyx_string_tab[67]
+#define __pyx_n_u_max_sample __pyx_string_tab[68]
+#define __pyx_n_u_maximizing __pyx_string_tab[69]
+#define __pyx_n_u_module __pyx_string_tab[70]
+#define __pyx_n_u_move __pyx_string_tab[71]
+#define __pyx_n_u_moves_iter __pyx_string_tab[72]
+#define __pyx_n_u_n __pyx_string_tab[73]
+#define __pyx_n_u_n_cand __pyx_string_tab[74]
+#define __pyx_n_u_n_leaves __pyx_string_tab[75]
+#define __pyx_n_u_n_sample __pyx_string_tab[76]
+#define __pyx_n_u_name __pyx_string_tab[77]
+#define __pyx_n_u_np __pyx_string_tab[78]
+#define __pyx_n_u_numpy __pyx_string_tab[79]
+#define __pyx_n_u_occupied_co __pyx_string_tab[80]
+#define __pyx_n_u_off __pyx_string_tab[81]
+#define __pyx_n_u_out __pyx_string_tab[82]
+#define __pyx_n_u_outcome_weight __pyx_string_tab[83]
+#define __pyx_n_u_outp __pyx_string_tab[84]
+#define __pyx_n_u_pawns __pyx_string_tab[85]
+#define __pyx_n_u_plies __pyx_string_tab[86]
+#define __pyx_n_u_ply __pyx_string_tab[87]
+#define __pyx_n_u_ply_list __pyx_string_tab[88]
+#define __pyx_n_u_pop __pyx_string_tab[89]
+#define __pyx_n_u_pptr __pyx_string_tab[90]
+#define __pyx_n_u_propagate_and_best_move __pyx_string_tab[91]
+#define __pyx_n_u_push __pyx_string_tab[92]
+#define __pyx_n_u_pyx_state __pyx_string_tab[93]
+#define __pyx_n_u_pyx_vtable __pyx_string_tab[94]
+#define __pyx_n_u_qualname __pyx_string_tab[95]
+#define __pyx_n_u_queens __pyx_string_tab[96]
+#define __pyx_n_u_random __pyx_string_tab[97]
+#define __pyx_n_u_reduce __pyx_string_tab[98]
+#define __pyx_n_u_reduce_cython __pyx_string_tab[99]
+#define __pyx_n_u_reduce_ex __pyx_string_tab[100]
+#define __pyx_n_u_result __pyx_string_tab[101]
+#define __pyx_n_u_return __pyx_string_tab[102]
+#define __pyx_n_u_rooks __pyx_string_tab[103]
+#define __pyx_n_u_root_child_info __pyx_string_tab[104]
+#define __pyx_n_u_root_idx __pyx_string_tab[105]
+#define __pyx_n_u_root_maximizing __pyx_string_tab[106]
+#define __pyx_n_u_row __pyx_string_tab[107]
+#define __pyx_n_u_rptr __pyx_string_tab[108]
+#define __pyx_n_u_sample __pyx_string_tab[109]
+#define __pyx_n_u_self __pyx_string_tab[110]
+#define __pyx_n_u_set_name __pyx_string_tab[111]
+#define __pyx_n_u_setdefault __pyx_string_tab[112]
+#define __pyx_n_u_setstate __pyx_string_tab[113]
+#define __pyx_n_u_setstate_cython __pyx_string_tab[114]
+#define __pyx_n_u_skip_ply __pyx_string_tab[115]
+#define __pyx_n_u_sq __pyx_string_tab[116]
+#define __pyx_n_u_src_plane __pyx_string_tab[117]
+#define __pyx_n_u_t __pyx_string_tab[118]
+#define __pyx_n_u_test __pyx_string_tab[119]
+#define __pyx_n_u_total_plies __pyx_string_tab[120]
+#define __pyx_n_u_tp __pyx_string_tab[121]
+#define __pyx_n_u_tree __pyx_string_tab[122]
+#define __pyx_n_u_tuple __pyx_string_tab[123]
+#define __pyx_n_u_turn __pyx_string_tab[124]
+#define __pyx_n_u_v __pyx_string_tab[125]
+#define __pyx_n_u_values __pyx_string_tab[126]
+#define __pyx_n_u_vectorize_into_buffer __pyx_string_tab[127]
+#define __pyx_n_u_weight __pyx_string_tab[128]
+#define __pyx_n_u_weights __pyx_string_tab[129]
+#define __pyx_n_u_wptr __pyx_string_tab[130]
+#define __pyx_n_u_write_offset __pyx_string_tab[131]
+#define __pyx_n_u_write_pos __pyx_string_tab[132]
+#define __pyx_n_u_written __pyx_string_tab[133]
+#define __pyx_n_u_xptr __pyx_string_tab[134]
+#define __pyx_n_u_y_out __pyx_string_tab[135]
+#define __pyx_n_u_yptr __pyx_string_tab[136]
+#define __pyx_kp_b_iso88591_0_3a_q_4q_t2WA __pyx_string_tab[137]
+#define __pyx_kp_b_iso88591_12_1_xuA_xuA_XYaq_U_1_4s_4t5_Q __pyx_string_tab[138]
+#define __pyx_kp_b_iso88591_AQ_4BfAS_b_xwa_V5_G1_3a_E_aq_a __pyx_string_tab[139]
+#define __pyx_kp_b_iso88591_B_56_4q_2S_S_1_6_A_E_aq_q_A_A_A __pyx_string_tab[140]
+#define __pyx_kp_b_iso88591_IQ_AQ_32V2S_PRRS_xvQ_U_1_q_Rr_9 __pyx_string_tab[141]
+#define __pyx_kp_b_iso88591_Q __pyx_string_tab[142]
+#define __pyx_kp_b_iso88591_a_0_ZvRq_haq_xs_U_1_b_auBe3hb_M __pyx_string_tab[143]
+#define __pyx_kp_b_iso88591_aq_A_E1Fc_Q_QgV_Q_4A_q_q_q_q __pyx_string_tab[144]
+#define __pyx_kp_b_iso88591_q_b_ay_b_1HAWA_1 __pyx_string_tab[145]
+#define __pyx_kp_b_iso88591_t2Rs_c_F_1_1IS_r_Ry_1 __pyx_string_tab[146]
 #define __pyx_float_0_0 __pyx_number_tab[0]
 #define __pyx_float_0_5 __pyx_number_tab[1]
 #define __pyx_int_0 __pyx_number_tab[2]
-#define __pyx_int_1 __pyx_number_tab[3]
-#define __pyx_int_773 __pyx_number_tab[4]
+#define __pyx_int_neg_1 __pyx_number_tab[3]
+#define __pyx_int_1 __pyx_number_tab[4]
+#define __pyx_int_773 __pyx_number_tab[5]
 /* #### Code section: module_state_clear ### */
 #if CYTHON_USE_MODULE_STATE
 static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
@@ -3269,9 +3275,9 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_ptype_10fast_chess_FlatTreeWrapper);
   Py_CLEAR(clear_module_state->__pyx_type_10fast_chess_FlatTreeWrapper);
   for (int i=0; i<1; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<10; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<143; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
-  for (int i=0; i<5; ++i) { Py_CLEAR(clear_module_state->__pyx_number_tab[i]); }
+  for (int i=0; i<11; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<147; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<6; ++i) { Py_CLEAR(clear_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_clear_contents ### */
 /* CommonTypesMetaclass.module_state_clear */
 Py_CLEAR(clear_module_state->__pyx_CommonTypesMetaclassType);
@@ -3313,9 +3319,9 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   Py_VISIT(traverse_module_state->__pyx_ptype_10fast_chess_FlatTreeWrapper);
   Py_VISIT(traverse_module_state->__pyx_type_10fast_chess_FlatTreeWrapper);
   for (int i=0; i<1; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<10; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<143; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
-  for (int i=0; i<5; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_number_tab[i]); }
+  for (int i=0; i<11; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<147; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<6; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_traverse_contents ### */
 /* CommonTypesMetaclass.module_state_traverse */
 Py_VISIT(traverse_module_state->__pyx_CommonTypesMetaclassType);
@@ -6060,7 +6066,240 @@ static PyArrayObject *__pyx_pf_10fast_chess_2batch_vectorize(CYTHON_UNUSED PyObj
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":120
+/* "fast_chess.pyx":102
+ * 
+ * 
+ * def vectorize_into_buffer(board,             # <<<<<<<<<<<<<<
+ *                           np.ndarray[np.float32_t, ndim=2] buf,
+ *                           int row) -> int:
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_10fast_chess_5vectorize_into_buffer(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_10fast_chess_4vectorize_into_buffer, "\n    Write board vector directly into buf[row].\n    ZERO temp allocation \342\200\224 no intermediate numpy array.\n    Returns row on success, -1 on out-of-bounds.\n\n    At depth 4 this saves ~810k numpy array allocations per move.\n    ");
+static PyMethodDef __pyx_mdef_10fast_chess_5vectorize_into_buffer = {"vectorize_into_buffer", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_5vectorize_into_buffer, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_4vectorize_into_buffer};
+static PyObject *__pyx_pw_10fast_chess_5vectorize_into_buffer(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_board = 0;
+  PyArrayObject *__pyx_v_buf = 0;
+  int __pyx_v_row;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[3] = {0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("vectorize_into_buffer (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_board,&__pyx_mstate_global->__pyx_n_u_buf,&__pyx_mstate_global->__pyx_n_u_row,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 102, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  3:
+        values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 102, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 102, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 102, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "vectorize_into_buffer", 0) < (0)) __PYX_ERR(0, 102, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 3; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("vectorize_into_buffer", 1, 3, 3, i); __PYX_ERR(0, 102, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 3)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 102, __pyx_L3_error)
+      values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 102, __pyx_L3_error)
+      values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 102, __pyx_L3_error)
+    }
+    __pyx_v_board = values[0];
+    __pyx_v_buf = ((PyArrayObject *)values[1]);
+    __pyx_v_row = __Pyx_PyLong_As_int(values[2]); if (unlikely((__pyx_v_row == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L3_error)
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("vectorize_into_buffer", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 102, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("fast_chess.vectorize_into_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_buf), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "buf", 0))) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_r = __pyx_pf_10fast_chess_4vectorize_into_buffer(__pyx_self, __pyx_v_board, __pyx_v_buf, __pyx_v_row);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_10fast_chess_4vectorize_into_buffer(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyArrayObject *__pyx_v_buf, int __pyx_v_row) {
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_buf;
+  __Pyx_Buffer __pyx_pybuffer_buf;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("vectorize_into_buffer", 0);
+  __pyx_pybuffer_buf.pybuffer.buf = NULL;
+  __pyx_pybuffer_buf.refcount = 0;
+  __pyx_pybuffernd_buf.data = NULL;
+  __pyx_pybuffernd_buf.rcbuffer = &__pyx_pybuffer_buf;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_buf.rcbuffer->pybuffer, (PyObject*)__pyx_v_buf, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 102, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_buf.diminfo[0].strides = __pyx_pybuffernd_buf.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_buf.diminfo[0].shape = __pyx_pybuffernd_buf.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_buf.diminfo[1].strides = __pyx_pybuffernd_buf.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_buf.diminfo[1].shape = __pyx_pybuffernd_buf.rcbuffer->pybuffer.shape[1];
+
+  /* "fast_chess.pyx":112
+ *     At depth 4 this saves ~810k numpy array allocations per move.
+ *     """
+ *     if row < 0 or row >= buf.shape[0]:             # <<<<<<<<<<<<<<
+ *         return -1
+ *     _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)
+*/
+  __pyx_t_2 = (__pyx_v_row < 0);
+  if (!__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_2 = (__pyx_v_row >= (__pyx_f_5numpy_7ndarray_5shape_shape(((PyArrayObject *)__pyx_v_buf))[0]));
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L4_bool_binop_done:;
+  if (__pyx_t_1) {
+
+    /* "fast_chess.pyx":113
+ *     """
+ *     if row < 0 or row >= buf.shape[0]:
+ *         return -1             # <<<<<<<<<<<<<<
+ *     _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)
+ *     return row
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __Pyx_INCREF(__pyx_mstate_global->__pyx_int_neg_1);
+    __pyx_r = __pyx_mstate_global->__pyx_int_neg_1;
+    goto __pyx_L0;
+
+    /* "fast_chess.pyx":112
+ *     At depth 4 this saves ~810k numpy array allocations per move.
+ *     """
+ *     if row < 0 or row >= buf.shape[0]:             # <<<<<<<<<<<<<<
+ *         return -1
+ *     _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)
+*/
+  }
+
+  /* "fast_chess.pyx":114
+ *     if row < 0 or row >= buf.shape[0]:
+ *         return -1
+ *     _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)             # <<<<<<<<<<<<<<
+ *     return row
+ * 
+*/
+  __pyx_f_10fast_chess__vectorize_into((((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_buf))) + (__pyx_v_row * 0x305)), __pyx_v_board); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 114, __pyx_L1_error)
+
+  /* "fast_chess.pyx":115
+ *         return -1
+ *     _vectorize_into(<float*>(buf.data) + row * VEC_DIM, board)
+ *     return row             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_row); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (__Pyx_PyInt_FromNumber(&__pyx_t_3, NULL, 0) < (0)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "fast_chess.pyx":102
+ * 
+ * 
+ * def vectorize_into_buffer(board,             # <<<<<<<<<<<<<<
+ *                           np.ndarray[np.float32_t, ndim=2] buf,
+ *                           int row) -> int:
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_buf.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("fast_chess.vectorize_into_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_buf.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "fast_chess.pyx":136
  * 
  * 
  * cdef FlatTree* ftree_create(int capacity) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -6072,7 +6311,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
   struct __pyx_t_10fast_chess_FlatTree *__pyx_v_t;
   struct __pyx_t_10fast_chess_FlatTree *__pyx_r;
 
-  /* "fast_chess.pyx":121
+  /* "fast_chess.pyx":137
  * 
  * cdef FlatTree* ftree_create(int capacity) noexcept nogil:
  *     cdef FlatTree* t = <FlatTree*>malloc(sizeof(FlatTree))             # <<<<<<<<<<<<<<
@@ -6081,7 +6320,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t = ((struct __pyx_t_10fast_chess_FlatTree *)malloc((sizeof(struct __pyx_t_10fast_chess_FlatTree))));
 
-  /* "fast_chess.pyx":122
+  /* "fast_chess.pyx":138
  * cdef FlatTree* ftree_create(int capacity) noexcept nogil:
  *     cdef FlatTree* t = <FlatTree*>malloc(sizeof(FlatTree))
  *     t.parent        = <int*>malloc(capacity * sizeof(int))             # <<<<<<<<<<<<<<
@@ -6090,7 +6329,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->parent = ((int *)malloc((__pyx_v_capacity * (sizeof(int)))));
 
-  /* "fast_chess.pyx":123
+  /* "fast_chess.pyx":139
  *     cdef FlatTree* t = <FlatTree*>malloc(sizeof(FlatTree))
  *     t.parent        = <int*>malloc(capacity * sizeof(int))
  *     t.is_maximizing = <int*>malloc(capacity * sizeof(int))             # <<<<<<<<<<<<<<
@@ -6099,7 +6338,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->is_maximizing = ((int *)malloc((__pyx_v_capacity * (sizeof(int)))));
 
-  /* "fast_chess.pyx":124
+  /* "fast_chess.pyx":140
  *     t.parent        = <int*>malloc(capacity * sizeof(int))
  *     t.is_maximizing = <int*>malloc(capacity * sizeof(int))
  *     t.is_leaf       = <int*>malloc(capacity * sizeof(int))             # <<<<<<<<<<<<<<
@@ -6108,7 +6347,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->is_leaf = ((int *)malloc((__pyx_v_capacity * (sizeof(int)))));
 
-  /* "fast_chess.pyx":125
+  /* "fast_chess.pyx":141
  *     t.is_maximizing = <int*>malloc(capacity * sizeof(int))
  *     t.is_leaf       = <int*>malloc(capacity * sizeof(int))
  *     t.eval_idx      = <int*>malloc(capacity * sizeof(int))             # <<<<<<<<<<<<<<
@@ -6117,7 +6356,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->eval_idx = ((int *)malloc((__pyx_v_capacity * (sizeof(int)))));
 
-  /* "fast_chess.pyx":126
+  /* "fast_chess.pyx":142
  *     t.is_leaf       = <int*>malloc(capacity * sizeof(int))
  *     t.eval_idx      = <int*>malloc(capacity * sizeof(int))
  *     t.score         = <float*>malloc(capacity * sizeof(float))             # <<<<<<<<<<<<<<
@@ -6126,7 +6365,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->score = ((float *)malloc((__pyx_v_capacity * (sizeof(float)))));
 
-  /* "fast_chess.pyx":127
+  /* "fast_chess.pyx":143
  *     t.eval_idx      = <int*>malloc(capacity * sizeof(int))
  *     t.score         = <float*>malloc(capacity * sizeof(float))
  *     t.count = 0             # <<<<<<<<<<<<<<
@@ -6135,7 +6374,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->count = 0;
 
-  /* "fast_chess.pyx":128
+  /* "fast_chess.pyx":144
  *     t.score         = <float*>malloc(capacity * sizeof(float))
  *     t.count = 0
  *     t.capacity = capacity             # <<<<<<<<<<<<<<
@@ -6144,7 +6383,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 */
   __pyx_v_t->capacity = __pyx_v_capacity;
 
-  /* "fast_chess.pyx":129
+  /* "fast_chess.pyx":145
  *     t.count = 0
  *     t.capacity = capacity
  *     return t             # <<<<<<<<<<<<<<
@@ -6154,7 +6393,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
   __pyx_r = __pyx_v_t;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":120
+  /* "fast_chess.pyx":136
  * 
  * 
  * cdef FlatTree* ftree_create(int capacity) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -6167,7 +6406,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":132
+/* "fast_chess.pyx":148
  * 
  * 
  * cdef void ftree_destroy(FlatTree* t) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -6178,7 +6417,7 @@ static struct __pyx_t_10fast_chess_FlatTree *__pyx_f_10fast_chess_ftree_create(i
 static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatTree *__pyx_v_t) {
   int __pyx_t_1;
 
-  /* "fast_chess.pyx":133
+  /* "fast_chess.pyx":149
  * 
  * cdef void ftree_destroy(FlatTree* t) noexcept nogil:
  *     if t == NULL:             # <<<<<<<<<<<<<<
@@ -6188,7 +6427,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
   __pyx_t_1 = (__pyx_v_t == NULL);
   if (__pyx_t_1) {
 
-    /* "fast_chess.pyx":134
+    /* "fast_chess.pyx":150
  * cdef void ftree_destroy(FlatTree* t) noexcept nogil:
  *     if t == NULL:
  *         return             # <<<<<<<<<<<<<<
@@ -6197,7 +6436,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
     goto __pyx_L0;
 
-    /* "fast_chess.pyx":133
+    /* "fast_chess.pyx":149
  * 
  * cdef void ftree_destroy(FlatTree* t) noexcept nogil:
  *     if t == NULL:             # <<<<<<<<<<<<<<
@@ -6206,7 +6445,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   }
 
-  /* "fast_chess.pyx":135
+  /* "fast_chess.pyx":151
  *     if t == NULL:
  *         return
  *     free(t.parent)             # <<<<<<<<<<<<<<
@@ -6215,7 +6454,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t->parent);
 
-  /* "fast_chess.pyx":136
+  /* "fast_chess.pyx":152
  *         return
  *     free(t.parent)
  *     free(t.is_maximizing)             # <<<<<<<<<<<<<<
@@ -6224,7 +6463,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t->is_maximizing);
 
-  /* "fast_chess.pyx":137
+  /* "fast_chess.pyx":153
  *     free(t.parent)
  *     free(t.is_maximizing)
  *     free(t.is_leaf)             # <<<<<<<<<<<<<<
@@ -6233,7 +6472,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t->is_leaf);
 
-  /* "fast_chess.pyx":138
+  /* "fast_chess.pyx":154
  *     free(t.is_maximizing)
  *     free(t.is_leaf)
  *     free(t.eval_idx)             # <<<<<<<<<<<<<<
@@ -6242,7 +6481,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t->eval_idx);
 
-  /* "fast_chess.pyx":139
+  /* "fast_chess.pyx":155
  *     free(t.is_leaf)
  *     free(t.eval_idx)
  *     free(t.score)             # <<<<<<<<<<<<<<
@@ -6251,7 +6490,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t->score);
 
-  /* "fast_chess.pyx":140
+  /* "fast_chess.pyx":156
  *     free(t.eval_idx)
  *     free(t.score)
  *     free(t)             # <<<<<<<<<<<<<<
@@ -6260,7 +6499,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
 */
   free(__pyx_v_t);
 
-  /* "fast_chess.pyx":132
+  /* "fast_chess.pyx":148
  * 
  * 
  * cdef void ftree_destroy(FlatTree* t) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -6272,7 +6511,7 @@ static void __pyx_f_10fast_chess_ftree_destroy(struct __pyx_t_10fast_chess_FlatT
   __pyx_L0:;
 }
 
-/* "fast_chess.pyx":143
+/* "fast_chess.pyx":159
  * 
  * 
  * cdef int ftree_add(FlatTree* t, int par, int maximizing,             # <<<<<<<<<<<<<<
@@ -6286,7 +6525,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
   int __pyx_t_1;
   int __pyx_t_2;
 
-  /* "fast_chess.pyx":145
+  /* "fast_chess.pyx":161
  * cdef int ftree_add(FlatTree* t, int par, int maximizing,
  *                    int leaf, int eidx) noexcept nogil:
  *     cdef int idx = t.count             # <<<<<<<<<<<<<<
@@ -6296,7 +6535,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
   __pyx_t_1 = __pyx_v_t->count;
   __pyx_v_idx = __pyx_t_1;
 
-  /* "fast_chess.pyx":146
+  /* "fast_chess.pyx":162
  *                    int leaf, int eidx) noexcept nogil:
  *     cdef int idx = t.count
  *     if idx >= t.capacity:             # <<<<<<<<<<<<<<
@@ -6306,7 +6545,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
   __pyx_t_2 = (__pyx_v_idx >= __pyx_v_t->capacity);
   if (__pyx_t_2) {
 
-    /* "fast_chess.pyx":147
+    /* "fast_chess.pyx":163
  *     cdef int idx = t.count
  *     if idx >= t.capacity:
  *         return -1             # <<<<<<<<<<<<<<
@@ -6316,7 +6555,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
     __pyx_r = -1;
     goto __pyx_L0;
 
-    /* "fast_chess.pyx":146
+    /* "fast_chess.pyx":162
  *                    int leaf, int eidx) noexcept nogil:
  *     cdef int idx = t.count
  *     if idx >= t.capacity:             # <<<<<<<<<<<<<<
@@ -6325,7 +6564,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   }
 
-  /* "fast_chess.pyx":148
+  /* "fast_chess.pyx":164
  *     if idx >= t.capacity:
  *         return -1
  *     t.parent[idx] = par             # <<<<<<<<<<<<<<
@@ -6334,7 +6573,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   (__pyx_v_t->parent[__pyx_v_idx]) = __pyx_v_par;
 
-  /* "fast_chess.pyx":149
+  /* "fast_chess.pyx":165
  *         return -1
  *     t.parent[idx] = par
  *     t.is_maximizing[idx] = maximizing             # <<<<<<<<<<<<<<
@@ -6343,7 +6582,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   (__pyx_v_t->is_maximizing[__pyx_v_idx]) = __pyx_v_maximizing;
 
-  /* "fast_chess.pyx":150
+  /* "fast_chess.pyx":166
  *     t.parent[idx] = par
  *     t.is_maximizing[idx] = maximizing
  *     t.is_leaf[idx] = leaf             # <<<<<<<<<<<<<<
@@ -6352,7 +6591,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   (__pyx_v_t->is_leaf[__pyx_v_idx]) = __pyx_v_leaf;
 
-  /* "fast_chess.pyx":151
+  /* "fast_chess.pyx":167
  *     t.is_maximizing[idx] = maximizing
  *     t.is_leaf[idx] = leaf
  *     t.eval_idx[idx] = eidx             # <<<<<<<<<<<<<<
@@ -6361,7 +6600,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   (__pyx_v_t->eval_idx[__pyx_v_idx]) = __pyx_v_eidx;
 
-  /* "fast_chess.pyx":152
+  /* "fast_chess.pyx":168
  *     t.is_leaf[idx] = leaf
  *     t.eval_idx[idx] = eidx
  *     t.score[idx] = 0.0             # <<<<<<<<<<<<<<
@@ -6370,7 +6609,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   (__pyx_v_t->score[__pyx_v_idx]) = 0.0;
 
-  /* "fast_chess.pyx":153
+  /* "fast_chess.pyx":169
  *     t.eval_idx[idx] = eidx
  *     t.score[idx] = 0.0
  *     t.count += 1             # <<<<<<<<<<<<<<
@@ -6379,7 +6618,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
 */
   __pyx_v_t->count = (__pyx_v_t->count + 1);
 
-  /* "fast_chess.pyx":154
+  /* "fast_chess.pyx":170
  *     t.score[idx] = 0.0
  *     t.count += 1
  *     return idx             # <<<<<<<<<<<<<<
@@ -6389,7 +6628,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
   __pyx_r = __pyx_v_idx;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":143
+  /* "fast_chess.pyx":159
  * 
  * 
  * cdef int ftree_add(FlatTree* t, int par, int maximizing,             # <<<<<<<<<<<<<<
@@ -6402,7 +6641,7 @@ static int __pyx_f_10fast_chess_ftree_add(struct __pyx_t_10fast_chess_FlatTree *
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":157
+/* "fast_chess.pyx":173
  * 
  * 
  * cdef void _expand_recursive(object board, FlatTree* tree, int par_idx,             # <<<<<<<<<<<<<<
@@ -6431,7 +6670,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_expand_recursive", 0);
 
-  /* "fast_chess.pyx":166
+  /* "fast_chess.pyx":182
  *     """
  *     cdef int child_idx
  *     cdef bint next_max = not child_maximizing             # <<<<<<<<<<<<<<
@@ -6440,23 +6679,23 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
   __pyx_v_next_max = (!__pyx_v_child_maximizing);
 
-  /* "fast_chess.pyx":168
+  /* "fast_chess.pyx":184
  *     cdef bint next_max = not child_maximizing
  * 
  *     for move in board.legal_moves:             # <<<<<<<<<<<<<<
  *         board.push(move)
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_board, __pyx_mstate_global->__pyx_n_u_legal_moves); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_board, __pyx_mstate_global->__pyx_n_u_legal_moves); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
     __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2);
     __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 168, __pyx_L1_error)
+    __pyx_t_4 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
@@ -6465,7 +6704,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_2);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 168, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 184, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -6475,7 +6714,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_2);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 168, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 184, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -6486,13 +6725,13 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         #endif
         ++__pyx_t_3;
       }
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
     } else {
       __pyx_t_1 = __pyx_t_4(__pyx_t_2);
       if (unlikely(!__pyx_t_1)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 168, __pyx_L1_error)
+          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 184, __pyx_L1_error)
           PyErr_Clear();
         }
         break;
@@ -6502,7 +6741,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
     __Pyx_XDECREF_SET(__pyx_v_move, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "fast_chess.pyx":169
+    /* "fast_chess.pyx":185
  * 
  *     for move in board.legal_moves:
  *         board.push(move)             # <<<<<<<<<<<<<<
@@ -6516,12 +6755,12 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_v_move};
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_push, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "fast_chess.pyx":171
+    /* "fast_chess.pyx":187
  *         board.push(move)
  * 
  *         if depth_left <= 1 or board.is_game_over():             # <<<<<<<<<<<<<<
@@ -6541,16 +6780,16 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_is_game_over, __pyx_callargs+__pyx_t_6, (1-__pyx_t_6) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_8 < 0))) __PYX_ERR(0, 171, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_8 < 0))) __PYX_ERR(0, 187, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_7 = __pyx_t_8;
     __pyx_L6_bool_binop_done:;
     if (__pyx_t_7) {
 
-      /* "fast_chess.pyx":172
+      /* "fast_chess.pyx":188
  * 
  *         if depth_left <= 1 or board.is_game_over():
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,             # <<<<<<<<<<<<<<
@@ -6563,7 +6802,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         __pyx_t_9 = 0;
       }
 
-      /* "fast_chess.pyx":173
+      /* "fast_chess.pyx":189
  *         if depth_left <= 1 or board.is_game_over():
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,
  *                                   1, len(leaf_boards))             # <<<<<<<<<<<<<<
@@ -6572,11 +6811,11 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
       if (unlikely(__pyx_v_leaf_boards == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-        __PYX_ERR(0, 173, __pyx_L1_error)
+        __PYX_ERR(0, 189, __pyx_L1_error)
       }
-      __pyx_t_10 = __Pyx_PyList_GET_SIZE(__pyx_v_leaf_boards); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyList_GET_SIZE(__pyx_v_leaf_boards); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 189, __pyx_L1_error)
 
-      /* "fast_chess.pyx":172
+      /* "fast_chess.pyx":188
  * 
  *         if depth_left <= 1 or board.is_game_over():
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,             # <<<<<<<<<<<<<<
@@ -6585,7 +6824,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
       __pyx_v_child_idx = __pyx_f_10fast_chess_ftree_add(__pyx_v_tree, __pyx_v_par_idx, __pyx_t_9, 1, __pyx_t_10);
 
-      /* "fast_chess.pyx":174
+      /* "fast_chess.pyx":190
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,
  *                                   1, len(leaf_boards))
  *             if child_idx >= 0:             # <<<<<<<<<<<<<<
@@ -6595,7 +6834,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       __pyx_t_7 = (__pyx_v_child_idx >= 0);
       if (__pyx_t_7) {
 
-        /* "fast_chess.pyx":175
+        /* "fast_chess.pyx":191
  *                                   1, len(leaf_boards))
  *             if child_idx >= 0:
  *                 leaf_boards.append(board.copy())             # <<<<<<<<<<<<<<
@@ -6604,7 +6843,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
         if (unlikely(__pyx_v_leaf_boards == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "append");
-          __PYX_ERR(0, 175, __pyx_L1_error)
+          __PYX_ERR(0, 191, __pyx_L1_error)
         }
         __pyx_t_5 = __pyx_v_board;
         __Pyx_INCREF(__pyx_t_5);
@@ -6613,13 +6852,13 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
           PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_copy, __pyx_callargs+__pyx_t_6, (1-__pyx_t_6) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
-        __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_leaf_boards, __pyx_t_1); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_leaf_boards, __pyx_t_1); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 191, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "fast_chess.pyx":176
+        /* "fast_chess.pyx":192
  *             if child_idx >= 0:
  *                 leaf_boards.append(board.copy())
  *                 if par_idx == root_idx:             # <<<<<<<<<<<<<<
@@ -6629,7 +6868,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         __pyx_t_7 = (__pyx_v_par_idx == __pyx_v_root_idx);
         if (__pyx_t_7) {
 
-          /* "fast_chess.pyx":177
+          /* "fast_chess.pyx":193
  *                 leaf_boards.append(board.copy())
  *                 if par_idx == root_idx:
  *                     root_child_info.append((child_idx, move))             # <<<<<<<<<<<<<<
@@ -6638,22 +6877,22 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
           if (unlikely(__pyx_v_root_child_info == Py_None)) {
             PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "append");
-            __PYX_ERR(0, 177, __pyx_L1_error)
+            __PYX_ERR(0, 193, __pyx_L1_error)
           }
-          __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_child_idx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_child_idx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 177, __pyx_L1_error)
+          __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 193, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_GIVEREF(__pyx_t_1);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 177, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 193, __pyx_L1_error);
           __Pyx_INCREF(__pyx_v_move);
           __Pyx_GIVEREF(__pyx_v_move);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_move) != (0)) __PYX_ERR(0, 177, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_move) != (0)) __PYX_ERR(0, 193, __pyx_L1_error);
           __pyx_t_1 = 0;
-          __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_root_child_info, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 177, __pyx_L1_error)
+          __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_root_child_info, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 193, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-          /* "fast_chess.pyx":176
+          /* "fast_chess.pyx":192
  *             if child_idx >= 0:
  *                 leaf_boards.append(board.copy())
  *                 if par_idx == root_idx:             # <<<<<<<<<<<<<<
@@ -6662,7 +6901,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
         }
 
-        /* "fast_chess.pyx":174
+        /* "fast_chess.pyx":190
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,
  *                                   1, len(leaf_boards))
  *             if child_idx >= 0:             # <<<<<<<<<<<<<<
@@ -6671,7 +6910,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
       }
 
-      /* "fast_chess.pyx":171
+      /* "fast_chess.pyx":187
  *         board.push(move)
  * 
  *         if depth_left <= 1 or board.is_game_over():             # <<<<<<<<<<<<<<
@@ -6681,7 +6920,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       goto __pyx_L5;
     }
 
-    /* "fast_chess.pyx":179
+    /* "fast_chess.pyx":195
  *                     root_child_info.append((child_idx, move))
  *         else:
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,             # <<<<<<<<<<<<<<
@@ -6696,7 +6935,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       }
       __pyx_v_child_idx = __pyx_f_10fast_chess_ftree_add(__pyx_v_tree, __pyx_v_par_idx, __pyx_t_9, 0, -1);
 
-      /* "fast_chess.pyx":181
+      /* "fast_chess.pyx":197
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,
  *                                   0, -1)
  *             if child_idx >= 0:             # <<<<<<<<<<<<<<
@@ -6706,7 +6945,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       __pyx_t_7 = (__pyx_v_child_idx >= 0);
       if (__pyx_t_7) {
 
-        /* "fast_chess.pyx":182
+        /* "fast_chess.pyx":198
  *                                   0, -1)
  *             if child_idx >= 0:
  *                 if par_idx == root_idx:             # <<<<<<<<<<<<<<
@@ -6716,7 +6955,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
         __pyx_t_7 = (__pyx_v_par_idx == __pyx_v_root_idx);
         if (__pyx_t_7) {
 
-          /* "fast_chess.pyx":183
+          /* "fast_chess.pyx":199
  *             if child_idx >= 0:
  *                 if par_idx == root_idx:
  *                     root_child_info.append((child_idx, move))             # <<<<<<<<<<<<<<
@@ -6725,22 +6964,22 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
           if (unlikely(__pyx_v_root_child_info == Py_None)) {
             PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "append");
-            __PYX_ERR(0, 183, __pyx_L1_error)
+            __PYX_ERR(0, 199, __pyx_L1_error)
           }
-          __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_child_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 183, __pyx_L1_error)
+          __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_child_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 199, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
+          __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GIVEREF(__pyx_t_5);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 199, __pyx_L1_error);
           __Pyx_INCREF(__pyx_v_move);
           __Pyx_GIVEREF(__pyx_v_move);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_move) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_move) != (0)) __PYX_ERR(0, 199, __pyx_L1_error);
           __pyx_t_5 = 0;
-          __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_root_child_info, __pyx_t_1); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 183, __pyx_L1_error)
+          __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_root_child_info, __pyx_t_1); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 199, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-          /* "fast_chess.pyx":182
+          /* "fast_chess.pyx":198
  *                                   0, -1)
  *             if child_idx >= 0:
  *                 if par_idx == root_idx:             # <<<<<<<<<<<<<<
@@ -6749,16 +6988,16 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
         }
 
-        /* "fast_chess.pyx":184
+        /* "fast_chess.pyx":200
  *                 if par_idx == root_idx:
  *                     root_child_info.append((child_idx, move))
  *                 _expand_recursive(board, tree, child_idx,             # <<<<<<<<<<<<<<
  *                                   depth_left - 1, next_max,
  *                                   leaf_boards, root_child_info, root_idx)
 */
-        __pyx_f_10fast_chess__expand_recursive(__pyx_v_board, __pyx_v_tree, __pyx_v_child_idx, (__pyx_v_depth_left - 1), __pyx_v_next_max, __pyx_v_leaf_boards, __pyx_v_root_child_info, __pyx_v_root_idx); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 184, __pyx_L1_error)
+        __pyx_f_10fast_chess__expand_recursive(__pyx_v_board, __pyx_v_tree, __pyx_v_child_idx, (__pyx_v_depth_left - 1), __pyx_v_next_max, __pyx_v_leaf_boards, __pyx_v_root_child_info, __pyx_v_root_idx); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 200, __pyx_L1_error)
 
-        /* "fast_chess.pyx":181
+        /* "fast_chess.pyx":197
  *             child_idx = ftree_add(tree, par_idx, 1 if child_maximizing else 0,
  *                                   0, -1)
  *             if child_idx >= 0:             # <<<<<<<<<<<<<<
@@ -6769,18 +7008,18 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
     }
     __pyx_L5:;
 
-    /* "fast_chess.pyx":188
+    /* "fast_chess.pyx":204
  *                                   leaf_boards, root_child_info, root_idx)
  * 
  *         board.pop()             # <<<<<<<<<<<<<<
  *         if child_idx < 0:
  *             return  # tree full
 */
-    __pyx_t_1 = __Pyx_PyObject_Pop(__pyx_v_board); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Pop(__pyx_v_board); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "fast_chess.pyx":189
+    /* "fast_chess.pyx":205
  * 
  *         board.pop()
  *         if child_idx < 0:             # <<<<<<<<<<<<<<
@@ -6790,7 +7029,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
     __pyx_t_7 = (__pyx_v_child_idx < 0);
     if (__pyx_t_7) {
 
-      /* "fast_chess.pyx":190
+      /* "fast_chess.pyx":206
  *         board.pop()
  *         if child_idx < 0:
  *             return  # tree full             # <<<<<<<<<<<<<<
@@ -6800,7 +7039,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       goto __pyx_L0;
 
-      /* "fast_chess.pyx":189
+      /* "fast_chess.pyx":205
  * 
  *         board.pop()
  *         if child_idx < 0:             # <<<<<<<<<<<<<<
@@ -6809,7 +7048,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
 */
     }
 
-    /* "fast_chess.pyx":168
+    /* "fast_chess.pyx":184
  *     cdef bint next_max = not child_maximizing
  * 
  *     for move in board.legal_moves:             # <<<<<<<<<<<<<<
@@ -6819,7 +7058,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fast_chess.pyx":157
+  /* "fast_chess.pyx":173
  * 
  * 
  * cdef void _expand_recursive(object board, FlatTree* tree, int par_idx,             # <<<<<<<<<<<<<<
@@ -6839,7 +7078,7 @@ static void __pyx_f_10fast_chess__expand_recursive(PyObject *__pyx_v_board, stru
   __Pyx_RefNannyFinishContext();
 }
 
-/* "fast_chess.pyx":193
+/* "fast_chess.pyx":209
  * 
  * 
  * cdef void ftree_propagate(FlatTree* t, float* eval_scores) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -6858,7 +7097,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   int __pyx_t_4;
   double __pyx_t_5;
 
-  /* "fast_chess.pyx":202
+  /* "fast_chess.pyx":218
  *     """
  *     cdef int i, par
  *     cdef int n = t.count             # <<<<<<<<<<<<<<
@@ -6868,7 +7107,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   __pyx_t_1 = __pyx_v_t->count;
   __pyx_v_n = __pyx_t_1;
 
-  /* "fast_chess.pyx":206
+  /* "fast_chess.pyx":222
  * 
  *     # Step 1: Fill leaf scores
  *     for i in range(n):             # <<<<<<<<<<<<<<
@@ -6880,7 +7119,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "fast_chess.pyx":207
+    /* "fast_chess.pyx":223
  *     # Step 1: Fill leaf scores
  *     for i in range(n):
  *         if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -6890,7 +7129,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     __pyx_t_4 = ((__pyx_v_t->is_leaf[__pyx_v_i]) != 0);
     if (__pyx_t_4) {
 
-      /* "fast_chess.pyx":208
+      /* "fast_chess.pyx":224
  *     for i in range(n):
  *         if t.is_leaf[i]:
  *             t.score[i] = eval_scores[t.eval_idx[i]]             # <<<<<<<<<<<<<<
@@ -6899,7 +7138,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
       (__pyx_v_t->score[__pyx_v_i]) = (__pyx_v_eval_scores[(__pyx_v_t->eval_idx[__pyx_v_i])]);
 
-      /* "fast_chess.pyx":207
+      /* "fast_chess.pyx":223
  *     # Step 1: Fill leaf scores
  *     for i in range(n):
  *         if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -6909,7 +7148,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     }
   }
 
-  /* "fast_chess.pyx":211
+  /* "fast_chess.pyx":227
  * 
  *     # Step 2: Initialize non-leaf scores to worst possible
  *     for i in range(n):             # <<<<<<<<<<<<<<
@@ -6921,7 +7160,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "fast_chess.pyx":212
+    /* "fast_chess.pyx":228
  *     # Step 2: Initialize non-leaf scores to worst possible
  *     for i in range(n):
  *         if not t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -6931,7 +7170,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     __pyx_t_4 = (!((__pyx_v_t->is_leaf[__pyx_v_i]) != 0));
     if (__pyx_t_4) {
 
-      /* "fast_chess.pyx":213
+      /* "fast_chess.pyx":229
  *     for i in range(n):
  *         if not t.is_leaf[i]:
  *             t.score[i] = -1e9 if t.is_maximizing[i] else 1e9             # <<<<<<<<<<<<<<
@@ -6946,7 +7185,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
       }
       (__pyx_v_t->score[__pyx_v_i]) = __pyx_t_5;
 
-      /* "fast_chess.pyx":212
+      /* "fast_chess.pyx":228
  *     # Step 2: Initialize non-leaf scores to worst possible
  *     for i in range(n):
  *         if not t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -6956,7 +7195,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     }
   }
 
-  /* "fast_chess.pyx":216
+  /* "fast_chess.pyx":232
  * 
  *     # Step 3: Single reverse pass
  *     for i in range(n - 1, 0, -1):             # <<<<<<<<<<<<<<
@@ -6966,7 +7205,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   for (__pyx_t_1 = (__pyx_v_n - 1); __pyx_t_1 > 0; __pyx_t_1-=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "fast_chess.pyx":217
+    /* "fast_chess.pyx":233
  *     # Step 3: Single reverse pass
  *     for i in range(n - 1, 0, -1):
  *         par = t.parent[i]             # <<<<<<<<<<<<<<
@@ -6975,7 +7214,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
     __pyx_v_par = (__pyx_v_t->parent[__pyx_v_i]);
 
-    /* "fast_chess.pyx":218
+    /* "fast_chess.pyx":234
  *     for i in range(n - 1, 0, -1):
  *         par = t.parent[i]
  *         if par < 0:             # <<<<<<<<<<<<<<
@@ -6985,7 +7224,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     __pyx_t_4 = (__pyx_v_par < 0);
     if (__pyx_t_4) {
 
-      /* "fast_chess.pyx":219
+      /* "fast_chess.pyx":235
  *         par = t.parent[i]
  *         if par < 0:
  *             continue             # <<<<<<<<<<<<<<
@@ -6994,7 +7233,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
       goto __pyx_L9_continue;
 
-      /* "fast_chess.pyx":218
+      /* "fast_chess.pyx":234
  *     for i in range(n - 1, 0, -1):
  *         par = t.parent[i]
  *         if par < 0:             # <<<<<<<<<<<<<<
@@ -7003,7 +7242,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
     }
 
-    /* "fast_chess.pyx":220
+    /* "fast_chess.pyx":236
  *         if par < 0:
  *             continue
  *         child_score = t.score[i]             # <<<<<<<<<<<<<<
@@ -7012,7 +7251,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
     __pyx_v_child_score = (__pyx_v_t->score[__pyx_v_i]);
 
-    /* "fast_chess.pyx":221
+    /* "fast_chess.pyx":237
  *             continue
  *         child_score = t.score[i]
  *         if t.is_maximizing[par]:             # <<<<<<<<<<<<<<
@@ -7022,7 +7261,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     __pyx_t_4 = ((__pyx_v_t->is_maximizing[__pyx_v_par]) != 0);
     if (__pyx_t_4) {
 
-      /* "fast_chess.pyx":222
+      /* "fast_chess.pyx":238
  *         child_score = t.score[i]
  *         if t.is_maximizing[par]:
  *             if child_score > t.score[par]:             # <<<<<<<<<<<<<<
@@ -7032,7 +7271,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
       __pyx_t_4 = (__pyx_v_child_score > (__pyx_v_t->score[__pyx_v_par]));
       if (__pyx_t_4) {
 
-        /* "fast_chess.pyx":223
+        /* "fast_chess.pyx":239
  *         if t.is_maximizing[par]:
  *             if child_score > t.score[par]:
  *                 t.score[par] = child_score             # <<<<<<<<<<<<<<
@@ -7041,7 +7280,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
         (__pyx_v_t->score[__pyx_v_par]) = __pyx_v_child_score;
 
-        /* "fast_chess.pyx":222
+        /* "fast_chess.pyx":238
  *         child_score = t.score[i]
  *         if t.is_maximizing[par]:
  *             if child_score > t.score[par]:             # <<<<<<<<<<<<<<
@@ -7050,7 +7289,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
       }
 
-      /* "fast_chess.pyx":221
+      /* "fast_chess.pyx":237
  *             continue
  *         child_score = t.score[i]
  *         if t.is_maximizing[par]:             # <<<<<<<<<<<<<<
@@ -7060,7 +7299,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
       goto __pyx_L12;
     }
 
-    /* "fast_chess.pyx":225
+    /* "fast_chess.pyx":241
  *                 t.score[par] = child_score
  *         else:
  *             if child_score < t.score[par]:             # <<<<<<<<<<<<<<
@@ -7071,7 +7310,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
       __pyx_t_4 = (__pyx_v_child_score < (__pyx_v_t->score[__pyx_v_par]));
       if (__pyx_t_4) {
 
-        /* "fast_chess.pyx":226
+        /* "fast_chess.pyx":242
  *         else:
  *             if child_score < t.score[par]:
  *                 t.score[par] = child_score             # <<<<<<<<<<<<<<
@@ -7080,7 +7319,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
 */
         (__pyx_v_t->score[__pyx_v_par]) = __pyx_v_child_score;
 
-        /* "fast_chess.pyx":225
+        /* "fast_chess.pyx":241
  *                 t.score[par] = child_score
  *         else:
  *             if child_score < t.score[par]:             # <<<<<<<<<<<<<<
@@ -7093,7 +7332,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
     __pyx_L9_continue:;
   }
 
-  /* "fast_chess.pyx":193
+  /* "fast_chess.pyx":209
  * 
  * 
  * cdef void ftree_propagate(FlatTree* t, float* eval_scores) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -7104,7 +7343,7 @@ static void __pyx_f_10fast_chess_ftree_propagate(struct __pyx_t_10fast_chess_Fla
   /* function exit code */
 }
 
-/* "fast_chess.pyx":234
+/* "fast_chess.pyx":250
  *     cdef bint _owns
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -7140,7 +7379,7 @@ static int __pyx_pw_10fast_chess_15FlatTreeWrapper_1__cinit__(PyObject *__pyx_v_
 static int __pyx_pf_10fast_chess_15FlatTreeWrapper___cinit__(struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_v_self) {
   int __pyx_r;
 
-  /* "fast_chess.pyx":235
+  /* "fast_chess.pyx":251
  * 
  *     def __cinit__(self):
  *         self._tree = NULL             # <<<<<<<<<<<<<<
@@ -7149,7 +7388,7 @@ static int __pyx_pf_10fast_chess_15FlatTreeWrapper___cinit__(struct __pyx_obj_10
 */
   __pyx_v_self->_tree = NULL;
 
-  /* "fast_chess.pyx":236
+  /* "fast_chess.pyx":252
  *     def __cinit__(self):
  *         self._tree = NULL
  *         self._owns = False             # <<<<<<<<<<<<<<
@@ -7158,7 +7397,7 @@ static int __pyx_pf_10fast_chess_15FlatTreeWrapper___cinit__(struct __pyx_obj_10
 */
   __pyx_v_self->_owns = 0;
 
-  /* "fast_chess.pyx":234
+  /* "fast_chess.pyx":250
  *     cdef bint _owns
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -7171,7 +7410,7 @@ static int __pyx_pf_10fast_chess_15FlatTreeWrapper___cinit__(struct __pyx_obj_10
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":238
+/* "fast_chess.pyx":254
  *         self._owns = False
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
@@ -7191,7 +7430,7 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wrap", 0);
 
-  /* "fast_chess.pyx":240
+  /* "fast_chess.pyx":256
  *     @staticmethod
  *     cdef FlatTreeWrapper wrap(FlatTree* tree):
  *         cdef FlatTreeWrapper w = FlatTreeWrapper()             # <<<<<<<<<<<<<<
@@ -7204,13 +7443,13 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
     PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_mstate_global->__pyx_ptype_10fast_chess_FlatTreeWrapper, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_GOTREF((PyObject *)__pyx_t_1);
   }
   __pyx_v_w = ((struct __pyx_obj_10fast_chess_FlatTreeWrapper *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":241
+  /* "fast_chess.pyx":257
  *     cdef FlatTreeWrapper wrap(FlatTree* tree):
  *         cdef FlatTreeWrapper w = FlatTreeWrapper()
  *         w._tree = tree             # <<<<<<<<<<<<<<
@@ -7219,7 +7458,7 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
 */
   __pyx_v_w->_tree = __pyx_v_tree;
 
-  /* "fast_chess.pyx":242
+  /* "fast_chess.pyx":258
  *         cdef FlatTreeWrapper w = FlatTreeWrapper()
  *         w._tree = tree
  *         w._owns = True             # <<<<<<<<<<<<<<
@@ -7228,7 +7467,7 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
 */
   __pyx_v_w->_owns = 1;
 
-  /* "fast_chess.pyx":243
+  /* "fast_chess.pyx":259
  *         w._tree = tree
  *         w._owns = True
  *         return w             # <<<<<<<<<<<<<<
@@ -7240,7 +7479,7 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
   __pyx_r = __pyx_v_w;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":238
+  /* "fast_chess.pyx":254
  *         self._owns = False
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
@@ -7261,7 +7500,7 @@ static struct __pyx_obj_10fast_chess_FlatTreeWrapper *__pyx_f_10fast_chess_15Fla
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":245
+/* "fast_chess.pyx":261
  *         return w
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -7286,7 +7525,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
   int __pyx_t_1;
   int __pyx_t_2;
 
-  /* "fast_chess.pyx":246
+  /* "fast_chess.pyx":262
  * 
  *     def __dealloc__(self):
  *         if self._owns and self._tree != NULL:             # <<<<<<<<<<<<<<
@@ -7303,7 +7542,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "fast_chess.pyx":247
+    /* "fast_chess.pyx":263
  *     def __dealloc__(self):
  *         if self._owns and self._tree != NULL:
  *             ftree_destroy(self._tree)             # <<<<<<<<<<<<<<
@@ -7312,7 +7551,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
 */
     __pyx_f_10fast_chess_ftree_destroy(__pyx_v_self->_tree);
 
-    /* "fast_chess.pyx":248
+    /* "fast_chess.pyx":264
  *         if self._owns and self._tree != NULL:
  *             ftree_destroy(self._tree)
  *             self._tree = NULL             # <<<<<<<<<<<<<<
@@ -7321,7 +7560,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
 */
     __pyx_v_self->_tree = NULL;
 
-    /* "fast_chess.pyx":246
+    /* "fast_chess.pyx":262
  * 
  *     def __dealloc__(self):
  *         if self._owns and self._tree != NULL:             # <<<<<<<<<<<<<<
@@ -7330,7 +7569,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
 */
   }
 
-  /* "fast_chess.pyx":245
+  /* "fast_chess.pyx":261
  *         return w
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -7341,7 +7580,7 @@ static void __pyx_pf_10fast_chess_15FlatTreeWrapper_2__dealloc__(struct __pyx_ob
   /* function exit code */
 }
 
-/* "fast_chess.pyx":250
+/* "fast_chess.pyx":266
  *             self._tree = NULL
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -7375,7 +7614,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_10node_count___get__(st
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "fast_chess.pyx":252
+  /* "fast_chess.pyx":268
  *     @property
  *     def node_count(self):
  *         return self._tree.count if self._tree else 0             # <<<<<<<<<<<<<<
@@ -7385,7 +7624,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_10node_count___get__(st
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2 = (__pyx_v_self->_tree != 0);
   if (__pyx_t_2) {
-    __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_self->_tree->count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_self->_tree->count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_1 = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -7397,7 +7636,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_10node_count___get__(st
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":250
+  /* "fast_chess.pyx":266
  *             self._tree = NULL
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -7417,7 +7656,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_10node_count___get__(st
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":254
+/* "fast_chess.pyx":270
  *         return self._tree.count if self._tree else 0
  * 
  *     def propagate_and_best_move(self, evaluator, root_child_info: list,             # <<<<<<<<<<<<<<
@@ -7467,46 +7706,46 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_evaluator,&__pyx_mstate_global->__pyx_n_u_root_child_info,&__pyx_mstate_global->__pyx_n_u_maximizing,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 254, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 270, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 254, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 270, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 254, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 270, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 254, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 270, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "propagate_and_best_move", 0) < (0)) __PYX_ERR(0, 254, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "propagate_and_best_move", 0) < (0)) __PYX_ERR(0, 270, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 3; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("propagate_and_best_move", 1, 3, 3, i); __PYX_ERR(0, 254, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("propagate_and_best_move", 1, 3, 3, i); __PYX_ERR(0, 270, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 254, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 270, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 254, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 270, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 254, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 270, __pyx_L3_error)
     }
     __pyx_v_evaluator = values[0];
     __pyx_v_root_child_info = ((PyObject*)values[1]);
-    __pyx_v_maximizing = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_maximizing == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 255, __pyx_L3_error)
+    __pyx_v_maximizing = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_maximizing == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 271, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("propagate_and_best_move", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 254, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("propagate_and_best_move", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 270, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7517,7 +7756,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_root_child_info), (&PyList_Type), 0, "root_child_info", 2))) __PYX_ERR(0, 254, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_root_child_info), (&PyList_Type), 0, "root_child_info", 2))) __PYX_ERR(0, 270, __pyx_L1_error)
   __pyx_r = __pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_move(((struct __pyx_obj_10fast_chess_FlatTreeWrapper *)__pyx_v_self), __pyx_v_evaluator, __pyx_v_root_child_info, __pyx_v_maximizing);
 
   /* function exit code */
@@ -7571,7 +7810,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("propagate_and_best_move", 0);
 
-  /* "fast_chess.pyx":265
+  /* "fast_chess.pyx":281
  *         Returns (best_move, best_score)
  *         """
  *         cdef FlatTree* t = self._tree             # <<<<<<<<<<<<<<
@@ -7581,7 +7820,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   __pyx_t_1 = __pyx_v_self->_tree;
   __pyx_v_t = __pyx_t_1;
 
-  /* "fast_chess.pyx":266
+  /* "fast_chess.pyx":282
  *         """
  *         cdef FlatTree* t = self._tree
  *         if t == NULL or t.count == 0:             # <<<<<<<<<<<<<<
@@ -7599,7 +7838,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "fast_chess.pyx":267
+    /* "fast_chess.pyx":283
  *         cdef FlatTree* t = self._tree
  *         if t == NULL or t.count == 0:
  *             return None, 0.0             # <<<<<<<<<<<<<<
@@ -7611,7 +7850,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     __pyx_r = __pyx_mstate_global->__pyx_tuple[0];
     goto __pyx_L0;
 
-    /* "fast_chess.pyx":266
+    /* "fast_chess.pyx":282
  *         """
  *         cdef FlatTree* t = self._tree
  *         if t == NULL or t.count == 0:             # <<<<<<<<<<<<<<
@@ -7620,7 +7859,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   }
 
-  /* "fast_chess.pyx":270
+  /* "fast_chess.pyx":286
  * 
  *         # Build eval_scores array from evaluator
  *         cdef int n_leaves = 0             # <<<<<<<<<<<<<<
@@ -7629,7 +7868,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   __pyx_v_n_leaves = 0;
 
-  /* "fast_chess.pyx":272
+  /* "fast_chess.pyx":288
  *         cdef int n_leaves = 0
  *         cdef int i
  *         for i in range(t.count):             # <<<<<<<<<<<<<<
@@ -7641,7 +7880,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "fast_chess.pyx":273
+    /* "fast_chess.pyx":289
  *         cdef int i
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7651,7 +7890,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     __pyx_t_2 = ((__pyx_v_t->is_leaf[__pyx_v_i]) != 0);
     if (__pyx_t_2) {
 
-      /* "fast_chess.pyx":274
+      /* "fast_chess.pyx":290
  *         for i in range(t.count):
  *             if t.is_leaf[i]:
  *                 n_leaves += 1             # <<<<<<<<<<<<<<
@@ -7660,7 +7899,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       __pyx_v_n_leaves = (__pyx_v_n_leaves + 1);
 
-      /* "fast_chess.pyx":273
+      /* "fast_chess.pyx":289
  *         cdef int i
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7670,7 +7909,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     }
   }
 
-  /* "fast_chess.pyx":276
+  /* "fast_chess.pyx":292
  *                 n_leaves += 1
  * 
  *         cdef float* eval_scores = <float*>malloc(n_leaves * sizeof(float))             # <<<<<<<<<<<<<<
@@ -7679,7 +7918,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   __pyx_v_eval_scores = ((float *)malloc((__pyx_v_n_leaves * (sizeof(float)))));
 
-  /* "fast_chess.pyx":277
+  /* "fast_chess.pyx":293
  * 
  *         cdef float* eval_scores = <float*>malloc(n_leaves * sizeof(float))
  *         cdef int leaf_idx = 0             # <<<<<<<<<<<<<<
@@ -7688,7 +7927,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   __pyx_v_leaf_idx = 0;
 
-  /* "fast_chess.pyx":278
+  /* "fast_chess.pyx":294
  *         cdef float* eval_scores = <float*>malloc(n_leaves * sizeof(float))
  *         cdef int leaf_idx = 0
  *         for i in range(t.count):             # <<<<<<<<<<<<<<
@@ -7700,7 +7939,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "fast_chess.pyx":279
+    /* "fast_chess.pyx":295
  *         cdef int leaf_idx = 0
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7710,7 +7949,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     __pyx_t_2 = ((__pyx_v_t->is_leaf[__pyx_v_i]) != 0);
     if (__pyx_t_2) {
 
-      /* "fast_chess.pyx":280
+      /* "fast_chess.pyx":296
  *         for i in range(t.count):
  *             if t.is_leaf[i]:
  *                 eval_scores[leaf_idx] = evaluator.get_score(t.eval_idx[i])             # <<<<<<<<<<<<<<
@@ -7719,7 +7958,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       __pyx_t_8 = __pyx_v_evaluator;
       __Pyx_INCREF(__pyx_t_8);
-      __pyx_t_9 = __Pyx_PyLong_From_int((__pyx_v_t->eval_idx[__pyx_v_i])); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 280, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyLong_From_int((__pyx_v_t->eval_idx[__pyx_v_i])); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 296, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __pyx_t_10 = 0;
       {
@@ -7727,14 +7966,14 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
         __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_score, __pyx_callargs+__pyx_t_10, (2-__pyx_t_10) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 280, __pyx_L1_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 296, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
       }
-      __pyx_t_11 = __Pyx_PyFloat_AsFloat(__pyx_t_7); if (unlikely((__pyx_t_11 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 280, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyFloat_AsFloat(__pyx_t_7); if (unlikely((__pyx_t_11 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 296, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       (__pyx_v_eval_scores[__pyx_v_leaf_idx]) = __pyx_t_11;
 
-      /* "fast_chess.pyx":281
+      /* "fast_chess.pyx":297
  *             if t.is_leaf[i]:
  *                 eval_scores[leaf_idx] = evaluator.get_score(t.eval_idx[i])
  *                 leaf_idx += 1             # <<<<<<<<<<<<<<
@@ -7743,7 +7982,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       __pyx_v_leaf_idx = (__pyx_v_leaf_idx + 1);
 
-      /* "fast_chess.pyx":279
+      /* "fast_chess.pyx":295
  *         cdef int leaf_idx = 0
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7753,7 +7992,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     }
   }
 
-  /* "fast_chess.pyx":284
+  /* "fast_chess.pyx":300
  * 
  *         # Remap eval_idx to sequential leaf index for propagation
  *         leaf_idx = 0             # <<<<<<<<<<<<<<
@@ -7762,7 +8001,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   __pyx_v_leaf_idx = 0;
 
-  /* "fast_chess.pyx":285
+  /* "fast_chess.pyx":301
  *         # Remap eval_idx to sequential leaf index for propagation
  *         leaf_idx = 0
  *         for i in range(t.count):             # <<<<<<<<<<<<<<
@@ -7774,7 +8013,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "fast_chess.pyx":286
+    /* "fast_chess.pyx":302
  *         leaf_idx = 0
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7784,7 +8023,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     __pyx_t_2 = ((__pyx_v_t->is_leaf[__pyx_v_i]) != 0);
     if (__pyx_t_2) {
 
-      /* "fast_chess.pyx":287
+      /* "fast_chess.pyx":303
  *         for i in range(t.count):
  *             if t.is_leaf[i]:
  *                 t.eval_idx[i] = leaf_idx             # <<<<<<<<<<<<<<
@@ -7793,7 +8032,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       (__pyx_v_t->eval_idx[__pyx_v_i]) = __pyx_v_leaf_idx;
 
-      /* "fast_chess.pyx":288
+      /* "fast_chess.pyx":304
  *             if t.is_leaf[i]:
  *                 t.eval_idx[i] = leaf_idx
  *                 leaf_idx += 1             # <<<<<<<<<<<<<<
@@ -7802,7 +8041,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       __pyx_v_leaf_idx = (__pyx_v_leaf_idx + 1);
 
-      /* "fast_chess.pyx":286
+      /* "fast_chess.pyx":302
  *         leaf_idx = 0
  *         for i in range(t.count):
  *             if t.is_leaf[i]:             # <<<<<<<<<<<<<<
@@ -7812,7 +8051,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     }
   }
 
-  /* "fast_chess.pyx":291
+  /* "fast_chess.pyx":307
  * 
  *         # Propagate
  *         ftree_propagate(t, eval_scores)             # <<<<<<<<<<<<<<
@@ -7821,7 +8060,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   __pyx_f_10fast_chess_ftree_propagate(__pyx_v_t, __pyx_v_eval_scores);
 
-  /* "fast_chess.pyx":292
+  /* "fast_chess.pyx":308
  *         # Propagate
  *         ftree_propagate(t, eval_scores)
  *         free(eval_scores)             # <<<<<<<<<<<<<<
@@ -7830,7 +8069,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
   free(__pyx_v_eval_scores);
 
-  /* "fast_chess.pyx":295
+  /* "fast_chess.pyx":311
  * 
  *         # Pick best root child
  *         cdef float best_score = -1e9 if maximizing else 1e9             # <<<<<<<<<<<<<<
@@ -7844,7 +8083,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   }
   __pyx_v_best_score = __pyx_t_12;
 
-  /* "fast_chess.pyx":296
+  /* "fast_chess.pyx":312
  *         # Pick best root child
  *         cdef float best_score = -1e9 if maximizing else 1e9
  *         best_move = None             # <<<<<<<<<<<<<<
@@ -7854,7 +8093,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   __Pyx_INCREF(Py_None);
   __pyx_v_best_move = Py_None;
 
-  /* "fast_chess.pyx":298
+  /* "fast_chess.pyx":314
  *         best_move = None
  * 
  *         for child_idx, move in root_child_info:             # <<<<<<<<<<<<<<
@@ -7867,13 +8106,13 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     {
       Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_7);
       #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 298, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 314, __pyx_L1_error)
       #endif
       if (__pyx_t_13 >= __pyx_temp) break;
     }
     __pyx_t_9 = __Pyx_PyList_GetItemRefFast(__pyx_t_7, __pyx_t_13, __Pyx_ReferenceSharing_OwnStrongReference);
     ++__pyx_t_13;
-    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 298, __pyx_L1_error)
+    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 314, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     if ((likely(PyTuple_CheckExact(__pyx_t_9))) || (PyList_CheckExact(__pyx_t_9))) {
       PyObject* sequence = __pyx_t_9;
@@ -7881,7 +8120,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 298, __pyx_L1_error)
+        __PYX_ERR(0, 314, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -7891,22 +8130,22 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
         __Pyx_INCREF(__pyx_t_14);
       } else {
         __pyx_t_8 = __Pyx_PyList_GetItemRefFast(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 298, __pyx_L1_error)
+        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 314, __pyx_L1_error)
         __Pyx_XGOTREF(__pyx_t_8);
         __pyx_t_14 = __Pyx_PyList_GetItemRefFast(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-        if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 298, __pyx_L1_error)
+        if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 314, __pyx_L1_error)
         __Pyx_XGOTREF(__pyx_t_14);
       }
       #else
-      __pyx_t_8 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 314, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_14 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 314, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_14);
       #endif
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_15 = PyObject_GetIter(__pyx_t_9); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 298, __pyx_L1_error)
+      __pyx_t_15 = PyObject_GetIter(__pyx_t_9); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 314, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_15);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __pyx_t_16 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_15);
@@ -7914,7 +8153,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
       __Pyx_GOTREF(__pyx_t_8);
       index = 1; __pyx_t_14 = __pyx_t_16(__pyx_t_15); if (unlikely(!__pyx_t_14)) goto __pyx_L17_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_14);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_15), 2) < (0)) __PYX_ERR(0, 298, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_15), 2) < (0)) __PYX_ERR(0, 314, __pyx_L1_error)
       __pyx_t_16 = NULL;
       __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
       goto __pyx_L18_unpacking_done;
@@ -7922,7 +8161,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
       __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
       __pyx_t_16 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 298, __pyx_L1_error)
+      __PYX_ERR(0, 314, __pyx_L1_error)
       __pyx_L18_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_child_idx, __pyx_t_8);
@@ -7930,22 +8169,22 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     __Pyx_XDECREF_SET(__pyx_v_move, __pyx_t_14);
     __pyx_t_14 = 0;
 
-    /* "fast_chess.pyx":299
+    /* "fast_chess.pyx":315
  * 
  *         for child_idx, move in root_child_info:
  *             if child_idx >= t.count:             # <<<<<<<<<<<<<<
  *                 continue
  *             if maximizing:
 */
-    __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_t->count); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_t->count); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 315, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
-    __pyx_t_14 = PyObject_RichCompare(__pyx_v_child_idx, __pyx_t_9, Py_GE); __Pyx_XGOTREF(__pyx_t_14); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 299, __pyx_L1_error)
+    __pyx_t_14 = PyObject_RichCompare(__pyx_v_child_idx, __pyx_t_9, Py_GE); __Pyx_XGOTREF(__pyx_t_14); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 315, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_14); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 299, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_14); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 315, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
     if (__pyx_t_2) {
 
-      /* "fast_chess.pyx":300
+      /* "fast_chess.pyx":316
  *         for child_idx, move in root_child_info:
  *             if child_idx >= t.count:
  *                 continue             # <<<<<<<<<<<<<<
@@ -7954,7 +8193,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       goto __pyx_L15_continue;
 
-      /* "fast_chess.pyx":299
+      /* "fast_chess.pyx":315
  * 
  *         for child_idx, move in root_child_info:
  *             if child_idx >= t.count:             # <<<<<<<<<<<<<<
@@ -7963,7 +8202,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
     }
 
-    /* "fast_chess.pyx":301
+    /* "fast_chess.pyx":317
  *             if child_idx >= t.count:
  *                 continue
  *             if maximizing:             # <<<<<<<<<<<<<<
@@ -7972,28 +8211,28 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
     if (__pyx_v_maximizing) {
 
-      /* "fast_chess.pyx":302
+      /* "fast_chess.pyx":318
  *                 continue
  *             if maximizing:
  *                 if t.score[child_idx] > best_score:             # <<<<<<<<<<<<<<
  *                     best_score = t.score[child_idx]
  *                     best_move = move
 */
-      __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 302, __pyx_L1_error)
+      __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 318, __pyx_L1_error)
       __pyx_t_2 = ((__pyx_v_t->score[__pyx_t_17]) > __pyx_v_best_score);
       if (__pyx_t_2) {
 
-        /* "fast_chess.pyx":303
+        /* "fast_chess.pyx":319
  *             if maximizing:
  *                 if t.score[child_idx] > best_score:
  *                     best_score = t.score[child_idx]             # <<<<<<<<<<<<<<
  *                     best_move = move
  *             else:
 */
-        __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 303, __pyx_L1_error)
+        __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 319, __pyx_L1_error)
         __pyx_v_best_score = (__pyx_v_t->score[__pyx_t_17]);
 
-        /* "fast_chess.pyx":304
+        /* "fast_chess.pyx":320
  *                 if t.score[child_idx] > best_score:
  *                     best_score = t.score[child_idx]
  *                     best_move = move             # <<<<<<<<<<<<<<
@@ -8003,7 +8242,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
         __Pyx_INCREF(__pyx_v_move);
         __Pyx_DECREF_SET(__pyx_v_best_move, __pyx_v_move);
 
-        /* "fast_chess.pyx":302
+        /* "fast_chess.pyx":318
  *                 continue
  *             if maximizing:
  *                 if t.score[child_idx] > best_score:             # <<<<<<<<<<<<<<
@@ -8012,7 +8251,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
 */
       }
 
-      /* "fast_chess.pyx":301
+      /* "fast_chess.pyx":317
  *             if child_idx >= t.count:
  *                 continue
  *             if maximizing:             # <<<<<<<<<<<<<<
@@ -8022,7 +8261,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
       goto __pyx_L20;
     }
 
-    /* "fast_chess.pyx":306
+    /* "fast_chess.pyx":322
  *                     best_move = move
  *             else:
  *                 if t.score[child_idx] < best_score:             # <<<<<<<<<<<<<<
@@ -8030,21 +8269,21 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
  *                     best_move = move
 */
     /*else*/ {
-      __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 306, __pyx_L1_error)
+      __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 322, __pyx_L1_error)
       __pyx_t_2 = ((__pyx_v_t->score[__pyx_t_17]) < __pyx_v_best_score);
       if (__pyx_t_2) {
 
-        /* "fast_chess.pyx":307
+        /* "fast_chess.pyx":323
  *             else:
  *                 if t.score[child_idx] < best_score:
  *                     best_score = t.score[child_idx]             # <<<<<<<<<<<<<<
  *                     best_move = move
  * 
 */
-        __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 307, __pyx_L1_error)
+        __pyx_t_17 = __Pyx_PyIndex_AsSsize_t(__pyx_v_child_idx); if (unlikely((__pyx_t_17 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 323, __pyx_L1_error)
         __pyx_v_best_score = (__pyx_v_t->score[__pyx_t_17]);
 
-        /* "fast_chess.pyx":308
+        /* "fast_chess.pyx":324
  *                 if t.score[child_idx] < best_score:
  *                     best_score = t.score[child_idx]
  *                     best_move = move             # <<<<<<<<<<<<<<
@@ -8054,7 +8293,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
         __Pyx_INCREF(__pyx_v_move);
         __Pyx_DECREF_SET(__pyx_v_best_move, __pyx_v_move);
 
-        /* "fast_chess.pyx":306
+        /* "fast_chess.pyx":322
  *                     best_move = move
  *             else:
  *                 if t.score[child_idx] < best_score:             # <<<<<<<<<<<<<<
@@ -8065,7 +8304,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
     }
     __pyx_L20:;
 
-    /* "fast_chess.pyx":298
+    /* "fast_chess.pyx":314
  *         best_move = None
  * 
  *         for child_idx, move in root_child_info:             # <<<<<<<<<<<<<<
@@ -8076,7 +8315,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "fast_chess.pyx":310
+  /* "fast_chess.pyx":326
  *                     best_move = move
  * 
  *         return best_move, best_score             # <<<<<<<<<<<<<<
@@ -8084,21 +8323,21 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_4propagate_and_best_mov
  * 
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_best_score); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 310, __pyx_L1_error)
+  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_best_score); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 326, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_14 = PyTuple_New(2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 310, __pyx_L1_error)
+  __pyx_t_14 = PyTuple_New(2); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 326, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
   __Pyx_INCREF(__pyx_v_best_move);
   __Pyx_GIVEREF(__pyx_v_best_move);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_v_best_move) != (0)) __PYX_ERR(0, 310, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_v_best_move) != (0)) __PYX_ERR(0, 326, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_7);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_14, 1, __pyx_t_7) != (0)) __PYX_ERR(0, 310, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_14, 1, __pyx_t_7) != (0)) __PYX_ERR(0, 326, __pyx_L1_error);
   __pyx_t_7 = 0;
   __pyx_r = ((PyObject*)__pyx_t_14);
   __pyx_t_14 = 0;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":254
+  /* "fast_chess.pyx":270
  *         return self._tree.count if self._tree else 0
  * 
  *     def propagate_and_best_move(self, evaluator, root_child_info: list,             # <<<<<<<<<<<<<<
@@ -8328,7 +8567,7 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_8__setstate_cython__(CY
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":313
+/* "fast_chess.pyx":329
  * 
  * 
  * def expand_tree(board, int max_depth, bint root_maximizing,             # <<<<<<<<<<<<<<
@@ -8337,16 +8576,16 @@ static PyObject *__pyx_pf_10fast_chess_15FlatTreeWrapper_8__setstate_cython__(CY
 */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10fast_chess_5expand_tree(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10fast_chess_7expand_tree(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_10fast_chess_4expand_tree, "\n    Expand full game tree and collect leaves for batched GPU evaluation.\n    \n    Returns (FlatTreeWrapper, root_child_info_list).\n    \n    After calling evaluator.flush(), call:\n        wrapper.propagate_and_best_move(evaluator, root_child_info, maximizing)\n    ");
-static PyMethodDef __pyx_mdef_10fast_chess_5expand_tree = {"expand_tree", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_5expand_tree, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_4expand_tree};
-static PyObject *__pyx_pw_10fast_chess_5expand_tree(PyObject *__pyx_self, 
+PyDoc_STRVAR(__pyx_doc_10fast_chess_6expand_tree, "\n    Expand full game tree and collect leaves for batched GPU evaluation.\n    \n    Returns (FlatTreeWrapper, root_child_info_list).\n    \n    After calling evaluator.flush(), call:\n        wrapper.propagate_and_best_move(evaluator, root_child_info, maximizing)\n    ");
+static PyMethodDef __pyx_mdef_10fast_chess_7expand_tree = {"expand_tree", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_7expand_tree, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_6expand_tree};
+static PyObject *__pyx_pw_10fast_chess_7expand_tree(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -8379,53 +8618,53 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_board,&__pyx_mstate_global->__pyx_n_u_max_depth,&__pyx_mstate_global->__pyx_n_u_root_maximizing,&__pyx_mstate_global->__pyx_n_u_evaluator,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 313, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 329, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 313, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 329, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 313, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 329, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 313, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 329, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 313, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 329, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "expand_tree", 0) < (0)) __PYX_ERR(0, 313, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "expand_tree", 0) < (0)) __PYX_ERR(0, 329, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 4; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("expand_tree", 1, 4, 4, i); __PYX_ERR(0, 313, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("expand_tree", 1, 4, 4, i); __PYX_ERR(0, 329, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 4)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 313, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 329, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 313, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 329, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 313, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 329, __pyx_L3_error)
       values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 313, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 329, __pyx_L3_error)
     }
     __pyx_v_board = values[0];
-    __pyx_v_max_depth = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_max_depth == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 313, __pyx_L3_error)
-    __pyx_v_root_maximizing = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_root_maximizing == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 313, __pyx_L3_error)
+    __pyx_v_max_depth = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_max_depth == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 329, __pyx_L3_error)
+    __pyx_v_root_maximizing = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_root_maximizing == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 329, __pyx_L3_error)
     __pyx_v_evaluator = values[3];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("expand_tree", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 313, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("expand_tree", 1, 4, 4, __pyx_nargs); __PYX_ERR(0, 329, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -8436,7 +8675,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10fast_chess_4expand_tree(__pyx_self, __pyx_v_board, __pyx_v_max_depth, __pyx_v_root_maximizing, __pyx_v_evaluator);
+  __pyx_r = __pyx_pf_10fast_chess_6expand_tree(__pyx_self, __pyx_v_board, __pyx_v_max_depth, __pyx_v_root_maximizing, __pyx_v_evaluator);
 
   /* function exit code */
   for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
@@ -8446,7 +8685,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, int __pyx_v_max_depth, int __pyx_v_root_maximizing, PyObject *__pyx_v_evaluator) {
+static PyObject *__pyx_pf_10fast_chess_6expand_tree(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, int __pyx_v_max_depth, int __pyx_v_root_maximizing, PyObject *__pyx_v_evaluator) {
   struct __pyx_t_10fast_chess_FlatTree *__pyx_v_tree;
   PyObject *__pyx_v_leaf_boards = 0;
   PyObject *__pyx_v_root_child_info = 0;
@@ -8463,7 +8702,7 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("expand_tree", 0);
 
-  /* "fast_chess.pyx":323
+  /* "fast_chess.pyx":339
  *         wrapper.propagate_and_best_move(evaluator, root_child_info, maximizing)
  *     """
  *     cdef FlatTree* tree = ftree_create(MAX_TREE_NODES)             # <<<<<<<<<<<<<<
@@ -8472,31 +8711,31 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
 */
   __pyx_v_tree = __pyx_f_10fast_chess_ftree_create(0x1E8480);
 
-  /* "fast_chess.pyx":324
+  /* "fast_chess.pyx":340
  *     """
  *     cdef FlatTree* tree = ftree_create(MAX_TREE_NODES)
  *     cdef list leaf_boards = []             # <<<<<<<<<<<<<<
  *     cdef list root_child_info = []
  * 
 */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 324, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_leaf_boards = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":325
+  /* "fast_chess.pyx":341
  *     cdef FlatTree* tree = ftree_create(MAX_TREE_NODES)
  *     cdef list leaf_boards = []
  *     cdef list root_child_info = []             # <<<<<<<<<<<<<<
  * 
  *     # Add root
 */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_root_child_info = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":328
+  /* "fast_chess.pyx":344
  * 
  *     # Add root
  *     cdef int root_idx = ftree_add(tree, -1, 1 if root_maximizing else 0, 0, -1)             # <<<<<<<<<<<<<<
@@ -8510,16 +8749,16 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
   }
   __pyx_v_root_idx = __pyx_f_10fast_chess_ftree_add(__pyx_v_tree, -1, __pyx_t_2, 0, -1);
 
-  /* "fast_chess.pyx":331
+  /* "fast_chess.pyx":347
  * 
  *     # Expand
  *     _expand_recursive(board, tree, root_idx, max_depth,             # <<<<<<<<<<<<<<
  *                       not root_maximizing,
  *                       leaf_boards, root_child_info, root_idx)
 */
-  __pyx_f_10fast_chess__expand_recursive(__pyx_v_board, __pyx_v_tree, __pyx_v_root_idx, __pyx_v_max_depth, (!__pyx_v_root_maximizing), __pyx_v_leaf_boards, __pyx_v_root_child_info, __pyx_v_root_idx); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 331, __pyx_L1_error)
+  __pyx_f_10fast_chess__expand_recursive(__pyx_v_board, __pyx_v_tree, __pyx_v_root_idx, __pyx_v_max_depth, (!__pyx_v_root_maximizing), __pyx_v_leaf_boards, __pyx_v_root_child_info, __pyx_v_root_idx); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 347, __pyx_L1_error)
 
-  /* "fast_chess.pyx":336
+  /* "fast_chess.pyx":352
  * 
  *     # Batch-enqueue all leaves
  *     if leaf_boards:             # <<<<<<<<<<<<<<
@@ -8528,13 +8767,13 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
 */
   {
     Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_v_leaf_boards);
-    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 336, __pyx_L1_error)
+    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 352, __pyx_L1_error)
     __pyx_t_3 = (__pyx_temp != 0);
   }
 
   if (__pyx_t_3) {
 
-    /* "fast_chess.pyx":337
+    /* "fast_chess.pyx":353
  *     # Batch-enqueue all leaves
  *     if leaf_boards:
  *         evaluator.enqueue_batch(leaf_boards)             # <<<<<<<<<<<<<<
@@ -8548,12 +8787,12 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
       PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_leaf_boards};
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_enqueue_batch, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 337, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 353, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "fast_chess.pyx":336
+    /* "fast_chess.pyx":352
  * 
  *     # Batch-enqueue all leaves
  *     if leaf_boards:             # <<<<<<<<<<<<<<
@@ -8562,7 +8801,7 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
 */
   }
 
-  /* "fast_chess.pyx":339
+  /* "fast_chess.pyx":355
  *         evaluator.enqueue_batch(leaf_boards)
  * 
  *     return FlatTreeWrapper.wrap(tree), root_child_info             # <<<<<<<<<<<<<<
@@ -8570,21 +8809,21 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
  * 
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_10fast_chess_15FlatTreeWrapper_wrap(__pyx_v_tree)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_10fast_chess_15FlatTreeWrapper_wrap(__pyx_v_tree)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 355, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 355, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 339, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 355, __pyx_L1_error);
   __Pyx_INCREF(__pyx_v_root_child_info);
   __Pyx_GIVEREF(__pyx_v_root_child_info);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_root_child_info) != (0)) __PYX_ERR(0, 339, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_root_child_info) != (0)) __PYX_ERR(0, 355, __pyx_L1_error);
   __pyx_t_1 = 0;
   __pyx_r = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":313
+  /* "fast_chess.pyx":329
  * 
  * 
  * def expand_tree(board, int max_depth, bint root_maximizing,             # <<<<<<<<<<<<<<
@@ -8606,7 +8845,7 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":346
+/* "fast_chess.pyx":362
  * #
  * 
  * def outcome_weight(int ply, int total_plies) -> float:             # <<<<<<<<<<<<<<
@@ -8615,15 +8854,15 @@ static PyObject *__pyx_pf_10fast_chess_4expand_tree(CYTHON_UNUSED PyObject *__py
 */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10fast_chess_7outcome_weight(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10fast_chess_9outcome_weight(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_10fast_chess_7outcome_weight = {"outcome_weight", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_7outcome_weight, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10fast_chess_7outcome_weight(PyObject *__pyx_self, 
+static PyMethodDef __pyx_mdef_10fast_chess_9outcome_weight = {"outcome_weight", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_9outcome_weight, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_10fast_chess_9outcome_weight(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -8654,39 +8893,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_ply,&__pyx_mstate_global->__pyx_n_u_total_plies,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 346, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 362, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 346, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 362, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 346, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 362, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "outcome_weight", 0) < (0)) __PYX_ERR(0, 346, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "outcome_weight", 0) < (0)) __PYX_ERR(0, 362, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("outcome_weight", 1, 2, 2, i); __PYX_ERR(0, 346, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("outcome_weight", 1, 2, 2, i); __PYX_ERR(0, 362, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 346, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 362, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 346, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 362, __pyx_L3_error)
     }
-    __pyx_v_ply = __Pyx_PyLong_As_int(values[0]); if (unlikely((__pyx_v_ply == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 346, __pyx_L3_error)
-    __pyx_v_total_plies = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_total_plies == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 346, __pyx_L3_error)
+    __pyx_v_ply = __Pyx_PyLong_As_int(values[0]); if (unlikely((__pyx_v_ply == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 362, __pyx_L3_error)
+    __pyx_v_total_plies = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_total_plies == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 362, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("outcome_weight", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 346, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("outcome_weight", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 362, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -8697,7 +8936,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10fast_chess_6outcome_weight(__pyx_self, __pyx_v_ply, __pyx_v_total_plies);
+  __pyx_r = __pyx_pf_10fast_chess_8outcome_weight(__pyx_self, __pyx_v_ply, __pyx_v_total_plies);
 
   /* function exit code */
   for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
@@ -8707,7 +8946,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_ply, int __pyx_v_total_plies) {
+static PyObject *__pyx_pf_10fast_chess_8outcome_weight(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_ply, int __pyx_v_total_plies) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -8717,7 +8956,7 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("outcome_weight", 0);
 
-  /* "fast_chess.pyx":347
+  /* "fast_chess.pyx":363
  * 
  * def outcome_weight(int ply, int total_plies) -> float:
  *     if total_plies <= 0:             # <<<<<<<<<<<<<<
@@ -8727,7 +8966,7 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
   __pyx_t_1 = (__pyx_v_total_plies <= 0);
   if (__pyx_t_1) {
 
-    /* "fast_chess.pyx":348
+    /* "fast_chess.pyx":364
  * def outcome_weight(int ply, int total_plies) -> float:
  *     if total_plies <= 0:
  *         return 0.5             # <<<<<<<<<<<<<<
@@ -8739,7 +8978,7 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
     __pyx_r = __pyx_mstate_global->__pyx_float_0_5;
     goto __pyx_L0;
 
-    /* "fast_chess.pyx":347
+    /* "fast_chess.pyx":363
  * 
  * def outcome_weight(int ply, int total_plies) -> float:
  *     if total_plies <= 0:             # <<<<<<<<<<<<<<
@@ -8748,7 +8987,7 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
 */
   }
 
-  /* "fast_chess.pyx":349
+  /* "fast_chess.pyx":365
  *     if total_plies <= 0:
  *         return 0.5
  *     return sqrt(<float>ply / <float>total_plies)             # <<<<<<<<<<<<<<
@@ -8756,13 +8995,13 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
  * 
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = PyFloat_FromDouble(sqrt((((float)__pyx_v_ply) / ((float)__pyx_v_total_plies)))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 349, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(sqrt((((float)__pyx_v_ply) / ((float)__pyx_v_total_plies)))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 365, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":346
+  /* "fast_chess.pyx":362
  * #
  * 
  * def outcome_weight(int ply, int total_plies) -> float:             # <<<<<<<<<<<<<<
@@ -8781,7 +9020,7 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":352
+/* "fast_chess.pyx":368
  * 
  * 
  * def batch_outcome_weights(             # <<<<<<<<<<<<<<
@@ -8790,16 +9029,16 @@ static PyObject *__pyx_pf_10fast_chess_6outcome_weight(CYTHON_UNUSED PyObject *_
 */
 
 /* Python wrapper */
-static PyArrayObject *__pyx_pw_10fast_chess_9batch_outcome_weights(PyObject *__pyx_self, 
+static PyArrayObject *__pyx_pw_10fast_chess_11batch_outcome_weights(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_10fast_chess_8batch_outcome_weights, "Compute outcome weights for an array of plies. Pure C loop.");
-static PyMethodDef __pyx_mdef_10fast_chess_9batch_outcome_weights = {"batch_outcome_weights", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_9batch_outcome_weights, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_8batch_outcome_weights};
-static PyArrayObject *__pyx_pw_10fast_chess_9batch_outcome_weights(PyObject *__pyx_self, 
+PyDoc_STRVAR(__pyx_doc_10fast_chess_10batch_outcome_weights, "Compute outcome weights for an array of plies. Pure C loop.");
+static PyMethodDef __pyx_mdef_10fast_chess_11batch_outcome_weights = {"batch_outcome_weights", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_11batch_outcome_weights, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_10batch_outcome_weights};
+static PyArrayObject *__pyx_pw_10fast_chess_11batch_outcome_weights(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -8830,39 +9069,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_plies,&__pyx_mstate_global->__pyx_n_u_total_plies,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 352, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 368, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 352, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 368, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 352, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 368, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "batch_outcome_weights", 0) < (0)) __PYX_ERR(0, 352, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "batch_outcome_weights", 0) < (0)) __PYX_ERR(0, 368, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("batch_outcome_weights", 1, 2, 2, i); __PYX_ERR(0, 352, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("batch_outcome_weights", 1, 2, 2, i); __PYX_ERR(0, 368, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 352, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 368, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 352, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 368, __pyx_L3_error)
     }
     __pyx_v_plies = ((PyArrayObject *)values[0]);
-    __pyx_v_total_plies = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_total_plies == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 354, __pyx_L3_error)
+    __pyx_v_total_plies = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_total_plies == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 370, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("batch_outcome_weights", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 352, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("batch_outcome_weights", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 368, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -8873,8 +9112,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_plies), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "plies", 0))) __PYX_ERR(0, 353, __pyx_L1_error)
-  __pyx_r = __pyx_pf_10fast_chess_8batch_outcome_weights(__pyx_self, __pyx_v_plies, __pyx_v_total_plies);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_plies), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "plies", 0))) __PYX_ERR(0, 369, __pyx_L1_error)
+  __pyx_r = __pyx_pf_10fast_chess_10batch_outcome_weights(__pyx_self, __pyx_v_plies, __pyx_v_total_plies);
 
   /* function exit code */
   goto __pyx_L0;
@@ -8893,7 +9132,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_plies, int __pyx_v_total_plies) {
+static PyArrayObject *__pyx_pf_10fast_chess_10batch_outcome_weights(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_plies, int __pyx_v_total_plies) {
   int __pyx_v_n;
   PyArrayObject *__pyx_v_weights = 0;
   float *__pyx_v_wptr;
@@ -8932,21 +9171,21 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   __pyx_pybuffernd_plies.rcbuffer = &__pyx_pybuffer_plies;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_plies.rcbuffer->pybuffer, (PyObject*)__pyx_v_plies, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int32_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 352, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_plies.rcbuffer->pybuffer, (PyObject*)__pyx_v_plies, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int32_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 368, __pyx_L1_error)
   }
   __pyx_pybuffernd_plies.diminfo[0].strides = __pyx_pybuffernd_plies.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_plies.diminfo[0].shape = __pyx_pybuffernd_plies.rcbuffer->pybuffer.shape[0];
 
-  /* "fast_chess.pyx":357
+  /* "fast_chess.pyx":373
  * ) -> np.ndarray:
  *     """Compute outcome weights for an array of plies. Pure C loop."""
  *     cdef int n = len(plies)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float32_t, ndim=1] weights = np.empty(n, dtype=np.float32)
  *     cdef float* wptr = <float*>weights.data
 */
-  __pyx_t_1 = PyObject_Length(((PyObject *)__pyx_v_plies)); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 357, __pyx_L1_error)
+  __pyx_t_1 = PyObject_Length(((PyObject *)__pyx_v_plies)); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 373, __pyx_L1_error)
   __pyx_v_n = __pyx_t_1;
 
-  /* "fast_chess.pyx":358
+  /* "fast_chess.pyx":374
  *     """Compute outcome weights for an array of plies. Pure C loop."""
  *     cdef int n = len(plies)
  *     cdef np.ndarray[np.float32_t, ndim=1] weights = np.empty(n, dtype=np.float32)             # <<<<<<<<<<<<<<
@@ -8954,16 +9193,16 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
  *     cdef int* pptr = <int*>plies.data
 */
   __pyx_t_3 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 374, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyLong_From_int(__pyx_v_n); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyLong_From_int(__pyx_v_n); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 374, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_float32); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 358, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_float32); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 374, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_8 = 1;
@@ -8980,31 +9219,31 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   #endif
   {
     PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_3, __pyx_t_4};
-    __pyx_t_6 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 358, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 374, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_6, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 358, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_6, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 374, __pyx_L1_error)
     __pyx_t_2 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 358, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 374, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 358, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 374, __pyx_L1_error)
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_2), &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_weights = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 358, __pyx_L1_error)
+      __PYX_ERR(0, 374, __pyx_L1_error)
     } else {__pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
     }
   }
   __pyx_v_weights = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "fast_chess.pyx":359
+  /* "fast_chess.pyx":375
  *     cdef int n = len(plies)
  *     cdef np.ndarray[np.float32_t, ndim=1] weights = np.empty(n, dtype=np.float32)
  *     cdef float* wptr = <float*>weights.data             # <<<<<<<<<<<<<<
@@ -9013,7 +9252,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
 */
   __pyx_v_wptr = ((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_weights)));
 
-  /* "fast_chess.pyx":360
+  /* "fast_chess.pyx":376
  *     cdef np.ndarray[np.float32_t, ndim=1] weights = np.empty(n, dtype=np.float32)
  *     cdef float* wptr = <float*>weights.data
  *     cdef int* pptr = <int*>plies.data             # <<<<<<<<<<<<<<
@@ -9022,7 +9261,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
 */
   __pyx_v_pptr = ((int *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_plies)));
 
-  /* "fast_chess.pyx":361
+  /* "fast_chess.pyx":377
  *     cdef float* wptr = <float*>weights.data
  *     cdef int* pptr = <int*>plies.data
  *     cdef float tp = <float>total_plies             # <<<<<<<<<<<<<<
@@ -9031,7 +9270,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
 */
   __pyx_v_tp = ((float)__pyx_v_total_plies);
 
-  /* "fast_chess.pyx":364
+  /* "fast_chess.pyx":380
  *     cdef int i
  * 
  *     if total_plies <= 0:             # <<<<<<<<<<<<<<
@@ -9041,7 +9280,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   __pyx_t_9 = (__pyx_v_total_plies <= 0);
   if (__pyx_t_9) {
 
-    /* "fast_chess.pyx":365
+    /* "fast_chess.pyx":381
  * 
  *     if total_plies <= 0:
  *         for i in range(n):             # <<<<<<<<<<<<<<
@@ -9053,7 +9292,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_i = __pyx_t_12;
 
-      /* "fast_chess.pyx":366
+      /* "fast_chess.pyx":382
  *     if total_plies <= 0:
  *         for i in range(n):
  *             wptr[i] = 0.5             # <<<<<<<<<<<<<<
@@ -9063,7 +9302,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
       (__pyx_v_wptr[__pyx_v_i]) = 0.5;
     }
 
-    /* "fast_chess.pyx":364
+    /* "fast_chess.pyx":380
  *     cdef int i
  * 
  *     if total_plies <= 0:             # <<<<<<<<<<<<<<
@@ -9073,7 +9312,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
     goto __pyx_L3;
   }
 
-  /* "fast_chess.pyx":368
+  /* "fast_chess.pyx":384
  *             wptr[i] = 0.5
  *     else:
  *         for i in range(n):             # <<<<<<<<<<<<<<
@@ -9086,7 +9325,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_i = __pyx_t_12;
 
-      /* "fast_chess.pyx":369
+      /* "fast_chess.pyx":385
  *     else:
  *         for i in range(n):
  *             wptr[i] = sqrt(<float>pptr[i] / tp)             # <<<<<<<<<<<<<<
@@ -9098,7 +9337,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   }
   __pyx_L3:;
 
-  /* "fast_chess.pyx":370
+  /* "fast_chess.pyx":386
  *         for i in range(n):
  *             wptr[i] = sqrt(<float>pptr[i] / tp)
  *     return weights             # <<<<<<<<<<<<<<
@@ -9110,7 +9349,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   __pyx_r = ((PyArrayObject *)__pyx_v_weights);
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":352
+  /* "fast_chess.pyx":368
  * 
  * 
  * def batch_outcome_weights(             # <<<<<<<<<<<<<<
@@ -9146,7 +9385,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":377
+/* "fast_chess.pyx":393
  * #
  * 
  * def batch_flip_vectors(np.ndarray[np.float32_t, ndim=2] X) -> np.ndarray:             # <<<<<<<<<<<<<<
@@ -9155,16 +9394,16 @@ static PyArrayObject *__pyx_pf_10fast_chess_8batch_outcome_weights(CYTHON_UNUSED
 */
 
 /* Python wrapper */
-static PyArrayObject *__pyx_pw_10fast_chess_11batch_flip_vectors(PyObject *__pyx_self, 
+static PyArrayObject *__pyx_pw_10fast_chess_13batch_flip_vectors(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_10fast_chess_10batch_flip_vectors, "Flip an entire (N, 773) array at C speed.");
-static PyMethodDef __pyx_mdef_10fast_chess_11batch_flip_vectors = {"batch_flip_vectors", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_11batch_flip_vectors, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_10batch_flip_vectors};
-static PyArrayObject *__pyx_pw_10fast_chess_11batch_flip_vectors(PyObject *__pyx_self, 
+PyDoc_STRVAR(__pyx_doc_10fast_chess_12batch_flip_vectors, "Flip an entire (N, 773) array at C speed.");
+static PyMethodDef __pyx_mdef_10fast_chess_13batch_flip_vectors = {"batch_flip_vectors", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_13batch_flip_vectors, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_12batch_flip_vectors};
+static PyArrayObject *__pyx_pw_10fast_chess_13batch_flip_vectors(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -9194,32 +9433,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_X,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 377, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 393, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 377, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 393, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "batch_flip_vectors", 0) < (0)) __PYX_ERR(0, 377, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "batch_flip_vectors", 0) < (0)) __PYX_ERR(0, 393, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("batch_flip_vectors", 1, 1, 1, i); __PYX_ERR(0, 377, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("batch_flip_vectors", 1, 1, 1, i); __PYX_ERR(0, 393, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 377, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 393, __pyx_L3_error)
     }
     __pyx_v_X = ((PyArrayObject *)values[0]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("batch_flip_vectors", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 377, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("batch_flip_vectors", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 393, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9230,8 +9469,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_X), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "X", 0))) __PYX_ERR(0, 377, __pyx_L1_error)
-  __pyx_r = __pyx_pf_10fast_chess_10batch_flip_vectors(__pyx_self, __pyx_v_X);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_X), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "X", 0))) __PYX_ERR(0, 393, __pyx_L1_error)
+  __pyx_r = __pyx_pf_10fast_chess_12batch_flip_vectors(__pyx_self, __pyx_v_X);
 
   /* function exit code */
   goto __pyx_L0;
@@ -9250,7 +9489,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_X) {
+static PyArrayObject *__pyx_pf_10fast_chess_12batch_flip_vectors(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_X) {
   int __pyx_v_n;
   PyArrayObject *__pyx_v_out = 0;
   float *__pyx_v_inp;
@@ -9292,11 +9531,11 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
   __pyx_pybuffernd_X.rcbuffer = &__pyx_pybuffer_X;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_X.rcbuffer->pybuffer, (PyObject*)__pyx_v_X, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 377, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_X.rcbuffer->pybuffer, (PyObject*)__pyx_v_X, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 393, __pyx_L1_error)
   }
   __pyx_pybuffernd_X.diminfo[0].strides = __pyx_pybuffernd_X.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_X.diminfo[0].shape = __pyx_pybuffernd_X.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_X.diminfo[1].strides = __pyx_pybuffernd_X.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_X.diminfo[1].shape = __pyx_pybuffernd_X.rcbuffer->pybuffer.shape[1];
 
-  /* "fast_chess.pyx":379
+  /* "fast_chess.pyx":395
  * def batch_flip_vectors(np.ndarray[np.float32_t, ndim=2] X) -> np.ndarray:
  *     """Flip an entire (N, 773) array at C speed."""
  *     cdef int n = X.shape[0]             # <<<<<<<<<<<<<<
@@ -9305,7 +9544,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
   __pyx_v_n = (__pyx_f_5numpy_7ndarray_5shape_shape(((PyArrayObject *)__pyx_v_X))[0]);
 
-  /* "fast_chess.pyx":380
+  /* "fast_chess.pyx":396
  *     """Flip an entire (N, 773) array at C speed."""
  *     cdef int n = X.shape[0]
  *     cdef np.ndarray[np.float32_t, ndim=2] out = np.empty((n, VEC_DIM), dtype=np.float32)             # <<<<<<<<<<<<<<
@@ -9313,24 +9552,24 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
  *     cdef float* outp = <float*>out.data
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_n); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_n); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 380, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 396, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_int_773);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_int_773);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_mstate_global->__pyx_int_773) != (0)) __PYX_ERR(0, 380, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_mstate_global->__pyx_int_773) != (0)) __PYX_ERR(0, 396, __pyx_L1_error);
   __pyx_t_3 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 380, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 396, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_7 = 1;
@@ -9347,31 +9586,31 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
   #endif
   {
     PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_t_5};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 380, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 396, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_6, __pyx_t_3, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 380, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_6, __pyx_t_3, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 396, __pyx_L1_error)
     __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 380, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 396, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 380, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 396, __pyx_L1_error)
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_out.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_out = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_out.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 380, __pyx_L1_error)
+      __PYX_ERR(0, 396, __pyx_L1_error)
     } else {__pyx_pybuffernd_out.diminfo[0].strides = __pyx_pybuffernd_out.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_out.diminfo[0].shape = __pyx_pybuffernd_out.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_out.diminfo[1].strides = __pyx_pybuffernd_out.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_out.diminfo[1].shape = __pyx_pybuffernd_out.rcbuffer->pybuffer.shape[1];
     }
   }
   __pyx_v_out = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":381
+  /* "fast_chess.pyx":397
  *     cdef int n = X.shape[0]
  *     cdef np.ndarray[np.float32_t, ndim=2] out = np.empty((n, VEC_DIM), dtype=np.float32)
  *     cdef float* inp = <float*>X.data             # <<<<<<<<<<<<<<
@@ -9380,7 +9619,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
   __pyx_v_inp = ((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_X)));
 
-  /* "fast_chess.pyx":382
+  /* "fast_chess.pyx":398
  *     cdef np.ndarray[np.float32_t, ndim=2] out = np.empty((n, VEC_DIM), dtype=np.float32)
  *     cdef float* inp = <float*>X.data
  *     cdef float* outp = <float*>out.data             # <<<<<<<<<<<<<<
@@ -9389,7 +9628,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
   __pyx_v_outp = ((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_out)));
 
-  /* "fast_chess.pyx":385
+  /* "fast_chess.pyx":401
  *     cdef int i, src_plane, dst_plane, sq, off
  * 
  *     for i in range(n):             # <<<<<<<<<<<<<<
@@ -9401,7 +9640,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
   for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
     __pyx_v_i = __pyx_t_10;
 
-    /* "fast_chess.pyx":386
+    /* "fast_chess.pyx":402
  * 
  *     for i in range(n):
  *         off = i * VEC_DIM             # <<<<<<<<<<<<<<
@@ -9410,7 +9649,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     __pyx_v_off = (__pyx_v_i * 0x305);
 
-    /* "fast_chess.pyx":387
+    /* "fast_chess.pyx":403
  *     for i in range(n):
  *         off = i * VEC_DIM
  *         memset(outp + off, 0, VEC_DIM * sizeof(float))             # <<<<<<<<<<<<<<
@@ -9419,7 +9658,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     (void)(memset((__pyx_v_outp + __pyx_v_off), 0, (0x305 * (sizeof(float)))));
 
-    /* "fast_chess.pyx":388
+    /* "fast_chess.pyx":404
  *         off = i * VEC_DIM
  *         memset(outp + off, 0, VEC_DIM * sizeof(float))
  *         for src_plane in range(12):             # <<<<<<<<<<<<<<
@@ -9429,7 +9668,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
     for (__pyx_t_11 = 0; __pyx_t_11 < 12; __pyx_t_11+=1) {
       __pyx_v_src_plane = __pyx_t_11;
 
-      /* "fast_chess.pyx":389
+      /* "fast_chess.pyx":405
  *         memset(outp + off, 0, VEC_DIM * sizeof(float))
  *         for src_plane in range(12):
  *             dst_plane = FLIP_PLANE[src_plane]             # <<<<<<<<<<<<<<
@@ -9438,7 +9677,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
       __pyx_v_dst_plane = (__pyx_v_10fast_chess_FLIP_PLANE[__pyx_v_src_plane]);
 
-      /* "fast_chess.pyx":390
+      /* "fast_chess.pyx":406
  *         for src_plane in range(12):
  *             dst_plane = FLIP_PLANE[src_plane]
  *             for sq in range(64):             # <<<<<<<<<<<<<<
@@ -9448,7 +9687,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
       for (__pyx_t_12 = 0; __pyx_t_12 < 64; __pyx_t_12+=1) {
         __pyx_v_sq = __pyx_t_12;
 
-        /* "fast_chess.pyx":391
+        /* "fast_chess.pyx":407
  *             dst_plane = FLIP_PLANE[src_plane]
  *             for sq in range(64):
  *                 outp[off + dst_plane * 64 + (sq ^ 56)] = inp[off + src_plane * 64 + sq]             # <<<<<<<<<<<<<<
@@ -9459,7 +9698,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
       }
     }
 
-    /* "fast_chess.pyx":392
+    /* "fast_chess.pyx":408
  *             for sq in range(64):
  *                 outp[off + dst_plane * 64 + (sq ^ 56)] = inp[off + src_plane * 64 + sq]
  *         outp[off + 768] = inp[off + 770]             # <<<<<<<<<<<<<<
@@ -9468,7 +9707,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     (__pyx_v_outp[(__pyx_v_off + 0x300)]) = (__pyx_v_inp[(__pyx_v_off + 0x302)]);
 
-    /* "fast_chess.pyx":393
+    /* "fast_chess.pyx":409
  *                 outp[off + dst_plane * 64 + (sq ^ 56)] = inp[off + src_plane * 64 + sq]
  *         outp[off + 768] = inp[off + 770]
  *         outp[off + 769] = inp[off + 771]             # <<<<<<<<<<<<<<
@@ -9477,7 +9716,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     (__pyx_v_outp[(__pyx_v_off + 0x301)]) = (__pyx_v_inp[(__pyx_v_off + 0x303)]);
 
-    /* "fast_chess.pyx":394
+    /* "fast_chess.pyx":410
  *         outp[off + 768] = inp[off + 770]
  *         outp[off + 769] = inp[off + 771]
  *         outp[off + 770] = inp[off + 768]             # <<<<<<<<<<<<<<
@@ -9486,7 +9725,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     (__pyx_v_outp[(__pyx_v_off + 0x302)]) = (__pyx_v_inp[(__pyx_v_off + 0x300)]);
 
-    /* "fast_chess.pyx":395
+    /* "fast_chess.pyx":411
  *         outp[off + 769] = inp[off + 771]
  *         outp[off + 770] = inp[off + 768]
  *         outp[off + 771] = inp[off + 769]             # <<<<<<<<<<<<<<
@@ -9495,7 +9734,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
     (__pyx_v_outp[(__pyx_v_off + 0x303)]) = (__pyx_v_inp[(__pyx_v_off + 0x301)]);
 
-    /* "fast_chess.pyx":396
+    /* "fast_chess.pyx":412
  *         outp[off + 770] = inp[off + 768]
  *         outp[off + 771] = inp[off + 769]
  *         outp[off + 772] = 1.0 - inp[off + 772]             # <<<<<<<<<<<<<<
@@ -9505,7 +9744,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
     (__pyx_v_outp[(__pyx_v_off + 0x304)]) = (1.0 - (__pyx_v_inp[(__pyx_v_off + 0x304)]));
   }
 
-  /* "fast_chess.pyx":397
+  /* "fast_chess.pyx":413
  *         outp[off + 771] = inp[off + 769]
  *         outp[off + 772] = 1.0 - inp[off + 772]
  *     return out             # <<<<<<<<<<<<<<
@@ -9517,7 +9756,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
   __pyx_r = ((PyArrayObject *)__pyx_v_out);
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":377
+  /* "fast_chess.pyx":393
  * #
  * 
  * def batch_flip_vectors(np.ndarray[np.float32_t, ndim=2] X) -> np.ndarray:             # <<<<<<<<<<<<<<
@@ -9553,7 +9792,7 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
   return __pyx_r;
 }
 
-/* "fast_chess.pyx":404
+/* "fast_chess.pyx":420
  * #
  * 
  * def extract_and_label_game(board, moves_iter, float result,             # <<<<<<<<<<<<<<
@@ -9562,16 +9801,16 @@ static PyArrayObject *__pyx_pf_10fast_chess_10batch_flip_vectors(CYTHON_UNUSED P
 */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10fast_chess_13extract_and_label_game(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10fast_chess_15extract_and_label_game(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_10fast_chess_12extract_and_label_game, "\n    Process one game into pre-allocated output arrays.\n    Returns number of positions written.\n    \n    Eliminates:\n      - list[tuple[ndarray, float]] intermediate allocations\n      - per-position numpy array creation\n      - Python-level outcome weight computation\n    ");
-static PyMethodDef __pyx_mdef_10fast_chess_13extract_and_label_game = {"extract_and_label_game", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_13extract_and_label_game, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_12extract_and_label_game};
-static PyObject *__pyx_pw_10fast_chess_13extract_and_label_game(PyObject *__pyx_self, 
+PyDoc_STRVAR(__pyx_doc_10fast_chess_14extract_and_label_game, "\n    Process one game into pre-allocated output arrays.\n    Returns number of positions written.\n    \n    Eliminates:\n      - list[tuple[ndarray, float]] intermediate allocations\n      - per-position numpy array creation\n      - Python-level outcome weight computation\n    ");
+static PyMethodDef __pyx_mdef_10fast_chess_15extract_and_label_game = {"extract_and_label_game", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10fast_chess_15extract_and_label_game, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10fast_chess_14extract_and_label_game};
+static PyObject *__pyx_pw_10fast_chess_15extract_and_label_game(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -9608,81 +9847,81 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_board,&__pyx_mstate_global->__pyx_n_u_moves_iter,&__pyx_mstate_global->__pyx_n_u_result,&__pyx_mstate_global->__pyx_n_u_skip_ply,&__pyx_mstate_global->__pyx_n_u_max_sample,&__pyx_mstate_global->__pyx_n_u_X_out,&__pyx_mstate_global->__pyx_n_u_y_out,&__pyx_mstate_global->__pyx_n_u_write_offset,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 404, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 420, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  8:
         values[7] = __Pyx_ArgRef_FASTCALL(__pyx_args, 7);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  7:
         values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 404, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 420, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "extract_and_label_game", 0) < (0)) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "extract_and_label_game", 0) < (0)) __PYX_ERR(0, 420, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 8; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("extract_and_label_game", 1, 8, 8, i); __PYX_ERR(0, 404, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("extract_and_label_game", 1, 8, 8, i); __PYX_ERR(0, 420, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 8)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 420, __pyx_L3_error)
       values[7] = __Pyx_ArgRef_FASTCALL(__pyx_args, 7);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 404, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 420, __pyx_L3_error)
     }
     __pyx_v_board = values[0];
     __pyx_v_moves_iter = values[1];
-    __pyx_v_result = __Pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_result == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 404, __pyx_L3_error)
-    __pyx_v_skip_ply = __Pyx_PyLong_As_int(values[3]); if (unlikely((__pyx_v_skip_ply == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 405, __pyx_L3_error)
-    __pyx_v_max_sample = __Pyx_PyLong_As_int(values[4]); if (unlikely((__pyx_v_max_sample == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 405, __pyx_L3_error)
+    __pyx_v_result = __Pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_result == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 420, __pyx_L3_error)
+    __pyx_v_skip_ply = __Pyx_PyLong_As_int(values[3]); if (unlikely((__pyx_v_skip_ply == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 421, __pyx_L3_error)
+    __pyx_v_max_sample = __Pyx_PyLong_As_int(values[4]); if (unlikely((__pyx_v_max_sample == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 421, __pyx_L3_error)
     __pyx_v_X_out = ((PyArrayObject *)values[5]);
     __pyx_v_y_out = ((PyArrayObject *)values[6]);
-    __pyx_v_write_offset = __Pyx_PyLong_As_int(values[7]); if (unlikely((__pyx_v_write_offset == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 408, __pyx_L3_error)
+    __pyx_v_write_offset = __Pyx_PyLong_As_int(values[7]); if (unlikely((__pyx_v_write_offset == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 424, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("extract_and_label_game", 1, 8, 8, __pyx_nargs); __PYX_ERR(0, 404, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("extract_and_label_game", 1, 8, 8, __pyx_nargs); __PYX_ERR(0, 420, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9693,9 +9932,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_X_out), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "X_out", 0))) __PYX_ERR(0, 406, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y_out), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "y_out", 0))) __PYX_ERR(0, 407, __pyx_L1_error)
-  __pyx_r = __pyx_pf_10fast_chess_12extract_and_label_game(__pyx_self, __pyx_v_board, __pyx_v_moves_iter, __pyx_v_result, __pyx_v_skip_ply, __pyx_v_max_sample, __pyx_v_X_out, __pyx_v_y_out, __pyx_v_write_offset);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_X_out), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "X_out", 0))) __PYX_ERR(0, 422, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y_out), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "y_out", 0))) __PYX_ERR(0, 423, __pyx_L1_error)
+  __pyx_r = __pyx_pf_10fast_chess_14extract_and_label_game(__pyx_self, __pyx_v_board, __pyx_v_moves_iter, __pyx_v_result, __pyx_v_skip_ply, __pyx_v_max_sample, __pyx_v_X_out, __pyx_v_y_out, __pyx_v_write_offset);
 
   /* function exit code */
   goto __pyx_L0;
@@ -9714,7 +9953,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyObject *__pyx_v_moves_iter, float __pyx_v_result, int __pyx_v_skip_ply, int __pyx_v_max_sample, PyArrayObject *__pyx_v_X_out, PyArrayObject *__pyx_v_y_out, int __pyx_v_write_offset) {
+static PyObject *__pyx_pf_10fast_chess_14extract_and_label_game(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_board, PyObject *__pyx_v_moves_iter, float __pyx_v_result, int __pyx_v_skip_ply, int __pyx_v_max_sample, PyArrayObject *__pyx_v_X_out, PyArrayObject *__pyx_v_y_out, int __pyx_v_write_offset) {
   PyObject *__pyx_v_ply_list = 0;
   PyObject *__pyx_v_board_list = 0;
   int __pyx_v_ply;
@@ -9772,40 +10011,40 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   __pyx_pybuffernd_y_out.rcbuffer = &__pyx_pybuffer_y_out;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_X_out.rcbuffer->pybuffer, (PyObject*)__pyx_v_X_out, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 404, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_X_out.rcbuffer->pybuffer, (PyObject*)__pyx_v_X_out, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 420, __pyx_L1_error)
   }
   __pyx_pybuffernd_X_out.diminfo[0].strides = __pyx_pybuffernd_X_out.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_X_out.diminfo[0].shape = __pyx_pybuffernd_X_out.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_X_out.diminfo[1].strides = __pyx_pybuffernd_X_out.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_X_out.diminfo[1].shape = __pyx_pybuffernd_X_out.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_y_out.rcbuffer->pybuffer, (PyObject*)__pyx_v_y_out, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 404, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_y_out.rcbuffer->pybuffer, (PyObject*)__pyx_v_y_out, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 420, __pyx_L1_error)
   }
   __pyx_pybuffernd_y_out.diminfo[0].strides = __pyx_pybuffernd_y_out.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_y_out.diminfo[0].shape = __pyx_pybuffernd_y_out.rcbuffer->pybuffer.shape[0];
 
-  /* "fast_chess.pyx":418
+  /* "fast_chess.pyx":434
  *       - Python-level outcome weight computation
  *     """
  *     cdef list ply_list = []             # <<<<<<<<<<<<<<
  *     cdef list board_list = []
  *     cdef int ply, total_plies, n_cand, n_sample
 */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 434, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_ply_list = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":419
+  /* "fast_chess.pyx":435
  *     """
  *     cdef list ply_list = []
  *     cdef list board_list = []             # <<<<<<<<<<<<<<
  *     cdef int ply, total_plies, n_cand, n_sample
  *     cdef int i, j, write_pos, written
 */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 419, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 435, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_board_list = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":423
+  /* "fast_chess.pyx":439
  *     cdef int i, j, write_pos, written
  *     cdef float weight
  *     cdef float* xptr = <float*>X_out.data             # <<<<<<<<<<<<<<
@@ -9814,7 +10053,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   __pyx_v_xptr = ((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_X_out)));
 
-  /* "fast_chess.pyx":424
+  /* "fast_chess.pyx":440
  *     cdef float weight
  *     cdef float* xptr = <float*>X_out.data
  *     cdef float* yptr = <float*>y_out.data             # <<<<<<<<<<<<<<
@@ -9823,7 +10062,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   __pyx_v_yptr = ((float *)__pyx_f_5numpy_7ndarray_4data_data(((PyArrayObject *)__pyx_v_y_out)));
 
-  /* "fast_chess.pyx":426
+  /* "fast_chess.pyx":442
  *     cdef float* yptr = <float*>y_out.data
  * 
  *     for ply, move in enumerate(moves_iter):             # <<<<<<<<<<<<<<
@@ -9836,9 +10075,9 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_moves_iter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 426, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_moves_iter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 442, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 426, __pyx_L1_error)
+    __pyx_t_4 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 442, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_4)) {
@@ -9846,7 +10085,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 426, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 442, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -9856,7 +10095,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 426, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 442, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -9867,13 +10106,13 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
         #endif
         ++__pyx_t_3;
       }
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 426, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 442, __pyx_L1_error)
     } else {
       __pyx_t_5 = __pyx_t_4(__pyx_t_1);
       if (unlikely(!__pyx_t_5)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 426, __pyx_L1_error)
+          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 442, __pyx_L1_error)
           PyErr_Clear();
         }
         break;
@@ -9885,7 +10124,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     __pyx_v_ply = __pyx_t_2;
     __pyx_t_2 = (__pyx_t_2 + 1);
 
-    /* "fast_chess.pyx":427
+    /* "fast_chess.pyx":443
  * 
  *     for ply, move in enumerate(moves_iter):
  *         board.push(move)             # <<<<<<<<<<<<<<
@@ -9899,12 +10138,12 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
       PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_v_move};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_push, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 427, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 443, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "fast_chess.pyx":428
+    /* "fast_chess.pyx":444
  *     for ply, move in enumerate(moves_iter):
  *         board.push(move)
  *         if ply >= skip_ply and not board.is_game_over():             # <<<<<<<<<<<<<<
@@ -9924,29 +10163,29 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
       PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_is_game_over, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 428, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 444, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 428, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 444, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_10 = (!__pyx_t_9);
     __pyx_t_8 = __pyx_t_10;
     __pyx_L6_bool_binop_done:;
     if (__pyx_t_8) {
 
-      /* "fast_chess.pyx":429
+      /* "fast_chess.pyx":445
  *         board.push(move)
  *         if ply >= skip_ply and not board.is_game_over():
  *             ply_list.append(ply)             # <<<<<<<<<<<<<<
  *             board_list.append(board.copy())
  * 
 */
-      __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_ply); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 429, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_ply); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 445, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_ply_list, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 429, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_ply_list, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 445, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "fast_chess.pyx":430
+      /* "fast_chess.pyx":446
  *         if ply >= skip_ply and not board.is_game_over():
  *             ply_list.append(ply)
  *             board_list.append(board.copy())             # <<<<<<<<<<<<<<
@@ -9960,13 +10199,13 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
         PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
         __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_copy, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 430, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 446, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
-      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_board_list, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 430, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_board_list, __pyx_t_5); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 446, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "fast_chess.pyx":428
+      /* "fast_chess.pyx":444
  *     for ply, move in enumerate(moves_iter):
  *         board.push(move)
  *         if ply >= skip_ply and not board.is_game_over():             # <<<<<<<<<<<<<<
@@ -9975,7 +10214,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
     }
 
-    /* "fast_chess.pyx":426
+    /* "fast_chess.pyx":442
  *     cdef float* yptr = <float*>y_out.data
  * 
  *     for ply, move in enumerate(moves_iter):             # <<<<<<<<<<<<<<
@@ -9985,7 +10224,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fast_chess.pyx":432
+  /* "fast_chess.pyx":448
  *             board_list.append(board.copy())
  * 
  *     if not board_list:             # <<<<<<<<<<<<<<
@@ -9994,14 +10233,14 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   {
     Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_v_board_list);
-    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 432, __pyx_L1_error)
+    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 448, __pyx_L1_error)
     __pyx_t_8 = (__pyx_temp != 0);
   }
 
   __pyx_t_10 = (!__pyx_t_8);
   if (__pyx_t_10) {
 
-    /* "fast_chess.pyx":433
+    /* "fast_chess.pyx":449
  * 
  *     if not board_list:
  *         return 0             # <<<<<<<<<<<<<<
@@ -10013,7 +10252,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     __pyx_r = __pyx_mstate_global->__pyx_int_0;
     goto __pyx_L0;
 
-    /* "fast_chess.pyx":432
+    /* "fast_chess.pyx":448
  *             board_list.append(board.copy())
  * 
  *     if not board_list:             # <<<<<<<<<<<<<<
@@ -10022,32 +10261,32 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   }
 
-  /* "fast_chess.pyx":435
+  /* "fast_chess.pyx":451
  *         return 0
  * 
  *     total_plies = ply_list[len(ply_list) - 1] + 1             # <<<<<<<<<<<<<<
  *     n_cand = len(board_list)
  * 
 */
-  __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_ply_list); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_ply_list); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 451, __pyx_L1_error)
   __pyx_t_12 = (__pyx_t_3 - 1);
-  __pyx_t_1 = __Pyx_PyLong_AddObjC(__Pyx_PyList_GET_ITEM(__pyx_v_ply_list, __pyx_t_12), __pyx_mstate_global->__pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_AddObjC(__Pyx_PyList_GET_ITEM(__pyx_v_ply_list, __pyx_t_12), __pyx_mstate_global->__pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 451, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyLong_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyLong_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 451, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_total_plies = __pyx_t_2;
 
-  /* "fast_chess.pyx":436
+  /* "fast_chess.pyx":452
  * 
  *     total_plies = ply_list[len(ply_list) - 1] + 1
  *     n_cand = len(board_list)             # <<<<<<<<<<<<<<
  * 
  *     if n_cand > max_sample:
 */
-  __pyx_t_12 = __Pyx_PyList_GET_SIZE(__pyx_v_board_list); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyList_GET_SIZE(__pyx_v_board_list); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 452, __pyx_L1_error)
   __pyx_v_n_cand = __pyx_t_12;
 
-  /* "fast_chess.pyx":438
+  /* "fast_chess.pyx":454
  *     n_cand = len(board_list)
  * 
  *     if n_cand > max_sample:             # <<<<<<<<<<<<<<
@@ -10057,7 +10296,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   __pyx_t_10 = (__pyx_v_n_cand > __pyx_v_max_sample);
   if (__pyx_t_10) {
 
-    /* "fast_chess.pyx":439
+    /* "fast_chess.pyx":455
  * 
  *     if n_cand > max_sample:
  *         indices = random.sample(range(n_cand), max_sample)             # <<<<<<<<<<<<<<
@@ -10065,13 +10304,13 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
  *         indices = list(range(n_cand))
 */
     __pyx_t_5 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 439, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 455, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_sample); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 439, __pyx_L1_error)
+    __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_sample); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 455, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_13);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_14 = NULL;
-    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_n_cand); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 439, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_n_cand); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 455, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __pyx_t_7 = 1;
     {
@@ -10079,10 +10318,10 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
       __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)(&PyRange_Type), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
       __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 439, __pyx_L1_error)
+      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 455, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
     }
-    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_max_sample); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 439, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_max_sample); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 455, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __pyx_t_7 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -10103,13 +10342,13 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 439, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 455, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __pyx_v_indices = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "fast_chess.pyx":438
+    /* "fast_chess.pyx":454
  *     n_cand = len(board_list)
  * 
  *     if n_cand > max_sample:             # <<<<<<<<<<<<<<
@@ -10119,7 +10358,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     goto __pyx_L10;
   }
 
-  /* "fast_chess.pyx":441
+  /* "fast_chess.pyx":457
  *         indices = random.sample(range(n_cand), max_sample)
  *     else:
  *         indices = list(range(n_cand))             # <<<<<<<<<<<<<<
@@ -10128,7 +10367,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   /*else*/ {
     __pyx_t_13 = NULL;
-    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_n_cand); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 441, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_n_cand); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 457, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __pyx_t_7 = 1;
     {
@@ -10136,10 +10375,10 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
       __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)(&PyRange_Type), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
       __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 441, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 457, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
-    __pyx_t_15 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 441, __pyx_L1_error)
+    __pyx_t_15 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 457, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_indices = __pyx_t_15;
@@ -10147,17 +10386,17 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   }
   __pyx_L10:;
 
-  /* "fast_chess.pyx":443
+  /* "fast_chess.pyx":459
  *         indices = list(range(n_cand))
  * 
  *     n_sample = len(indices)             # <<<<<<<<<<<<<<
  *     written = 0
  * 
 */
-  __pyx_t_12 = PyObject_Length(__pyx_v_indices); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 443, __pyx_L1_error)
+  __pyx_t_12 = PyObject_Length(__pyx_v_indices); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 459, __pyx_L1_error)
   __pyx_v_n_sample = __pyx_t_12;
 
-  /* "fast_chess.pyx":444
+  /* "fast_chess.pyx":460
  * 
  *     n_sample = len(indices)
  *     written = 0             # <<<<<<<<<<<<<<
@@ -10166,7 +10405,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
   __pyx_v_written = 0;
 
-  /* "fast_chess.pyx":446
+  /* "fast_chess.pyx":462
  *     written = 0
  * 
  *     for i in range(n_sample):             # <<<<<<<<<<<<<<
@@ -10178,20 +10417,20 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   for (__pyx_t_17 = 0; __pyx_t_17 < __pyx_t_16; __pyx_t_17+=1) {
     __pyx_v_i = __pyx_t_17;
 
-    /* "fast_chess.pyx":447
+    /* "fast_chess.pyx":463
  * 
  *     for i in range(n_sample):
  *         j = indices[i]             # <<<<<<<<<<<<<<
  *         write_pos = write_offset + written
  *         if write_pos >= X_out.shape[0]:
 */
-    __pyx_t_15 = __Pyx_GetItemInt(__pyx_v_indices, __pyx_v_i, int, 1, __Pyx_PyLong_From_int, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 447, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_GetItemInt(__pyx_v_indices, __pyx_v_i, int, 1, __Pyx_PyLong_From_int, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 463, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
-    __pyx_t_18 = __Pyx_PyLong_As_int(__pyx_t_15); if (unlikely((__pyx_t_18 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 447, __pyx_L1_error)
+    __pyx_t_18 = __Pyx_PyLong_As_int(__pyx_t_15); if (unlikely((__pyx_t_18 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 463, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
     __pyx_v_j = __pyx_t_18;
 
-    /* "fast_chess.pyx":448
+    /* "fast_chess.pyx":464
  *     for i in range(n_sample):
  *         j = indices[i]
  *         write_pos = write_offset + written             # <<<<<<<<<<<<<<
@@ -10200,7 +10439,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
     __pyx_v_write_pos = (__pyx_v_write_offset + __pyx_v_written);
 
-    /* "fast_chess.pyx":449
+    /* "fast_chess.pyx":465
  *         j = indices[i]
  *         write_pos = write_offset + written
  *         if write_pos >= X_out.shape[0]:             # <<<<<<<<<<<<<<
@@ -10210,7 +10449,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     __pyx_t_10 = (__pyx_v_write_pos >= (__pyx_f_5numpy_7ndarray_5shape_shape(((PyArrayObject *)__pyx_v_X_out))[0]));
     if (__pyx_t_10) {
 
-      /* "fast_chess.pyx":450
+      /* "fast_chess.pyx":466
  *         write_pos = write_offset + written
  *         if write_pos >= X_out.shape[0]:
  *             break             # <<<<<<<<<<<<<<
@@ -10219,7 +10458,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
       goto __pyx_L12_break;
 
-      /* "fast_chess.pyx":449
+      /* "fast_chess.pyx":465
  *         j = indices[i]
  *         write_pos = write_offset + written
  *         if write_pos >= X_out.shape[0]:             # <<<<<<<<<<<<<<
@@ -10228,7 +10467,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
     }
 
-    /* "fast_chess.pyx":451
+    /* "fast_chess.pyx":467
  *         if write_pos >= X_out.shape[0]:
  *             break
  *         _vectorize_into(xptr + write_pos * VEC_DIM, board_list[j])             # <<<<<<<<<<<<<<
@@ -10237,20 +10476,20 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
 */
     __pyx_t_15 = __Pyx_PyList_GET_ITEM(__pyx_v_board_list, __pyx_v_j);
     __Pyx_INCREF(__pyx_t_15);
-    __pyx_f_10fast_chess__vectorize_into((__pyx_v_xptr + (__pyx_v_write_pos * 0x305)), __pyx_t_15); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 451, __pyx_L1_error)
+    __pyx_f_10fast_chess__vectorize_into((__pyx_v_xptr + (__pyx_v_write_pos * 0x305)), __pyx_t_15); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 467, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-    /* "fast_chess.pyx":452
+    /* "fast_chess.pyx":468
  *             break
  *         _vectorize_into(xptr + write_pos * VEC_DIM, board_list[j])
  *         weight = sqrt(<float>ply_list[j] / <float>total_plies)             # <<<<<<<<<<<<<<
  *         yptr[write_pos] = max(-1.0, min(1.0, result * weight))
  *         written += 1
 */
-    __pyx_t_19 = __Pyx_PyFloat_AsFloat(__Pyx_PyList_GET_ITEM(__pyx_v_ply_list, __pyx_v_j)); if (unlikely((__pyx_t_19 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 452, __pyx_L1_error)
+    __pyx_t_19 = __Pyx_PyFloat_AsFloat(__Pyx_PyList_GET_ITEM(__pyx_v_ply_list, __pyx_v_j)); if (unlikely((__pyx_t_19 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 468, __pyx_L1_error)
     __pyx_v_weight = sqrt((((float)__pyx_t_19) / ((float)__pyx_v_total_plies)));
 
-    /* "fast_chess.pyx":453
+    /* "fast_chess.pyx":469
  *         _vectorize_into(xptr + write_pos * VEC_DIM, board_list[j])
  *         weight = sqrt(<float>ply_list[j] / <float>total_plies)
  *         yptr[write_pos] = max(-1.0, min(1.0, result * weight))             # <<<<<<<<<<<<<<
@@ -10275,7 +10514,7 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
     }
     (__pyx_v_yptr[__pyx_v_write_pos]) = __pyx_t_22;
 
-    /* "fast_chess.pyx":454
+    /* "fast_chess.pyx":470
  *         weight = sqrt(<float>ply_list[j] / <float>total_plies)
  *         yptr[write_pos] = max(-1.0, min(1.0, result * weight))
  *         written += 1             # <<<<<<<<<<<<<<
@@ -10286,20 +10525,20 @@ static PyObject *__pyx_pf_10fast_chess_12extract_and_label_game(CYTHON_UNUSED Py
   }
   __pyx_L12_break:;
 
-  /* "fast_chess.pyx":456
+  /* "fast_chess.pyx":472
  *         written += 1
  * 
  *     return written             # <<<<<<<<<<<<<<
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_written); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 456, __pyx_L1_error)
+  __pyx_t_15 = __Pyx_PyLong_From_int(__pyx_v_written); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 472, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_15);
-  if (__Pyx_PyInt_FromNumber(&__pyx_t_15, NULL, 0) < (0)) __PYX_ERR(0, 456, __pyx_L1_error)
+  if (__Pyx_PyInt_FromNumber(&__pyx_t_15, NULL, 0) < (0)) __PYX_ERR(0, 472, __pyx_L1_error)
   __pyx_r = ((PyObject*)__pyx_t_15);
   __pyx_t_15 = 0;
   goto __pyx_L0;
 
-  /* "fast_chess.pyx":404
+  /* "fast_chess.pyx":420
  * #
  * 
  * def extract_and_label_game(board, moves_iter, float result,             # <<<<<<<<<<<<<<
@@ -10546,15 +10785,15 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
   __pyx_vtabptr_10fast_chess_FlatTreeWrapper = &__pyx_vtable_10fast_chess_FlatTreeWrapper;
   __pyx_vtable_10fast_chess_FlatTreeWrapper.wrap = (struct __pyx_obj_10fast_chess_FlatTreeWrapper *(*)(struct __pyx_t_10fast_chess_FlatTree *))__pyx_f_10fast_chess_15FlatTreeWrapper_wrap;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10fast_chess_FlatTreeWrapper_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper)) __PYX_ERR(0, 229, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10fast_chess_FlatTreeWrapper_spec, __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10fast_chess_FlatTreeWrapper_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper)) __PYX_ERR(0, 245, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10fast_chess_FlatTreeWrapper_spec, __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper = &__pyx_type_10fast_chess_FlatTreeWrapper;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper);
@@ -10564,10 +10803,10 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper->tp_getattro = PyObject_GenericGetAttr;
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper, __pyx_vtabptr_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
-  if (__Pyx_MergeVtables(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper, (PyObject *) __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper, __pyx_vtabptr_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper, (PyObject *) __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10fast_chess_FlatTreeWrapper) < (0)) __PYX_ERR(0, 245, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -11126,39 +11365,59 @@ __Pyx_RefNannySetupContext("PyInit_fast_chess", 0);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_batch_vectorize, __pyx_t_2) < (0)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fast_chess.pyx":254
- *         return self._tree.count if self._tree else 0
+  /* "fast_chess.pyx":102
  * 
- *     def propagate_and_best_move(self, evaluator, root_child_info: list,             # <<<<<<<<<<<<<<
- *                                  bint maximizing) -> tuple:
- *         """
+ * 
+ * def vectorize_into_buffer(board,             # <<<<<<<<<<<<<<
+ *                           np.ndarray[np.float32_t, ndim=2] buf,
+ *                           int row) -> int:
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_root_child_info, __pyx_mstate_global->__pyx_n_u_list) < (0)) __PYX_ERR(0, 254, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_tuple) < (0)) __PYX_ERR(0, 254, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_5propagate_and_best_move, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper_propagate_and_be, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 254, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_int) < (0)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_5vectorize_into_buffer, 0, __pyx_mstate_global->__pyx_n_u_vectorize_into_buffer, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_10fast_chess_FlatTreeWrapper, __pyx_mstate_global->__pyx_n_u_propagate_and_best_move, __pyx_t_5) < (0)) __PYX_ERR(0, 254, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_vectorize_into_buffer, __pyx_t_5) < (0)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+  /* "fast_chess.pyx":270
+ *         return self._tree.count if self._tree else 0
+ * 
+ *     def propagate_and_best_move(self, evaluator, root_child_info: list,             # <<<<<<<<<<<<<<
+ *                                  bint maximizing) -> tuple:
+ *         """
+*/
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_root_child_info, __pyx_mstate_global->__pyx_n_u_list) < (0)) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_tuple) < (0)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_5propagate_and_best_move, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper_propagate_and_be, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_10fast_chess_FlatTreeWrapper, __pyx_mstate_global->__pyx_n_u_propagate_and_best_move, __pyx_t_2) < (0)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  * def __setstate_cython__(self, __pyx_state):
 */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_7__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_7__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_5) < (0)) __PYX_ERR(2, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < (0)) __PYX_ERR(2, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "(tree fragment)":3
  * def __reduce_cython__(self):
@@ -11166,123 +11425,123 @@ __Pyx_RefNannySetupContext("PyInit_fast_chess", 0);
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
 */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_9__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper___setstate_cytho, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15FlatTreeWrapper_9__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_FlatTreeWrapper___setstate_cytho, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_5) < (0)) __PYX_ERR(2, 3, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < (0)) __PYX_ERR(2, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fast_chess.pyx":313
+  /* "fast_chess.pyx":329
  * 
  * 
  * def expand_tree(board, int max_depth, bint root_maximizing,             # <<<<<<<<<<<<<<
  *                 evaluator) -> tuple:
  *     """
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 313, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_tuple) < (0)) __PYX_ERR(0, 313, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_5expand_tree, 0, __pyx_mstate_global->__pyx_n_u_expand_tree, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 313, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 329, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_tuple) < (0)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_7expand_tree, 0, __pyx_mstate_global->__pyx_n_u_expand_tree, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_expand_tree, __pyx_t_2) < (0)) __PYX_ERR(0, 313, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_expand_tree, __pyx_t_5) < (0)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "fast_chess.pyx":346
+  /* "fast_chess.pyx":362
  * #
  * 
  * def outcome_weight(int ply, int total_plies) -> float:             # <<<<<<<<<<<<<<
  *     if total_plies <= 0:
  *         return 0.5
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 346, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 346, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_7outcome_weight, 0, __pyx_mstate_global->__pyx_n_u_outcome_weight, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 346, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 362, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_9outcome_weight, 0, __pyx_mstate_global->__pyx_n_u_outcome_weight, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_outcome_weight, __pyx_t_5) < (0)) __PYX_ERR(0, 346, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_outcome_weight, __pyx_t_2) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fast_chess.pyx":352
+  /* "fast_chess.pyx":368
  * 
  * 
  * def batch_outcome_weights(             # <<<<<<<<<<<<<<
  *     np.ndarray[np.int32_t, ndim=1] plies,
  *     int total_plies
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 352, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_np_ndarray) < (0)) __PYX_ERR(0, 352, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_9batch_outcome_weights, 0, __pyx_mstate_global->__pyx_n_u_batch_outcome_weights, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 352, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 368, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
-  #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_batch_outcome_weights, __pyx_t_2) < (0)) __PYX_ERR(0, 352, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "fast_chess.pyx":377
- * #
- * 
- * def batch_flip_vectors(np.ndarray[np.float32_t, ndim=2] X) -> np.ndarray:             # <<<<<<<<<<<<<<
- *     """Flip an entire (N, 773) array at C speed."""
- *     cdef int n = X.shape[0]
-*/
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 377, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_np_ndarray) < (0)) __PYX_ERR(0, 377, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_11batch_flip_vectors, 0, __pyx_mstate_global->__pyx_n_u_batch_flip_vectors, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 377, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_np_ndarray) < (0)) __PYX_ERR(0, 368, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_11batch_outcome_weights, 0, __pyx_mstate_global->__pyx_n_u_batch_outcome_weights, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 368, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_batch_flip_vectors, __pyx_t_5) < (0)) __PYX_ERR(0, 377, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_batch_outcome_weights, __pyx_t_5) < (0)) __PYX_ERR(0, 368, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "fast_chess.pyx":404
+  /* "fast_chess.pyx":393
  * #
  * 
- * def extract_and_label_game(board, moves_iter, float result,             # <<<<<<<<<<<<<<
- *                            int skip_ply, int max_sample,
- *                            np.ndarray[np.float32_t, ndim=2] X_out,
+ * def batch_flip_vectors(np.ndarray[np.float32_t, ndim=2] X) -> np.ndarray:             # <<<<<<<<<<<<<<
+ *     """Flip an entire (N, 773) array at C speed."""
+ *     cdef int n = X.shape[0]
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 404, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 393, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_int) < (0)) __PYX_ERR(0, 404, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_13extract_and_label_game, 0, __pyx_mstate_global->__pyx_n_u_extract_and_label_game, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 404, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_np_ndarray) < (0)) __PYX_ERR(0, 393, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_13batch_flip_vectors, 0, __pyx_mstate_global->__pyx_n_u_batch_flip_vectors, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 393, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_extract_and_label_game, __pyx_t_2) < (0)) __PYX_ERR(0, 404, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_batch_flip_vectors, __pyx_t_2) < (0)) __PYX_ERR(0, 393, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "fast_chess.pyx":420
+ * #
+ * 
+ * def extract_and_label_game(board, moves_iter, float result,             # <<<<<<<<<<<<<<
+ *                            int skip_ply, int max_sample,
+ *                            np.ndarray[np.float32_t, ndim=2] X_out,
+*/
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 420, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_int) < (0)) __PYX_ERR(0, 420, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10fast_chess_15extract_and_label_game, 0, __pyx_mstate_global->__pyx_n_u_extract_and_label_game, NULL, __pyx_mstate_global->__pyx_n_u_fast_chess, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 420, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_extract_and_label_game, __pyx_t_5) < (0)) __PYX_ERR(0, 420, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /* "fast_chess.pyx":1
  * # fast_chess.pyx             # <<<<<<<<<<<<<<
  * # cython: boundscheck=False, wraparound=False, cdivision=True, nonecheck=False
  * # cython: language_level=3
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_test, __pyx_t_2) < (0)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_test, __pyx_t_5) < (0)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -11321,7 +11580,7 @@ __Pyx_RefNannySetupContext("PyInit_fast_chess", 0);
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 426, __pyx_L1_error)
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 442, __pyx_L1_error)
 
   /* Cached unbound methods */
   __pyx_mstate->__pyx_umethod_PyDict_Type_items.type = (PyObject*)&PyDict_Type;
@@ -11343,14 +11602,14 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "fast_chess.pyx":267
+  /* "fast_chess.pyx":283
  *         cdef FlatTree* t = self._tree
  *         if t == NULL or t.count == 0:
  *             return None, 0.0             # <<<<<<<<<<<<<<
  * 
  *         # Build eval_scores array from evaluator
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(2, Py_None, __pyx_mstate_global->__pyx_float_0_0); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(2, Py_None, __pyx_mstate_global->__pyx_float_0_0); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 283, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
   #if CYTHON_IMMORTAL_CONSTANTS
@@ -11383,39 +11642,39 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 9; } index[] = {{1},{179},{8},{7},{6},{14},{2},{9},{50},{10},{39},{34},{14},{15},{33},{35},{39},{20},{1},{5},{18},{18},{21},{15},{9},{10},{7},{5},{10},{24},{6},{9},{18},{4},{9},{5},{5},{13},{9},{11},{9},{11},{22},{10},{5},{7},{8},{9},{12},{28},{29},{1},{7},{3},{3},{13},{12},{5},{1},{5},{7},{11},{8},{11},{4},{8},{9},{10},{10},{10},{4},{10},{1},{6},{8},{8},{8},{2},{5},{11},{3},{3},{14},{4},{5},{5},{3},{8},{3},{4},{23},{4},{11},{14},{12},{6},{6},{10},{17},{13},{6},{6},{5},{15},{8},{15},{4},{6},{4},{12},{10},{12},{19},{8},{2},{9},{1},{8},{11},{2},{4},{5},{4},{1},{6},{6},{7},{4},{12},{9},{7},{4},{5},{4},{36},{316},{128},{328},{83},{9},{282},{107},{40}};
-    #if (CYTHON_COMPRESS_STRINGS) == 3 && __PYX_LIMITED_VERSION_HEX >= 0x030e0000 /* compression: zstd (1720 bytes) */
-const char* const cstring = "(\265/\375`\024\nu5\000JV\340\021F\340\260\270\r0\314\363D\236\306x\234\306x\236\310\323\020\006f\307\354\230\035a\274]\034\372\275\322H\"\030K\014a\022\0213\377X\246\363g9\0133\213V\373\261\3307\3327\357\302\234\336\3172\025C\031\027\224!\254\331\366\000\354\000\034\001\371o\025\341\332\335V\246:\3043&\306\364-\232\365,\346\010V\213e\316_\341\324\324\371\271y\242\037\006?Mu\326\237\347\354D\340\177\037\005]\374\203/\232\332\225\017\337\201!\316\247\353\001\245i*\324 \376R\325Vj\332jJ\364 \356\246\250\365\245\302\333\242 H\275+\372\356\234\272\336\332YZW\025\324\026.\276\241\267\315\371]\350=8\347\246m\350m\370z\271v'V\353\023\345\374\250n\352LM\367\337r4W\357\247\347Q\321gKW~U\301\352m&\247[\347\305US\215\357\245&\233\376\274\335G\351L\277\r\353\315\373\277[\210[\233\351\304&\312\377\265\364v\253\2665\3446\023\336\362\347Lm\307\205y\313\272\373\030\017n\336\245[\312\206\024\013,$X\266\013\276\356*\250\363\326\262\257)\370\\\265\357m\271n\027\243tK\304\246)Jo\2571\013\020\001T\343\374\272\003\263*\317\257\312\344i\262\237Al\272Sg\031\214\301\013\206\332\206\231\365)\014Z:9\252WsNT\016?P\177\337\207\277\326W\373\345;C\277\317d\302\336\327/\354:\374\245\350\235\363\322\267\363v\363^\360u\235\363m\350\321\324T}\373\245hF\351\357\275\311\272\225\246\346\314\226\236\336N\023}{eb\344\324\353\n\316\231\353\324\267~\267\346\357\252wk\275\017N\333\315\367\252\314\314\0245\3774gwC\323\234'(\232bkJ\321\323\264\317Q\253Y\377\017\352\217\245i\230-]\375\317\017?T\335o\351/\365\336_j\277\251\263\327\372p'\323Q\356;\n\352y\353\374[m\307\362\352\364lEuYWnb\255s\265\323\003)\346\362\207Q\271r\371i\252F\235\352\317\314O\341\016\304\272\373\325\374\2525MT\247)\027\244qd\314\235v\010]\203\027\313v\001O\2512\260It8\035\003\207\331\006\264\222\366\231\254\206{q\274\\\\$\227)E+K\233\264A\366G\213upl8F\261\321\006\351\224\224\014A\272\0309c\214\006\0370R\210\324\320\305\224v\310\376\270\250\013\005\311\241E\265\017t\312\017\317\250\303p\016w\331*\035\324W\354\220NI\332\243]B\364Pq\200\226E""\002Z\254\304I<\334tC\210\251\306\332K\235\323U\274\203\227lP\247\3146'\316|v\266]\304\017nD\031A#\r\n\017q\t\033\244\305F\242\246\321\241\305\262\347%~\332\"\236\222\304G\274\304\016\361\224%\362c\304\3205O\341\023v\356\224\243\035\332-\304\217N\251\342\224\277\3301\"G\354h\261\003ZI\352!gm\004\234\021_\240\225\037\256\200\263\t\251q2\332tjd4H\335\005?\341zwl\225\230\"\n\320J\225H\240S\322\215\262g\320\350\320\312\214\274\260\201\265Z\254\373:\343o\316\314\344\374+\373\275\2366#Q\200V\222\270\211\026II\016\222\033E\335d\003S\365\216\010\034D\326U\334\001\211L!\201\221\210\224!\256@\244,\215*\035F\244T\023R\323\275VF0\022#\310h\342\301\023h\235\366\n|\001g\003\252\361\300Ah\334\030Gt\216C \365\221\356\221p\r\033\264_Z\274\300^Z`Y\345\005z\275\200\270L\310\r\322e$i\351*\034\304_v\201\337\034\243\036\352\0018\002\217\001\276\002\365;\304\016E\032\332\033\003<B=\243\266HMK\315\352\005\303E\342\332p\225\220\033\344\005\255d\177\250\353\303\006V\332\024\304\000\345\210\014\221+#\007p\345\322\002ka\201\225\324\0048q\301\220'$J\251\237\340\0146\260\020\227\021\313\372\026R~\306l,\351\237\036\n)\263\221\353\035V6\010\247Q\245\310\\\033$\300:=T\022I\034\000\202\020O\260?!\252\027}\275\030\271\024\220\036\243\n^\272F\\\t\310\214,\031%\364\021\006\0052\336\331\2362\343$\336\300\343\3033l\020\017\200~\200g\234\023\025\003\217\014\030\312\320+\204\006+\003\201\005\250\2614\305\020C4#\"\"I\222\024:!\010\302q$\224\250\017\362\342\256EB3\242\240 II!\033\373\033\013\325@h\302BK\312\036\325&D\372+9IPU\200iQ\254\317UP\240\324\214\315\2215\300M\230\030\224D\215#:\313[\010 \264`\267\226\024\036\221P\370\303\371\3278\007\226\036C\352}@\021\2638Q\227(W\021h&\341\255Py\371z\000\363:X;\272\036\344m\304\310D}p$\352\204\317\217\002\343,\353&=u\021\242S\030$\266m\210\027H\006\210\025f\211\025\267\013\231\325b\335v\247qd\332\303s\004]4k\313&'\320Q,(\235\336/\006\"\022\200z\2775\022\245\345 \240\333\200zy]\362u\027\014u\002\003}\360j\230\351#\312?\\\246\331\260f\327f\213\024@=S\310\231\210\373""\363\307R\312\222UT\345\317\314|s\213\265\033X\036\226\255\242DM\224e\203\320\n\032\366L\232o\313SH\234\241\030\254\376r\024Q\222\324f\036\ru\215\365\351\340\305F?\264\206<\214\013\312\314Of\246\332\322\305\333\211\020\355\333\006\225\212$\265\005\013\253(\010\234\323\337\331\234&#\243_\004\007\031\205[\030\004e\003Y\341\233\000\312Ft\377\234\355\000\370W\323\nP\372\034\272j\300+\200\264\254~$\312\223\337AP\235\r\363S~d\247J\010\340\254>\003\273\270w\020\032\272\3768\177|8'\000\274\371\202eP|\n{<\247)\200\332\324\374$\2702\305\200\315KV\363`t\343\342,Q(\300\010\353\\L!\257\010H\037\300\277\240\304\001\265\303ry0ED\013\306\266:\000\205=\331\240H\247mc\354\001\321\007K\000\210\035-k6\371\274\324\230\371Ec}8*\334\230.&3\360\334\250\027{\200\301p,\254g1\000\244m\ru,\265NP\310\030f\007'\203J\256U\321\207\221M\222\307-\256XUV\252=\305\260\370\242,3E;\004\213\226\242\371}\275\033\204G\333#\\\316\206\364\202\342\225P\"\376\003";
-    PyObject *data = __Pyx_DecompressString(cstring, 1720, 3);
+    const struct { const unsigned int length: 9; } index[] = {{1},{179},{8},{7},{6},{14},{2},{9},{50},{10},{39},{34},{14},{15},{33},{35},{39},{20},{1},{5},{18},{18},{21},{15},{9},{10},{7},{5},{10},{24},{6},{3},{9},{18},{4},{9},{5},{5},{13},{9},{11},{9},{11},{22},{10},{5},{7},{8},{9},{12},{28},{29},{1},{7},{3},{3},{13},{12},{5},{1},{5},{7},{11},{8},{11},{4},{8},{9},{10},{10},{10},{4},{10},{1},{6},{8},{8},{8},{2},{5},{11},{3},{3},{14},{4},{5},{5},{3},{8},{3},{4},{23},{4},{11},{14},{12},{6},{6},{10},{17},{13},{6},{6},{5},{15},{8},{15},{3},{4},{6},{4},{12},{10},{12},{19},{8},{2},{9},{1},{8},{11},{2},{4},{5},{4},{1},{6},{21},{6},{7},{4},{12},{9},{7},{4},{5},{4},{36},{316},{128},{328},{83},{9},{282},{107},{40},{61}};
+    #if (CYTHON_COMPRESS_STRINGS) == 3 && __PYX_LIMITED_VERSION_HEX >= 0x030e0000 /* compression: zstd (1775 bytes) */
+const char* const cstring = "(\265/\375`l\n-7\000JYx\022F\340\222\270\r0\314\363D\236\306x\234\347\211X\013a \014\314\216\3311;\302P\377\354\007Id\261ExS\200>\233\210\231\356z\004~f\206\004Q13Ul\205&R\001\003\213\210\230\026\246^ZU`*J\033\n\375\000\363\000+\001+\351\321j\222(N\317-\277\245\241K9\333\312S\177W\312\220a\372\222f}\013I\202\325r!\345\257nJ\352\374\233<M\357bOO\235\365g)\271\020~\317\2338\306?~\321\263\266\200x\016\1777\237\354\007\224\236\251O\343\353\245h\245\323\244\321T\350\361\345d\250\345\245>\333\232\030\317\316\206<+\245\246\226ru\322\025\305\332\202\275\366\3534)\237\373\272\307Rj\272~\235vm\227)wb\265\274P\316\217\342\244\316\323d\377\35363\355^v\335\014}\256\263\345W\024\323NK9Y*\355\245z\352k\355L\321\364g\315>J\347\351iWk\335\277\325\276\333\322L(\264P~\257\2455Ku\245\337\246\231\256\226?\347Y\271\355\313Z\326\334\327x\254uvj,\033X,\270(\341B\263\3705G\261\316Z\253\276\236\3707Z\277\3232\325\354E\351\326\010MO\224\326^\337\026!\002o\222W\347_U\357\265\254S\337\374\232\303Y\225\245Gmdi\252\237\261\3660\314\305\327d\245\3166\356\305\026\177\272~\231\365\251\213\353\224u\233z%\245D\345\317\303\332\363\274\353\265\236V/[\230\351y&\323\355\236z\037\307]/5\255\224v~\225\226\223\326\342\327T\312\257_w\203\246\350W/53J{\337I\226\2453%e\256\363\364U\232\346Wk\243FN\275\246X\312L\245\266\324\2634?G;K\251},+'\277\2436d\236(\371')9\373\231\244TY\321\363VSj\236d\375mV\315\372\177\254=\226\236_\256s\365/\377\373Oe\277\245\275\324wog\365\244\316]\313\273\234\rnn\317M\254\245\245\362-\255\034\253\243\262\253\024\305\231\276-k\272\311\253u\246Uvx\336-{\027\225\351\226\377\006\325\250\023}\030\371\251\313\341\253\271\017\006x\266QQ-\010\311\200a\004\275Dh`\343(|\020\346>;\204\256\241\213e{\2443\252\n\354\022\234M\307\300a\354\002\232qv\230,f{}\274\\\\#\227\211E3\222\366h\227l\217&\006\362\221\371\020\305D\273\2043NQ\204\030#\334\2045\030\210\300F Q\003'\203\264?\333\343\232\256\024\"\207\222j\033\340\214\"\035Q\207\3017\334ew\350$\235\305\376p\306\321\026m\023`g\202\0034\031$\240\211""\221\370\210\177{n\0101UH;\251o\272\212\203p\224M\302\031\263\275\2010\236\235m\027Pd\013WB\222\360\306\n\007q\t\233D\023\023\201Z\007\210&\226='\361\3236\351\214#.\342&\366\2473\222D\221\020C\327\234\205O\330\2313\2126h\277\000E8\243\212O>c\313\0007 G\0233\240\031G\375\343\254}`#\342\n4\243\207'\330d>;TD\031\316\216L\307\250\307\340*\\o\220\255\002Y@\001\232Q\005\022\340\214s\257\354\034:@4c&^\310\300Z-\226}\235\257\247?K\030\230\214\003\"P\200f\314\\\255\260\024~B\354\302Q\354\021N\013\267!\354\014\226\364\310\216\024\224\330\210\237h\211S\374\020\2670\324S20U\007\211\300Cd]\305\033\214D\226\023\330\211\311\010\342\tLFR\330\241\3030!\305|b\270W\213\010V\",\tSB8\002M\237\275\002W\260\311\220\354p\320\000\024z\204$\372\306!\214\372\203\336\235p\r\233d\277\274x\201\275\224`\271\303\213\344\365R\342J\021=D\227\360\244\324;p\022\376\262G~\177\210:\250\007\340\007:\0058\013\324o\021\373\003'h{\014\010\001\365\214\332&1\245\230\325\213\206\353\304\345\341B\021=\304\013\032\224\355\231.\020\031\030iS\000\003\214\"\021$\266\204\034\360\312\245\004+\271\200\241\304\004Pq\301\020U\304\025RG\301\027d` \216#\226u\3553z\302,D\351\236\016\372\214Y\270u\017-\273\204\337P\251\310\\\033$\3008\035D\002G\034\300\001\020G\260=\037\325k\276f\210\\\t\304\220p\005\037]\017\\\010\304LD\t%\364\007\013F2\316\331\2351\343#\316 \304\3033\354\222\016\200\036\201\r\250\3010\345\014C4#\"\"I\222\024:!\010\302q\244\223\250\017\362\332.e\204fDAA\222\222B6\3667\033 X\237KT\347\223i\336\006\335\226\345-T\014BN\020Z\002{\3244\021\351\373\344\334AU\031\246\265\261>W\232\300\246\271\235\023X\300\2510\021()CB\374\225\2478\340!AC\255.<*\2417\207A\255qW\200z\034\243\316\200\272\210j\242\336D\231\"\0346\033[\235\367r\364\300A\351\272\366e=\334m\022\234\311U\341\260\325\215\317\216\005\326Y\256Mz\303\"D\2472\310\277m\216\227\271\006\350V\300\3223\334\001\344\377\245\336\356\236\031\344\307\207Q\000\270X\332zL\010\243\367, %\005\036`D&\200\364}\257HX\213\033\227\356\004\334\310\337\322?\367\311\360\0200|\006""\254\006`\234\343\034\303U\231\366j2mZ\204\270\3523\205\312D\244?\316\226\260\\\262E~\376\230qo\223\261k\203Q#\304\372\225\250/-_\013]\240\341\317t\372\206=U\210\223\024\303\352\257H\021\321\223Z\346\321\200.\217\337\036\314\330\363\247\221\361\213\277[\2701\301\026\247<]9\216Z\234^\227U\240%H\313\267\3451p;C\2615\204(\324Z{\241\245\0045\032JG\200nq\000\t\353\256(8\013\325\\Dh\316N@\375\243i!(\375\031]%\343\025`\302\254\000\022\342I\343\313\3701L\2549\353\203\225\342\000)\365\006\330\305@Gh\327e\302\341\357\343\037\236p\330\003\233a\372\355\354\366,\207B\267`\260\347\351\241\245\016\222_\342f7\003\230\013\260\014\247\336\"\203\263\000\020\247B@\372\234\177\036\n*0\016e\321\361\032\355tP\360\312\001\220L\312a%Bm{#\037\370~\022\006|\354\226I\r\213\303\267\r\230_0\300\307\244\222\210\353B\016\206\314mw\031\002x\014\001\202\305\217l!ok\362l\331*\264\302I\233\035\210\014Un\255\202\376\206l\222\252vq\305\252r\245\362)\016\013:ee\246\260\203S\264\021M\333\027\264AV\250=\002\301\251\266^\320\276\022b\024\177";
+    PyObject *data = __Pyx_DecompressString(cstring, 1775, 3);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (1806 bytes) */
-const char* const cstring = "BZh91AY&SY\022\022\365\255\000\001\034\177\377\377\377\377\377\377\357\177\375\277\377\177\360\277\377\377\374@@@@@@@@@@@@@\000@\000`\006_}\317>\325z\347t\263\271\333\026\335h\367\300>\r\010\250h\002f\243OMM\246\215\251\352hzO$\236\246L\236\204\331O\324&\217D=Fi\221\250\332\215=\002i\344\323A\246\247\212\r4\200\232d\010bje&\304\324\311\240\003\020\r\000\000\000\000\000\001\240\003@\003S#\020D\233\025\000\017(\320\000\00044\320\000\000\000\000\000\001\246\206\201\352\003@D\320MSOQ\261F\312\033)\352i\352\0004\000\000\000\320\003 \000\000\032\032\032\0004\325H~\224d\r2\030F\200i\210\014\004\014\200\000d\031\0001\006\2004\000dd\302Q\r *y\252y\240\3251\250\310\006\200\000\320\320\000\000\000\000\000\000h\003M\004BU\256\353\221\312h$\027\260\037d\373\241\371?G\341t3\326\021\375\310\215\002Ep8g\254\024\245\nB\221B\001 \220P\024@J0\261\000Q\001z\310\262\377\360\201UL?\341\22221\302\"`%\t$\204$\022\210s\021H\244+@\332\246\365\255Pj$\031 EDKX\257\336\254*\204\225Up\231\010\304j7\204\322\211XiJ\204\016\362\206\203\204\030+\252\210V\224DZ\331\212\001\244\234\2453\236u\346\347R\"\373#\002\001$\210Mq\352\214\351\026)=\327C\rS\331z\363s2\263>\220\344|\0277+\037\347\374A?\311\261g\263\260\321\256\245H\0038S\257\027,\220\274B\323\014\027Z\372Ap=\343\002\0300\300\005\\\230\265\345B\207U\314\374\372|ouqa\347\313\347\327\226\321\240\333\300z\255s6\332Mv\024\240\024K\006\235\264\216\031\320\230\324\032\216\233#\3032\364C\213T\365\363'\0169\217\211E\201.\251\220Y\371\336k\331'3\205E\2336_\010\020\225\244\023\004cdZ@.s\030\ta\324B\250\272\356\246\027g!;\3522\206m\001\354EJ5T\310m6w\2027X8\210+\001\nKC!\337\242R\363\014\305Q&%\272z\347\234\"\204Y\236\036\330PS\200\034O\227\361\226\022NTEO\355\010O\256\006\200\030C\263\233\240\242/\211B\236\330\304tr\350\306x\264\220(3\333\214\n\220\010\353\312\303b\200H\252Xn\215\31593\315A\314\265\014\020\210\021D\316\006\033=6z\331\035\234\"(N\026\212\257HE\034\036U\222\031m+\242\320FMB\263\356V\260\220\300j\375\357\257\372\351}*(\216\026%\371\354Jc~""\241\335(\030\204\273)\010\300j\025\014\035\027\002\370A-\212P5o\256r\365,\022\030\262\004\304\032\243'M\260{\020\213>{\023\r\243\253\233\034H,\003< U\272V-\2618\305\303v\021LV\344\026]`\017\026\221\034\237\230\345\300?\371\"(xe\023\261\007)\300a}\216B\016\360\267\344T\021)\014\2555\275jr\254\206S\304\205\351R\314!\245\243&\313\324\225\322\n\327\035#+\314NQIn\221z\251XhD\025\320\305)\002w\355\005/\311\363g\000E\247}a\350\332\324\256\360<@N:k\026m\215G\332\257\317\220|\031O\030\n\347\010H#\352\245W@YP\224\300z\331I\226\002\006b\267\245`\311q\364\032\330\267s=\247\310\031\001@q>55\341\r\205@\212\211\013\350,\2428\013RR\311\025\354Tb\002\021u\242:\374\235~\237~5\n\323G\213\303\205\212\037\240\300m\3242\0266z\346\320\312r\332\0170[\215\217X\272\030NW2\033\236\230,\322\006Do4\363\332\301D\271P2+\221Q\256\022\032\320\274[\300\323\2220\311\201\222qI\264f)\246)Pt\025\006\202R*\242\347q\322\00087\210b\016lJ\025\210\365\255\005t\000\316\314\246\326\270U\221\227\024\220W\025\004\355P\245\000\320\350\312:\311\007\231\300\361\226\232\365`\366\262$\007\234B\\#\301<(l\304l\231\002l\260%\255e\205\001\030\250V\245H\261\3436eG\032\304\230\313@$B\202C;\2512\001\314\302\241R6\214r\253\253xT\307\002\211[\255q\340\355j\272\250\211\211\216\201=Yj,e\001\222\n\361j\227j\252c\0279\",r\326:\352\220\252\371o< _\037e\202H\030\327R\263f\024\030\361g\271\\.0\231V\262C)\267\203pQ\016}\241X\204bn\255jPX\025\341h/i|\270\234\230\352\322\026 \027aT\266\221\277k\327\004\322\025\240z\236\023\305\253\271\010\025\010\301:%!2\034\340[w\334B\207b\375\343-\343\211\271Ev\350\240rgl \306\2211\254\2524\223\257}\217A\313,\301\002,\364H\016p\352\246u\330\027\003\037\n\026\212\006\226\222\251P\251\256!_\315\202\226^k\223GM\210#\020.\000\330\250\245\271\322S\344\344\317^\353\256\022\t6\206\236\271\272\207Y\016v\200p\354\322\204kP\007*\373\305\343vo\030\241As\031HsX't\016\346.P\337H\005\033\n\205ej\242\320\215\317\001\320Z2\224{8\032\217'\361\304\n\305&+4\265\262\005\220\307OM\031\000\223\250D\235\344\014J\010\350""\210\266\314U\310\027G\003|?;3\010\215\372\n\337@\320D\210\004\331\232d\020\266\210( c\304\t\263Vaux\212\210\3402K@\355\310\030^9\351\240@g4\372\275\001\377bP\226d:g\204\024;n\353\203\202Th\204\031\307YK2\246\3311\010\021\253\236\337\242\020\025Y\235]|\217\035\341\026\256\273\310rR\314\333JJH\361-\251\366\330Xl\303m\327\270\016\n\250\002S\002\202\333\021IZ\352N\033.E\317p\202\037c\236\021d\037\031\365\"\214\005*\240\317\337't\0241JS\2237$\270\004OqxC\316\313\274L\326\227m\3163^\001\226\207\"\037\035'k3\362\314\377\010c)\212\207\223$0L\324\251eR\004\237\301\335\374\331\016\301(\032\2261#\300\320\350\373\371\254a\234\244{\351\367\270\3647y\244\321\340\316\327\227,1\343\205\003r\372To\344\010\320vo\314A\263[\003\247\030Kz\316\336\030\306yj\020jD\350\355F\014\354;\353~\371\364\311\3717Q\2376\036\\\336\245\352\326c\312\240\267\353\330Z\322\374*\340\247\270\022T\222M\007V5\014\246\355\260@\245(\023\211:\262\242\250G@a\246C5\231\241\027V>\004\302\014n\250\207\t\242\301\204\312\355\376\301\235\377\027rE8P\220\022\022\365\255";
-    PyObject *data = __Pyx_DecompressString(cstring, 1806, 2);
+    #elif (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (1839 bytes) */
+const char* const cstring = "BZh91AY&SY\324#ga\000\001(\177\377\377\377\377\377\377\357\177\375\277\377\177\360\277\377\377\374@@@@@@@@@@@@@\000@\000`\006\236g\317\202M\266KKb\323i\273\324\014\206\204\2124M\240OB~\2416\206\246\3654\304\3315O\324i2m\021\263I\014\231\250\364\032i1\031\241\030\230\236\247\240\320\304\032i\023MM\2051\014\025=\023\nz\231\006C d\310h\030\200\311\220\031\014LL\200\r\014A\204\030\000\000\000\000\000\000\000\000L\000\000\000\004`\000&\000\006\247\240D\320@FI\352m\023\023SO)\240\032h\032h\000\006\200\000\000\000\r\001\265\017P\032iS2\243 \031\000\000\000\000\000\000\000\006\201\240\001\240\000\003@\311\220JA\251\204\325O5Oh)\246j\000\000\000\000\000\000\000\000\000\000\003C@\006L\024\2230\037\252)\021\221\303\010\010\211\362\203\354~\017\257\325\214\310\252\307\216\265\035p4\252)!\327\215\014c\004q\034\241@H$\024\004\004%\037L\240\037\300=j5\354\200\201\324C\3020F=\342\327\210\200\222$\222\020\224%\020\342\217G\2450@\334\321r\301Bh$\032\220\"\242&v+\266U\205P\222\252\262p\221\010\320\323B-\346w\022\203\330\223\036\331\324A\350>\005IH\225\020\224H\220\2752\260\312\234\2456\316X\036\344J\344Y\025\210\300Y\252\262\026\267J\326\3220d\234\226\277AI\353}9\231{\374\277\233\370\336\352\263:\273\377\237\370\342\274\2113\327ga\311\212\365H\004\305\335\230\332\315!\256CC\016\001\266\334\344\205\340}d\010\340\341\200\025w\250\032\017\n\205\021^\177\353\325\340\207\362/\261\217\035\337N\316\326\241\315\032\266\317a\235uc&\334\010\027\310_,\006\206\310\341\235$\312\204\025\036\223\004x\353n\3148\323w\255\326\250q\346?h\243\001g\250d\026\274^\204-]w\320a\261\261\222s\"V\312r\313%j\226 \027uPJ\234\304\"\014z\365F\335d*\374\316!\355\332.\214(\322\241{\331\n\323\334\370a\215\342\220\022\340\324\223\253{Y\244\256&\006\250\265TX\244\212\226\323\3259\204\020\202\253\203\330\370\224\304\r'\254\370E\360\231b%?mBzq\215\006\re\275\237\253\210.\255\301OtD\371:v\344y\265\210\024\023\335\215\310\355a\304K\024\350:.\005M\360\3354\224\355\262jR\002\324\357\3149 \232\"2\t\350\254\3262\323\266j\013L""\206av\026\n<\203\014\215\nk\224\035\000\374\324\300\331\375\233i\031\205\243Gv\310\177\274n\332\211%\002if\032\222WYi\273ha\022\314S#\002\322E\345\212\206\020z]\030V-\367_\231\202\212\0205\355\211k\003\204s\267z*\341\241\326\273R\323\200\354iW$\025\003NY\224e<\313F,%\272+\032\355z\\\265\240\235y\300p\270\207\336\354\006\325!\337\341\032\020\355\301\346\340\2334\001\206\235\031\334\204\035\200\2721*\010\204\0065\230\271s)4\215\306\004m\357I\342\006\376\033yj\270g\270\002\371RnTn!\004S0\205$\344\345X$NN\326X\010\037\333\213q\330\265\234\200'yo\n\363\350=\370\004\345\002\264\327\222+<V\256X]\004+N\023\020\022\251\255\332\2509\262\214\264\264[!T\000c\255\205Gh\202EtE\216j\345G\364\334F9~\357\2363\030\340\246\026@\245\353\226T?L\340\213\211\2326\226\242(X\223\236$mNj1\001\010\272Q(\266\372-\313\365\2770\202d\341`\240MC\262\026\213\264\013\304\333\0351hd\266\232\017\2143\3357R\307\271\366\305\325\262\235nKV)I\250\246\300\335\252w\301\373\215\033\032i(\267\210\032\220\300]\304\263 \242\246%I\214%\2333\322\221G\014\255+cII3PS\264\351\0008/0\322\016ZJ\025\244y\355\n\350\001;\032.fqf\203]\352\310A\352\t\305B\224\003#\223%D\352\0161\244\356\226\203\r\026\271\254y\001\304\\\022\260\375\364m\221\235\303TH\021d\302gk&P\024\271B\2653\"\277t\316\371P`*c3\200Hm2\025\014+\224H\007\003MB\244l\231B\255\021pb\334\0043a6]\016\3321_l\310\241\264V\376\222\214:\000o\tk\226\342\366\352\244qy\311\000\307\021\216<r\030\360\227\177 \363\010\354\214\201 \0316\245\363`\025\231U+\232\306\214\311(\306\274t\314T~\256hA\305K1\004iU\006\316t\310\311j\002\241&\023\001\225\214]\274\362\337\211\3302\270\031\367a\363\333L\271\3267*\355{\205\204\335N^\034\316A\264\2402\241\260T\207p[\037\350B\212/v\302a\200\334m\357\\w\312\006\366\031\351\245\215\"#ITi'\313f,@\2462\007\225+\221\0365\243l\223myx2\263\210\\+\0264,\212\027f\2651\033\016\003\324\262\303\0304z\314@\367\201`\007:\242\226\341:\243\2747\260\325\256\272\305A\"\320\323\344#t\r\375<\033\200\333\325\224\210\322\240\r\233,\026\rx8]2\025\005md\337\300`""\226\272lEK4Sn\372\004\033\005\002-\310\203\020\223i\312:I\202\341\204.\246\224\023\327\331\002\310J\373i\300'\237\203\000_\201\351\233\264I'@\215\270A&\201A\005\021\033\207\252U\002\301\003l:sh\021h\247\255B\254\362\216\021\032\002\215\017y\004-2\n\010\031\360\002\215\025,\201*o\001\3267\312,\200X\200\207*\016\022\205\004\036\003\343F(\275\326\036\301A\341\304\025L8\217\242\203\303.^P\201\243\252\245\214\2516^\310@\215_\313.h@TgvW\212\364\255&\376\005\217Gq\n]Qu\023\251I*:\375}\225\226\r\230m\277\0331 TB\\\325\326\007\022\355\207\0071\255-d\337\256\343\256\270A\016\243\235\376\331g\304o\"\214\005*\230v\201M\314P\223\004\265\234\334k^c\2006\361w\305\221\031\370H\355,\2778i\360\021\220\345\304\341\214\365Xs\243y\010\203!\232h\230\363\003%\016\235:\352\322\023&\035\2649\330\341\354B\203*\266\004\355\014?w>\373\014V\277<\244\276\312u\313\321!\376ls\201G\343>xg\367\341\003\027^\343ZO\367\022L/\225\311\214Z\365n\256\240\211\360!\375/\204\027\326!\006\245\305\317\311\210\031zFf\003\014m\357cZ\272\303Eh\376\324^\314e\260\241\2657\222\314\230\202\316_\003\201b\245\211Hub\0242\227n4\013+\"N,ueEP\216\200\206\242\022\264h\233\253\037\006\202\030\272\242\003\024\233\006\017\224\272\321lcny\213\271\"\234(Hj\021\263\260\200";
+    PyObject *data = __Pyx_DecompressString(cstring, 1839, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (1684 bytes) */
-const char* const cstring = "x\332\255TMs\333\306\031\026\035R\242\\*\021%Y\376\210\223\202\226+\271\323\206\023Jr\234\270\235d\350\304\312Gk\217))\266\323\313\316\022X\222k\201\013\020\273\240H\267\207\034y\334\343\036q\304\021G\036y\324\221G\034\371\023\374\023\372\356\202\262\225\330\236^\252\221\240\027\273\357\347\363</\276y\354\tb\211\016\026\326\267C\321\361\230E\271\345\020\2276I\200\005q\207\026\027\001\265\005\t\264\023\263\236<|\362\331\376\227\373\026f\216\025\220\027\304\026\334\342a\323v1\347\204[^\313j\206\324\025\224Yb\350\023^\265~lYC/\264\030!\216%<\313\007\277\213\001\242C\230\305\211\320\206\265\203\031\363\004\026\324c\010\302)k\357X\016\r\240\010\355\023\035}\200]N\252\330q\020\370\021\207r\334t\ta\372\331\302\\ \273C8\257\372\303A\333\246<;w\230\007\363\264p\350\n\013\241\2008\241M\020\262\234\320$d\036\373\014\346\353S\354\302\255M\031\025\0101\277\312\034\034\004x\310\302\256?\254\"\333\013H\265\013\031\2509\265Z\230\272\3318\264\353{\201\270\350\026v\261\350\274\345\361w\215\"ks/\014l\362\365\201\213\305q@\310\263\000\373>\t~\367Z}\335\246m\030A\350m\007@\214\003P\357w\361\003\317\307m\355\001L\241&\001p\272^\037&\1772\034\300\337w@)zL\006\342\220\264\236?G^(0\0372\233zU\030\002\336(#\274\211\205\335A-\227\372\250\017\024x\301\374\004\256m\257K\320)\241\355\216\230\037f\036\364%y]\312\030\\c\322\244\274\343\371\274\351\341\3001\017\344R.2Kx\363P\324\244\342\215\007\267;\324u\020u\006\266\013\275 \n\202\010\260M\232\330>\261=\177\350@n\337\305\2148Zf\244\353\213!a\275\220\204\004\231~\010Pb\004L\372\330\315\272\340\332\0141\224\"\003_\203\"\000.@\000\322\n\003\222\213\233\304Em\334\275\240\245\226\353aa\036{\273\010\265Bf#\324&\363\271\214\231\321\200:\230\243\023\3150u\200\024\210\207\266\333(0\010\351;\350\215\260w]R\312\034j\023N\031\350] \312\321k\006\300\326\335 \0003\240\202t\371\013S\341\204\231@\227\340\026\312\3002&`\345\2226L\253\301\347\032a\204\272\030\200\203\347\0009\304\027\035mp\334\365]\002\026\355\322\227\272\r\360wB\227 \023gb\021\024\013\030\203N""\231\303\020$\20736\017\204\355\320-\301\216\030\321{\266\035\372\2248\320\264\327jA\333\277\025\007\274\371>>e\334w)\201\307\020~\r\371\276\347\373\276\010\336\243R?\344\035\204`\215\321\034]m\366\205^g\004?\275\020\273Y\027\031\252\001\004{\3357\313\375\326\376\274> \003mr\330\344\200\2100`\201\347\235pxh\266\215\336X\3133\257\000\246\371\377\006\247\000\332\315 \340\304m\231\r\234C\001\326\374\003sa/\321;v\224\237\300*\001\002\274\307\003;\223/\204\010=5\354\201\000\352\014L\302\327\312\024!\224\322=\366\265l\t\317\000\235\357\334)\270\234jM @\035\352d\266\357qm\010\302\006p?\324\213:\004c\272\360y\222K\363K\277\376G\356I\234\026?\032\365\322\374\037F\373\243\236\\\222B\355\252gQ\375\327\334\253\342Bm\367\325\306B\341\206*\247\371\217U\r\016\n\327\344@\205Q=\315_\315\214Y\2768*\214\236\313_\024V\275\264\2702\372YVd--\352l\\\376Y\355+\021\335\215W\222FZ\332\220\337\253\232\252\247\245M\331V\rE\340<7\203&\304\250fZ\230\345\327\344\035UQ{\220\352e\274\026\357\305M\335\345\312\350H\346dY{\236\216\2322\227\026\327\344\266ZR\275\250\0205\"\032\367fpp[b\031\252\272j\314\362\037A]\335B\376\303\021\316\272\233\267T\032}/k\262\236\0267\344\243h-2M\336\227G\252\240\236F5\030\251\264\222\026\257\312\036\274\037\232\372_%?\215\361\030\206*\313\r\331\200\236\237C=\033.\356%\025\235\255>]\371\004\346x\021\027\342g\311\203\004p\\\227\265\031\340X\003\354\026\027\026\227f\371\262\\\227u\331H\363\373\340\320\032\327\307G\223\305I\363,\227\301w\032\3414\177E>Uw#81\360@\\\241xNKi\364P^\201\301zii\025 \000s\366\366\231\003\210\335\213nG8\342\361\255\270\256y\254M\363\017&\225\364\356\027@\336\362M\240\240\247G\335\005\034\0130nN]\215>\200\351K\353\362\013U\206\202\313\237\250\372\205\304*\227\226\200\rY\004\317r\272zS_\336\212\356\304\333I.\271>\2765\006\000\341,}o\000\010E\3753^Nn\214k0\360/\023<\351\231,\272\322F\306\303\273\003\313\362:\314\242\2618w\277\006>\037(\023R\0375\364I%*N\357|9\316i\022M\323\377\000\034{:\315K\265\256\371\2074&i\272\nd\310\003H\370\267\250\031\347\322""\215JT\216\266\343\\\\N7\254(7\373\037\327\240\307\177\253\312t\341\246\3721j\\\340q/\331M\236\216w\201\307\313g\333\323'\207\323\303\243\214\313\276v\273 \266s!\005\240\264\257\342\203\244\222\324\322L\032i\376\362\350/\2621]\370z\214u\3462\250Y\317\237\377<\271\224l\217/\215\267\306\377\232\364\317\016\317`'7e\307\354\225)\301\243\212\226\307\362\233\"\037\302>\\\222\025m\340Q(\037H\002\313\3231\003\0014\217\324\025\023\\\272\246.G\025\315\370\252\\\004\027\275\203\253\000\237<Vk\352~t\010\302\331\212\217\240\370\316x\035\030;\236\254M\356Cy>=<\236\036\377\234\201\177,\327\344=\265\005rw\242[Q\375\377xx[5\265\034\243\357\342Kq\345\034\242O\377\370jm\241\360\261\372+\310\032\246\327z\313\003-z\374\353j\031\250\332\211\327\343\207\323\332\301\304>\3338\323\312(l\232\025}\032\335\217\033\351\346\rUI7\267\246[\373I=\333(\263\305\237\3027#\247\027\364\033\365'0\227\242\336ta'\202\357N\025\2764\213\tN\206\347\333\251\305\361\003\310\351Y\224-\324\177\001\345\224_.";
-    PyObject *data = __Pyx_DecompressString(cstring, 1684, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (1738 bytes) */
+const char* const cstring = "x\332\255TMs\333\306\031\026\035R\242\\*\021%Z\376\210\223\202\226+\271\323\206\023Jr\234\270\235d\350\304J\2356\031\223Rl\247\227\235%\260$\327\002\027 vA\221n\0179\362\270\307=\342\210#\217<\362\250#\2178\362'\370'\364\335\005%\253\261=\275T#A/v\337\317\347}\036|\363\223'\210%:XX\337\016E\307c\026\345\226C\\\332$\001\026\304\035Z\\\004\324\026$\320N\314z\372\370\351g\007_\036X\2309V@^\022[p\213\207M\333\305\234\023ny-\253\031RWPf\211\241Ox\305z\322\262\206^h1B\034Kx\226\017~\227\003D\2070\213\023\241\rk\0273\346\t,\250\307\020\204S\326\336\265\034\032@\021\332':\372\020\273\234T\260\343 \360#\016\345\270\351\022\302\364\263\205\271@v\207p^\361\207\203\266Myz\3560\017\346i\341\320\025\026B\001qB\233 d9\241I\310<\366\031\314\327\247\330\205[\2332*\020b~\20598\010\360\220\205]\177XA\266\027\220J\0272Psj\2650u\323qh\327\367\002q\331-\354b\321y\313\343\257\032E\326\346^\030\330\344\353C\027\213\343\200\220\347\001\366}\022\374\346\265r\321\246m6\202\320\333\016\200\030\007\240\336\357\342\007\236\217\333\332\0036\205\232\004\300\351z}\230\374\351p\000\177\337\301J\321Od \032\244\365\342\005\362B\201\371\220\331\324\253\300\020\360F\031\341M,\354\016j\271\324G}X\201\027,N\340\332\366\272\004\235\022\332\356\210\305a\352A_\221\213R\306\340\032\223&\345\035\317\347M\017\007\216y \227r\221Z\302[\204\242&\025o<x3l\331\035\352:\210:\003\333\205v\020\005N\004\330&Ml\237\330\236?t \275\357bF\034\3154\322\365\305\220\260^HB\202LK\004\266b8L\372\330M\033\341\332\0141T#\003_\343\"\0001\000\001\322\n\203\223\213\233\304Em\334\275D\247\226\353aa\036\373{\010\265Bf#\324&\213\321\214\231n\002u0G'z\311\324\201\275@<\264\335F\201\001I\337Ao\204\275\353\222R\346P\233p\312\200\362\002Q\216.\226\000\266\356\006\001\236\001\025\244\313_\232\n'\314\004\272\004\267P\212\2271\001+\227\264aZ\215?\327 #\324\305\000\034<\007\310!\276\350h\203\343\256\357\022\260h\227\276\322m\200\277\023\272\004\2318\023\213\240X\300\030t\312\034\206 9\234\261E \010D\267\00421\274\367l;\364)q\240i\257\325\202""\266\377\233\037\360\346\373\370\224q\337\245\004\036C\3705\373\367=\337\367E\360\036\242\372!\357 \004JF\013t\265\331\027Z\321\010~z!v\323.RT\003\010\366\272o\364\375\226\204.\016\310@\233\034\304\034\020\021\006,\360\274\023\016\017\275m\3037\326\362\314+\200i\376\277\301)\360N\003\3508E\201\023\267et\270@\003\254\305g\346\222:\321;\224\312O@P\000\002\357\361\300N\031\014!B\017\016j\020\260=\203\224\36059E\010\245t\233}\315\\\302/d\006}\202t@%-\022\244@/\344x\nq\247\232+\010\266\001\305S\333\367\2706\004a\003\270\037j\r\017\301\230-}>\316$\331\225_\377-\367%N\362\037\215zI\366w\243\203QO\256H\241\366\324\363\250\366k\346u~\251\272\367\272\264\224\273\245\212I\366cU\205\203\334\r9PaTK\262\327Sc\236\315\217r\243\027\362\027\205U/\311\257\215~\226eYM\362:\033\227\177T\007JD\367\343\265q=)\224\344\367\252\252jIaK\266U]\0218\317\314\241\t1\252\232\026\346\331\ryO\225\325>\244z\025o\304\373qSw\2716:\222\031Y\324\236\247\243\246\314$\371\r\271\243VT/\312E\365\210\306\2759\034\334\225X\206\252\246\352\363\354GPW\267\220\375p\204\323\356\026-\025F\337\313\252\254%\371\222\3741\332\210L\223\017\345\221\312\251gQ\025F*\254%\371\353\262\007\357\rS\377\253\361\017\023<\201\241\212\262$\353\320\363\013\250g\303\305\203qYg\253\315\326>\2019^\306\271\370\371\370\321\030p\334\224\3259\340X\005\354\226\227\226W\346\331\242\334\2245YO\262\007\340\320\232\324&G\323\345i\363,\223\302w\032\341${M>S\367#81\360@\\.\177\276\226\302\350\261\274\006\203\365\222\302:@\000\346\374\3553\007\020{\020\335\215p\304\343;qM\357\261:\313>\232\226\223\373_\300\362Vo\303\nzz\324=\3001\007\343f\324\365\350\003\230\276\260)\277PE(\270\372\211\252]J\2542I\001\266!\363\340YL\326o\353\313;\321\275xg\234\031\337\234\334\231\000\200p\226\2747\000\210\242\376\021\257\216oM\2520\360/S<\355\231,\272R)\335\303\273\003\213\362&\314\242\2618w\277\001>\037(\023R\033\325\365I9\312\317\356}9\311\350%\232\246\377\0168\366t\232WjS\357\037\322\230\244\311:,C\036B\302\277D\3158\223\224\312Q1\332\2113q1)YQf\376?\256\201""\217\377R\345\331\322m\365$\252_\332\343\376xo\374l\262\007{\274z\2663{\332\2305\216\322]\366\265\333%\262\235\023)\000\246}\025\037\216\313\343j\222R#\311^\035\375I\326gK_O\260\316\\\0046\353\371\263\237\217\257\214w&W&\333\223\177N\373g\2153\320\344\226\354\030]\231\022<*kz\254\276)\362!\350\341\212,k\003\217B\371H\022\020O\307\014\004\320\374\250\256\231\340\302\ru5*\353\215\257\313ep\321\032\\\007\370\344\261\332P\017\243\006\020g;>\202\342\273\223M\330\330\361tc\372\020\312\363Y\343xv\374s\n\376\261\334\220\017\3246\320\335\211\356D\265\377\343\341]\325\324t\214\276\213\257\304\345s\210>\375\375\353\215\245\334\307\352\317@k\230^\363-\013k\321\343\337T\253\260\252\335x3~<\253\036N\355\263\322\231fFn\313H\364Y\3640\256'[\267T9\331\332\236m\037\214k\251\242\214\212?\205oFF\013\364\033\365\0070W\242\336li7\202\357N\005\2764\313c<\036\236\253S\223\343o@\247\347Qm\321\322|g\367\365\272\316$@H\r\370\304\334\22560\356\320\000\233\007)\246AO\324\021\344\r\342R\334\210\207@S\035\374\037\365,\201n";
+    PyObject *data = __Pyx_DecompressString(cstring, 1738, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (2836 bytes) */
-const char* const bytes = "?Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.add_notedisableenablefast_chess.pyxgcisenabledno default __reduce__ due to non-trivial __cinit__np.ndarraynumpy._core.multiarray failed to importnumpy._core.umath failed to import<stringsource>FlatTreeWrapperFlatTreeWrapper.__reduce_cython__FlatTreeWrapper.__setstate_cython__FlatTreeWrapper.propagate_and_best_move__Pyx_PyDict_NextRefXX_outasyncio.coroutinesbatch_flip_vectorsbatch_outcome_weightsbatch_vectorizebest_movebest_scorebishopsboardboard_listboard_to_vector_bitboardboardschild_idxcline_in_tracebackcopydst_planedtypeemptyenqueue_batchenumerateeval_scoresevaluatorexpand_treeextract_and_label_gamefast_chessfloatfloat32__func__get_score__getstate__has_kingside_castling_rightshas_queenside_castling_rightsiindicesinpint_is_coroutineis_game_overitemsjkingsknightsleaf_boardsleaf_idxlegal_moveslist__main__max_depthmax_samplemaximizing__module__movemoves_iternn_candn_leavesn_sample__name__npnumpyoccupied_cooffoutoutcome_weightoutppawnspliesplyply_listpoppptrpropagate_and_best_movepush__pyx_state__pyx_vtable____qualname__queensrandom__reduce____reduce_cython____reduce_ex__resultreturnrooksroot_child_inforoot_idxroot_maximizingrptrsampleself__set_name__setdefault__setstate____setstate_cython__skip_plysqsrc_planet__test__total_pliestptreetupleturnvvaluesweightweightswptrwrite_offsetwrite_poswrittenxptry_outyptr\320\0000\260\001\330\004\007\200|\2203\220a\330\010\017\210q\330\004\013\2104\210q\220\007\220t\2302\230W\240A\200\001\360\010\00012\360\024\000\005\032\230\021\330\004\033\2301\360\010\000\005\030\220x\230u\240A\330\004\027\220x\230u\240A\340\004\010\210\005\210X\220Y\230a\230q\330\010\r\210U\220!\2201\330\010\013\2104\210s\220)\2304\230t\2405\250\r\260Q\330\014\024\220G\2301\230A\330\014\026\220g\230Q\230e\2405\250\001\340\004\007\200t\2101\330\010\017\210q\340\004\022\220(\230!\2303""\230a\230z\250\022\2503\250b\260\001\330\004\r\210S\220\001\220\021\340\004\007\200w\210b\220\001\330\010\022\220&\230\007\230q\240\005\240Q\240i\250q\340\010\022\220$\220a\220u\230A\230Q\340\004\017\210s\220!\2201\330\004\016\210a\340\004\010\210\005\210U\220!\2201\330\010\014\210G\2201\220A\330\010\024\220M\240\022\2401\330\010\013\210:\220S\230\005\230V\2401\240A\330\014\r\330\010\027\220q\230\005\230R\230z\250\022\2509\260J\270a\270q\330\010\021\220\024\220Q\220g\230X\240Q\240c\250\022\2507\260!\330\010\014\210A\320\r\035\230Q\230j\250\005\250W\260B\260a\330\010\023\2201\340\004\013\2101\200\001\360\006\000\006\007\340\004\021\220\023\220A\220Q\330\0044\260B\260f\270A\270S\300\006\300b\310\001\330\004\027\220x\230w\240a\330\004\025\220V\2305\240\001\330\004\024\220G\2301\360\006\000\005\010\200|\2203\220a\330\010\014\210E\220\025\220a\220q\330\014\020\220\001\220\025\220a\340\010\014\210E\220\025\220a\220q\330\014\020\220\001\220\025\220d\230!\2307\240$\240a\240s\250\"\250A\330\004\013\2101\320\004B\300!\33056\360\024\000\t\034\2304\230q\330\010\013\2102\210S\220\005\220S\230\001\230\027\240\003\2401\330\014\023\2206\230\021\360\006\000\t\035\230A\340\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\034\230A\340\010\"\240(\250&\260\001\260\031\270\"\270A\330\010\034\230A\330\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\033\2301\230L\250\t\260\032\2701\270A\270Y\300a\300q\330\020\034\230A\360\006\000\t\024\2201\330\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\021\220\031\230!\2305\240\001\330\020\034\230A\360\006\000\t\030\220q\230\003\2301\330\010\014\210A\210Q\360\006\000\t!\240\010\320(8\270\001\330\010\024\220A\340\010\014\210K\220x\230q\330\014\017\210z\230\023\230A\230Q\330\020\021\330\014\017\210q\330\020\023\2201\220F\230!\230;\240b\250\001\330\024!\240\021\240&\250\001\250\021\330\024 \240\001\340\020\023\2201\220F\230!\230;\240b""\250\001\330\024!\240\021\240&\250\001\250\021\330\024 \240\001\340\010\017\210{\230!\320\000\034\230I\240Q\340\004\021\220\023\220A\220Q\330\0043\2602\260V\2702\270S\300\n\310&\320PR\320RS\330\004\027\220x\230v\240Q\340\004\010\210\005\210U\220!\2201\330\010\027\220q\230\005\230R\230r\240\022\2409\250F\260!\2601\330\004\013\2101\200\001\330\004\n\210+\220Q\320\000>\270a\340\004\021\220\021\220&\230\001\230\021\330\0040\260\002\260&\270\002\270#\270Z\300v\310R\310q\330\004\026\220h\230a\230q\330\004\027\220x\230s\240!\360\006\000\005\t\210\005\210U\220!\2201\330\010\016\210b\220\002\220!\330\010\016\210a\210u\220B\220e\2303\230h\240b\250\001\330\010\014\210M\230\025\230a\230q\330\014\030\230\n\240!\2401\330\014\020\220\006\220e\2301\230A\330\020\024\220A\220T\230\022\230:\240R\240s\250#\250S\260\002\260'\270\023\270A\270T\300\022\300:\310R\310s\320RT\320TU\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230$\230b\240\003\2401\240D\250\002\250!\330\004\013\2101\200\001\330\036\037\360\022\000\005\033\230,\240a\240q\330\004\034\230A\330\004 \240\001\360\006\000\005\031\230\t\240\021\240'\250\023\250E\3201F\300c\310\024\310Q\360\006\000\005\026\220Q\220g\230V\240:\250Q\330\026\032\230!\330\026#\320#4\260A\360\006\000\005\010\200q\330\010\021\220\036\230q\240\001\340\004\013\210?\230%\230q\240\007\240q\320\000'\240q\340\004.\250b\260\006\260a\260y\300\006\300b\310\001\330\004\023\2201\220H\230A\230W\240A\330\004\013\2101";
+    #else /* compression: none (2924 bytes) */
+const char* const bytes = "?Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.add_notedisableenablefast_chess.pyxgcisenabledno default __reduce__ due to non-trivial __cinit__np.ndarraynumpy._core.multiarray failed to importnumpy._core.umath failed to import<stringsource>FlatTreeWrapperFlatTreeWrapper.__reduce_cython__FlatTreeWrapper.__setstate_cython__FlatTreeWrapper.propagate_and_best_move__Pyx_PyDict_NextRefXX_outasyncio.coroutinesbatch_flip_vectorsbatch_outcome_weightsbatch_vectorizebest_movebest_scorebishopsboardboard_listboard_to_vector_bitboardboardsbufchild_idxcline_in_tracebackcopydst_planedtypeemptyenqueue_batchenumerateeval_scoresevaluatorexpand_treeextract_and_label_gamefast_chessfloatfloat32__func__get_score__getstate__has_kingside_castling_rightshas_queenside_castling_rightsiindicesinpint_is_coroutineis_game_overitemsjkingsknightsleaf_boardsleaf_idxlegal_moveslist__main__max_depthmax_samplemaximizing__module__movemoves_iternn_candn_leavesn_sample__name__npnumpyoccupied_cooffoutoutcome_weightoutppawnspliesplyply_listpoppptrpropagate_and_best_movepush__pyx_state__pyx_vtable____qualname__queensrandom__reduce____reduce_cython____reduce_ex__resultreturnrooksroot_child_inforoot_idxroot_maximizingrowrptrsampleself__set_name__setdefault__setstate____setstate_cython__skip_plysqsrc_planet__test__total_pliestptreetupleturnvvaluesvectorize_into_bufferweightweightswptrwrite_offsetwrite_poswrittenxptry_outyptr\320\0000\260\001\330\004\007\200|\2203\220a\330\010\017\210q\330\004\013\2104\210q\220\007\220t\2302\230W\240A\200\001\360\010\00012\360\024\000\005\032\230\021\330\004\033\2301\360\010\000\005\030\220x\230u\240A\330\004\027\220x\230u\240A\340\004\010\210\005\210X\220Y\230a\230q\330\010\r\210U\220!\2201\330\010\013\2104\210s\220)\2304\230t\2405\250\r\260Q\330\014\024\220G\2301\230A\330\014\026\220g\230Q\230e\2405\250\001\340\004\007\200t\2101\330\010\017\210q""\340\004\022\220(\230!\2303\230a\230z\250\022\2503\250b\260\001\330\004\r\210S\220\001\220\021\340\004\007\200w\210b\220\001\330\010\022\220&\230\007\230q\240\005\240Q\240i\250q\340\010\022\220$\220a\220u\230A\230Q\340\004\017\210s\220!\2201\330\004\016\210a\340\004\010\210\005\210U\220!\2201\330\010\014\210G\2201\220A\330\010\024\220M\240\022\2401\330\010\013\210:\220S\230\005\230V\2401\240A\330\014\r\330\010\027\220q\230\005\230R\230z\250\022\2509\260J\270a\270q\330\010\021\220\024\220Q\220g\230X\240Q\240c\250\022\2507\260!\330\010\014\210A\320\r\035\230Q\230j\250\005\250W\260B\260a\330\010\023\2201\340\004\013\2101\200\001\360\006\000\006\007\340\004\021\220\023\220A\220Q\330\0044\260B\260f\270A\270S\300\006\300b\310\001\330\004\027\220x\230w\240a\330\004\025\220V\2305\240\001\330\004\024\220G\2301\360\006\000\005\010\200|\2203\220a\330\010\014\210E\220\025\220a\220q\330\014\020\220\001\220\025\220a\340\010\014\210E\220\025\220a\220q\330\014\020\220\001\220\025\220d\230!\2307\240$\240a\240s\250\"\250A\330\004\013\2101\320\004B\300!\33056\360\024\000\t\034\2304\230q\330\010\013\2102\210S\220\005\220S\230\001\230\027\240\003\2401\330\014\023\2206\230\021\360\006\000\t\035\230A\340\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\034\230A\340\010\"\240(\250&\260\001\260\031\270\"\270A\330\010\034\230A\330\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\033\2301\230L\250\t\260\032\2701\270A\270Y\300a\300q\330\020\034\230A\360\006\000\t\024\2201\330\010\014\210E\220\025\220a\220q\230\001\330\014\017\210q\220\010\230\001\230\021\330\020\021\220\031\230!\2305\240\001\330\020\034\230A\360\006\000\t\030\220q\230\003\2301\330\010\014\210A\210Q\360\006\000\t!\240\010\320(8\270\001\330\010\024\220A\340\010\014\210K\220x\230q\330\014\017\210z\230\023\230A\230Q\330\020\021\330\014\017\210q\330\020\023\2201\220F\230!\230;\240b\250\001\330\024!\240\021\240&\250\001\250\021\330\024 \240\001\340\020""\023\2201\220F\230!\230;\240b\250\001\330\024!\240\021\240&\250\001\250\021\330\024 \240\001\340\010\017\210{\230!\320\000\034\230I\240Q\340\004\021\220\023\220A\220Q\330\0043\2602\260V\2702\270S\300\n\310&\320PR\320RS\330\004\027\220x\230v\240Q\340\004\010\210\005\210U\220!\2201\330\010\027\220q\230\005\230R\230r\240\022\2409\250F\260!\2601\330\004\013\2101\200\001\330\004\n\210+\220Q\320\000>\270a\340\004\021\220\021\220&\230\001\230\021\330\0040\260\002\260&\270\002\270#\270Z\300v\310R\310q\330\004\026\220h\230a\230q\330\004\027\220x\230s\240!\360\006\000\005\t\210\005\210U\220!\2201\330\010\016\210b\220\002\220!\330\010\016\210a\210u\220B\220e\2303\230h\240b\250\001\330\010\014\210M\230\025\230a\230q\330\014\030\230\n\240!\2401\330\014\020\220\006\220e\2301\230A\330\020\024\220A\220T\230\022\230:\240R\240s\250#\250S\260\002\260'\270\023\270A\270T\300\022\300:\310R\310s\320RT\320TU\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230#\230Q\230d\240\"\240A\330\010\014\210A\210T\220\022\2207\230$\230b\240\003\2401\240D\250\002\250!\330\004\013\2101\200\001\330\036\037\360\022\000\005\033\230,\240a\240q\330\004\034\230A\330\004 \240\001\360\006\000\005\031\230\t\240\021\240'\250\023\250E\3201F\300c\310\024\310Q\360\006\000\005\026\220Q\220g\230V\240:\250Q\330\026\032\230!\330\026#\320#4\260A\360\006\000\005\010\200q\330\010\021\220\036\230q\240\001\340\004\013\210?\230%\230q\240\007\240q\320\000'\240q\340\004.\250b\260\006\260a\260y\300\006\300b\310\001\330\004\023\2201\220H\230A\230W\240A\330\004\013\2101\200\001\340&'\360\020\000\005\010\200t\2102\210R\210s\220$\220c\230\023\230F\240!\2401\330\010\020\220\001\330\004\023\2201\220I\230S\240\007\240r\250\024\250R\250y\270\001\330\004\013\2101";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
     PyObject **stringtab = __pyx_mstate->__pyx_string_tab;
     Py_ssize_t pos = 0;
-    for (int i = 0; i < 134; i++) {
+    for (int i = 0; i < 137; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
       if (likely(string) && i >= 13) PyUnicode_InternInPlace(&string);
@@ -11426,7 +11685,7 @@ const char* const bytes = "?Note that Cython is deliberately stricter than PEP-4
       stringtab[i] = string;
       pos += bytes_length;
     }
-    for (int i = 134; i < 143; i++) {
+    for (int i = 137; i < 147; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyBytes_FromStringAndSize(bytes + pos, bytes_length);
       stringtab[i] = string;
@@ -11437,15 +11696,15 @@ const char* const bytes = "?Note that Cython is deliberately stricter than PEP-4
       }
     }
     Py_XDECREF(data);
-    for (Py_ssize_t i = 0; i < 143; i++) {
+    for (Py_ssize_t i = 0; i < 147; i++) {
       if (unlikely(PyObject_Hash(stringtab[i]) == -1)) {
         __PYX_ERR(0, 1, __pyx_L1_error)
       }
     }
     #if CYTHON_IMMORTAL_CONSTANTS
     {
-      PyObject **table = stringtab + 134;
-      for (Py_ssize_t i=0; i<9; ++i) {
+      PyObject **table = stringtab + 137;
+      for (Py_ssize_t i=0; i<10; ++i) {
         #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
         #if PY_VERSION_HEX < 0x030E0000
         if (_Py_IsOwnedByCurrentThread(table[i]) && Py_REFCNT(table[i]) == 1)
@@ -11472,17 +11731,17 @@ const char* const bytes = "?Note that Cython is deliberately stricter than PEP-4
   }
   {
     PyObject **numbertab = __pyx_mstate->__pyx_number_tab + 2;
-    int8_t const cint_constants_1[] = {0,1};
+    int8_t const cint_constants_1[] = {0,-1,1};
     int16_t const cint_constants_2[] = {773};
-    for (int i = 0; i < 3; i++) {
-      numbertab[i] = PyLong_FromLong((i < 2 ? cint_constants_1[i - 0] : cint_constants_2[i - 2]));
+    for (int i = 0; i < 4; i++) {
+      numbertab[i] = PyLong_FromLong((i < 3 ? cint_constants_1[i - 0] : cint_constants_2[i - 3]));
       if (unlikely(!numbertab[i])) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #if CYTHON_IMMORTAL_CONSTANTS
   {
     PyObject **table = __pyx_mstate->__pyx_number_tab;
-    for (Py_ssize_t i=0; i<5; ++i) {
+    for (Py_ssize_t i=0; i<6; ++i) {
       #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
       #if PY_VERSION_HEX < 0x030E0000
       if (_Py_IsOwnedByCurrentThread(table[i]) && Py_REFCNT(table[i]) == 1)
@@ -11536,44 +11795,49 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_batch_vectorize, __pyx_mstate->__pyx_kp_b_iso88591_IQ_AQ_32V2S_PRRS_xvQ_U_1_q_Rr_9, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 13, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 254};
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 102};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_board, __pyx_mstate->__pyx_n_u_buf, __pyx_mstate->__pyx_n_u_row};
+    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_vectorize_into_buffer, __pyx_mstate->__pyx_kp_b_iso88591_t2Rs_c_F_1_1IS_r_Ry_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 13, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 270};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_evaluator, __pyx_mstate->__pyx_n_u_root_child_info, __pyx_mstate->__pyx_n_u_maximizing, __pyx_mstate->__pyx_n_u_t, __pyx_mstate->__pyx_n_u_n_leaves, __pyx_mstate->__pyx_n_u_i, __pyx_mstate->__pyx_n_u_eval_scores, __pyx_mstate->__pyx_n_u_leaf_idx, __pyx_mstate->__pyx_n_u_best_score, __pyx_mstate->__pyx_n_u_best_move, __pyx_mstate->__pyx_n_u_child_idx, __pyx_mstate->__pyx_n_u_move};
-    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_propagate_and_best_move, __pyx_mstate->__pyx_kp_b_iso88591_B_56_4q_2S_S_1_6_A_E_aq_q_A_A_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_propagate_and_best_move, __pyx_mstate->__pyx_kp_b_iso88591_B_56_4q_2S_S_1_6_A_E_aq_q_A_A_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
-    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
-    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 313};
+    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 329};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_board, __pyx_mstate->__pyx_n_u_max_depth, __pyx_mstate->__pyx_n_u_root_maximizing, __pyx_mstate->__pyx_n_u_evaluator, __pyx_mstate->__pyx_n_u_tree, __pyx_mstate->__pyx_n_u_leaf_boards, __pyx_mstate->__pyx_n_u_root_child_info, __pyx_mstate->__pyx_n_u_root_idx};
-    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_expand_tree, __pyx_mstate->__pyx_kp_b_iso88591_aq_A_E1Fc_Q_QgV_Q_4A_q_q_q_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_expand_tree, __pyx_mstate->__pyx_kp_b_iso88591_aq_A_E1Fc_Q_QgV_Q_4A_q_q_q_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 346};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 362};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_ply, __pyx_mstate->__pyx_n_u_total_plies};
-    __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_outcome_weight, __pyx_mstate->__pyx_kp_b_iso88591_0_3a_q_4q_t2WA, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_outcome_weight, __pyx_mstate->__pyx_kp_b_iso88591_0_3a_q_4q_t2WA, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 352};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 368};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_plies, __pyx_mstate->__pyx_n_u_total_plies, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_weights, __pyx_mstate->__pyx_n_u_wptr, __pyx_mstate->__pyx_n_u_pptr, __pyx_mstate->__pyx_n_u_tp, __pyx_mstate->__pyx_n_u_i};
-    __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_batch_outcome_weights, __pyx_mstate->__pyx_kp_b_iso88591_AQ_4BfAS_b_xwa_V5_G1_3a_E_aq_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_batch_outcome_weights, __pyx_mstate->__pyx_kp_b_iso88591_AQ_4BfAS_b_xwa_V5_G1_3a_E_aq_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 10, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 377};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 10, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 393};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_X, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_out, __pyx_mstate->__pyx_n_u_inp, __pyx_mstate->__pyx_n_u_outp, __pyx_mstate->__pyx_n_u_i, __pyx_mstate->__pyx_n_u_src_plane, __pyx_mstate->__pyx_n_u_dst_plane, __pyx_mstate->__pyx_n_u_sq, __pyx_mstate->__pyx_n_u_off};
-    __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_batch_flip_vectors, __pyx_mstate->__pyx_kp_b_iso88591_a_0_ZvRq_haq_xs_U_1_b_auBe3hb_M, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_batch_flip_vectors, __pyx_mstate->__pyx_kp_b_iso88591_a_0_ZvRq_haq_xs_U_1_b_auBe3hb_M, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {8, 0, 0, 23, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 404};
+    const __Pyx_PyCode_New_function_description descr = {8, 0, 0, 23, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 420};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_board, __pyx_mstate->__pyx_n_u_moves_iter, __pyx_mstate->__pyx_n_u_result, __pyx_mstate->__pyx_n_u_skip_ply, __pyx_mstate->__pyx_n_u_max_sample, __pyx_mstate->__pyx_n_u_X_out, __pyx_mstate->__pyx_n_u_y_out, __pyx_mstate->__pyx_n_u_write_offset, __pyx_mstate->__pyx_n_u_ply_list, __pyx_mstate->__pyx_n_u_board_list, __pyx_mstate->__pyx_n_u_ply, __pyx_mstate->__pyx_n_u_total_plies, __pyx_mstate->__pyx_n_u_n_cand, __pyx_mstate->__pyx_n_u_n_sample, __pyx_mstate->__pyx_n_u_i, __pyx_mstate->__pyx_n_u_j, __pyx_mstate->__pyx_n_u_write_pos, __pyx_mstate->__pyx_n_u_written, __pyx_mstate->__pyx_n_u_weight, __pyx_mstate->__pyx_n_u_xptr, __pyx_mstate->__pyx_n_u_yptr, __pyx_mstate->__pyx_n_u_move, __pyx_mstate->__pyx_n_u_indices};
-    __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_extract_and_label_game, __pyx_mstate->__pyx_kp_b_iso88591_12_1_xuA_xuA_XYaq_U_1_4s_4t5_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[10] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_fast_chess_pyx, __pyx_mstate->__pyx_n_u_extract_and_label_game, __pyx_mstate->__pyx_kp_b_iso88591_12_1_xuA_xuA_XYaq_U_1_4s_4t5_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[10])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
   return 0;
@@ -13959,6 +14223,46 @@ static const char* __Pyx_BufFmt_CheckString(__Pyx_BufFmt_Context* ctx, const cha
       return 0;
   }
   
+/* pybuiltin_invalid (used by pyint_simplify) */
+  static void __Pyx_PyBuiltin_Invalid(PyObject *obj, const char *type_name, const char *argname) {
+      __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+      if (argname) {
+          PyErr_Format(PyExc_TypeError,
+              "Argument '%.200s' has incorrect type (expected %.200s, got " __Pyx_FMT_TYPENAME ")",
+              argname, type_name, obj_type_name
+          );
+      } else {
+          PyErr_Format(PyExc_TypeError,
+              "Expected %.200s, got " __Pyx_FMT_TYPENAME,
+              type_name, obj_type_name
+          );
+      }
+      __Pyx_DECREF_TypeName(obj_type_name);
+  }
+  
+/* pyint_simplify */
+  static CYTHON_INLINE int __Pyx_PyInt_FromNumber(PyObject **number_var, const char *argname, int accept_none) {
+      PyObject *number = *number_var;
+      if (likely((accept_none && number == Py_None) || PyLong_CheckExact(number))) {
+          return 0;
+      }
+      PyObject *int_object;
+      if (likely(PyNumber_Check(number))) {
+          int_object = PyNumber_Long(number);
+          if (unlikely(!int_object)) goto bad;
+      } else {
+          __Pyx_PyBuiltin_Invalid(number, "int", argname);
+          goto bad;
+      }
+      *number_var = int_object;
+      Py_DECREF(number);
+      return 0;
+  bad:
+      *number_var = NULL;
+      Py_DECREF(number);
+      return -1;
+  }
+  
 /* PyObjectCallNoArg (used by PyObjectCallMethod0) */
   static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
       PyObject *arg[2] = {NULL, NULL};
@@ -14260,46 +14564,6 @@ static const char* __Pyx_BufFmt_CheckString(__Pyx_BufFmt_Context* ctx, const cha
       return __Pyx_Fallback___Pyx_PyLong_AddObjC(op1, op2, inplace);
   }
   #endif
-  
-/* pybuiltin_invalid (used by pyint_simplify) */
-  static void __Pyx_PyBuiltin_Invalid(PyObject *obj, const char *type_name, const char *argname) {
-      __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-      if (argname) {
-          PyErr_Format(PyExc_TypeError,
-              "Argument '%.200s' has incorrect type (expected %.200s, got " __Pyx_FMT_TYPENAME ")",
-              argname, type_name, obj_type_name
-          );
-      } else {
-          PyErr_Format(PyExc_TypeError,
-              "Expected %.200s, got " __Pyx_FMT_TYPENAME,
-              type_name, obj_type_name
-          );
-      }
-      __Pyx_DECREF_TypeName(obj_type_name);
-  }
-  
-/* pyint_simplify */
-  static CYTHON_INLINE int __Pyx_PyInt_FromNumber(PyObject **number_var, const char *argname, int accept_none) {
-      PyObject *number = *number_var;
-      if (likely((accept_none && number == Py_None) || PyLong_CheckExact(number))) {
-          return 0;
-      }
-      PyObject *int_object;
-      if (likely(PyNumber_Check(number))) {
-          int_object = PyNumber_Long(number);
-          if (unlikely(!int_object)) goto bad;
-      } else {
-          __Pyx_PyBuiltin_Invalid(number, "int", argname);
-          goto bad;
-      }
-      *number_var = int_object;
-      Py_DECREF(number);
-      return 0;
-  bad:
-      *number_var = NULL;
-      Py_DECREF(number);
-      return -1;
-  }
   
 /* AllocateExtensionType */
   static PyObject *__Pyx_AllocateExtensionType(PyTypeObject *t, int is_final) {
