@@ -215,7 +215,7 @@ class Strategy(ABC):
         params: list[Parameter],
         fitness_fn: Callable[[dict[str, float]], float],
         *,
-        verbose: bool = False,
+        verbose: bool = True,
         n_workers: int = _DEFAULT_WORKERS,
     ) -> Report: ...
 
@@ -223,7 +223,7 @@ class Strategy(ABC):
 class GridSearch(Strategy):
     name = "grid"
 
-    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+    def run(self, params, fitness_fn, *, verbose=True, n_workers=_DEFAULT_WORKERS) -> Report:
         import itertools
 
         grids = [p.all_values() for p in params]
@@ -252,7 +252,7 @@ class GridSearch(Strategy):
 class LinearSweep(Strategy):
     name = "sweep"
 
-    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+    def run(self, params, fitness_fn, *, verbose=True, n_workers=_DEFAULT_WORKERS) -> Report:
         evaluated = []
         history = []
         global_best = None
@@ -297,7 +297,7 @@ class RandomSearch(Strategy):
     def __init__(self, n_samples: int = 200):
         self.n_samples = n_samples
 
-    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+    def run(self, params, fitness_fn, *, verbose=True, n_workers=_DEFAULT_WORKERS) -> Report:
         if verbose:
             print(f"[random] {self.n_samples} samples ({n_workers} workers)")
 
@@ -381,7 +381,7 @@ class HillClimb(Strategy):
 
         return best, evaluated
 
-    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+    def run(self, params, fitness_fn, *, verbose=True, n_workers=_DEFAULT_WORKERS) -> Report:
         if verbose:
             print(f"[hillclimb] {self.restarts} restarts × {self.iterations} iters "
                   f"(perturb {self.perturb_fraction:.0%} params/step, {n_workers} workers)")
@@ -477,7 +477,7 @@ class Genetic(Strategy):
         return [Candidate(values={p.name: p.random_value() for p in params})
                 for _ in range(count)]
 
-    def run(self, params, fitness_fn, *, verbose=False, n_workers=_DEFAULT_WORKERS) -> Report:
+    def run(self, params, fitness_fn, *, verbose=True, n_workers=_DEFAULT_WORKERS) -> Report:
         population = [Candidate(values={p.name: p.random_value() for p in params})
                       for _ in range(self.population_size)]
 
@@ -495,8 +495,8 @@ class Genetic(Strategy):
             print(f"[genetic] pop={self.population_size} gen={self.generations} "
                   f"patience={self.patience} ({n_workers} workers)")
 
-        # Persistent pool — created once, reused every generation
-        with ThreadPoolExecutor(max_workers=n_workers) as pool:
+        pool = ThreadPoolExecutor(max_workers=n_workers)
+        try:
             for gen in range(self.generations):
                 unevaluated_before = [c for c in population if c.fitness is None]
                 _batch_evaluate(population, fitness_fn, n_workers,
@@ -581,6 +581,15 @@ class Genetic(Strategy):
                     next_gen.append(child)
 
                 population = next_gen
+
+        except KeyboardInterrupt:
+            if verbose:
+                print("\n  Interrupted by Ctrl+C; returning best-so-far")
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
+        if global_best is None and population:
+            global_best = population[0].copy()
 
         n_dupes = len(all_evaluated) - len(seen)
         if verbose and n_dupes > 0:

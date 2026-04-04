@@ -57,3 +57,111 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 thread 'main' (133380) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:703:52:
 called `Option::unwrap()` on a `None` value
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ 2026-04-02T23:04:53.990Z INFO  xwayland_satellite > Starting xwayland-satellite version 0.8.0
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > > Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > >                   Using F23, ignoring XF86TouchpadOff
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK23> redefined
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK24> redefined
+ 2026-04-02T23:04:54.036Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-02T23:04:54.037Z INFO  xwayland_process   > Errors from xkbcomp are not fatal to the X server
+ 2026-04-02T23:04:54.038Z INFO  xwayland_satellite::xstate > xfixes version: 1.0
+ 2026-04-02T23:04:54.038Z INFO  xwayland_satellite         > Connected to Xwayland on :0
+ 2026-04-02T23:04:54.038Z INFO  xwayland_satellite         > Systemd support disabled.
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > > Warning:          Unsupported maximum keycode 709, clipping.
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > >                   X11 cannot support keycodes above 255.
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > > Warning:          Virtual modifier Hyper multiply defined
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > > Warning:          Virtual modifier ScrollLock multiply defined
+ 2026-04-02T23:04:54.042Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-02T23:04:54.043Z INFO  xwayland_process           > Errors from xkbcomp are not fatal to the X server
+ 2026-04-02T23:05:01.566Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-02T23:05:14.287Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194698 }
+ 2026-04-02T23:05:49.433Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-02T23:05:53.427Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194584 }
+
+thread 'main' (197053) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:703:52:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ 2026-04-03T11:40:44.407Z INFO  xwayland_satellite > Starting xwayland-satellite version 0.8.0
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > > Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > >                   Using F23, ignoring XF86TouchpadOff
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK23> redefined
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK24> redefined
+ 2026-04-03T11:40:44.452Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-03T11:40:44.453Z INFO  xwayland_process   > Errors from xkbcomp are not fatal to the X server
+ 2026-04-03T11:40:44.454Z INFO  xwayland_satellite::xstate > xfixes version: 1.0
+ 2026-04-03T11:40:44.455Z INFO  xwayland_satellite         > Connected to Xwayland on :0
+ 2026-04-03T11:40:44.455Z INFO  xwayland_satellite         > Systemd support disabled.
+ 2026-04-03T11:40:44.458Z INFO  xwayland_process           > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-03T11:40:44.458Z INFO  xwayland_process           > > Warning:          Unsupported maximum keycode 709, clipping.
+ 2026-04-03T11:40:44.458Z INFO  xwayland_process           > >                   X11 cannot support keycodes above 255.
+ 2026-04-03T11:40:44.459Z INFO  xwayland_process           > > Warning:          Virtual modifier Hyper multiply defined
+ 2026-04-03T11:40:44.459Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-03T11:40:44.459Z INFO  xwayland_process           > > Warning:          Virtual modifier ScrollLock multiply defined
+ 2026-04-03T11:40:44.459Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-03T11:40:44.459Z INFO  xwayland_process           > Errors from xkbcomp are not fatal to the X server
+ 2026-04-03T11:40:52.076Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T11:41:05.894Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194648 }
+
+thread 'main' (297150) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:703:52:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ 2026-04-03T13:35:57.359Z INFO  xwayland_satellite > Starting xwayland-satellite version 0.8.0
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > > Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > >                   Using F23, ignoring XF86TouchpadOff
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK23> redefined
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK24> redefined
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-03T13:35:57.419Z INFO  xwayland_process   > Errors from xkbcomp are not fatal to the X server
+ 2026-04-03T13:35:57.421Z INFO  xwayland_satellite::xstate > xfixes version: 1.0
+ 2026-04-03T13:35:57.421Z INFO  xwayland_satellite         > Connected to Xwayland on :0
+ 2026-04-03T13:35:57.421Z INFO  xwayland_satellite         > Systemd support disabled.
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > > Warning:          Unsupported maximum keycode 709, clipping.
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > >                   X11 cannot support keycodes above 255.
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > > Warning:          Virtual modifier Hyper multiply defined
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > > Warning:          Virtual modifier ScrollLock multiply defined
+ 2026-04-03T13:35:57.426Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-03T13:35:57.427Z INFO  xwayland_process           > Errors from xkbcomp are not fatal to the X server
+ 2026-04-03T13:36:03.809Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T13:36:22.883Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T13:36:32.622Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194620 }
+ 2026-04-03T13:36:52.635Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T13:37:00.054Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194594 }
+ 2026-04-03T14:48:18.821Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T14:48:38.561Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194384 }
+ 2026-04-03T14:48:51.871Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4195004 }
+ 2026-04-03T15:38:21.519Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T15:38:35.102Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194586 }
+ 2026-04-03T15:43:28.993Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T15:43:33.493Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194598 }
+ 2026-04-03T15:46:45.149Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T15:46:48.650Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194554 }
+ 2026-04-03T19:06:05.382Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T19:06:09.458Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194586 }
+ 2026-04-03T19:33:57.575Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T19:34:03.409Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194660 }
+ 2026-04-03T20:11:54.411Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T20:12:00.470Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194624 }
+ 2026-04-03T20:26:30.018Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T20:26:37.151Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194586 }
+ 2026-04-03T20:31:52.055Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194384 }
+ 2026-04-03T20:32:00.354Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4195010 }
+ 2026-04-03T21:28:05.750Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T21:28:39.179Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194594 }
+ 2026-04-03T21:36:17.195Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T21:36:20.301Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194600 }
+ 2026-04-03T21:36:35.361Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-03T21:36:41.219Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194640 }
+
+thread 'main' (550674) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:703:52:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

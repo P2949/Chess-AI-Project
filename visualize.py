@@ -17,8 +17,8 @@ All three files must be in the same directory:
     team_goraieb.py
 """
 
-team_a = "goraieb.team_astar"
-team_b = "team_aaaaaaaaaaaaaaa"
+team_a = "goraieb.unified.team_goraieb"
+team_b = "goraieb.unified.team_goraieb"
 
 import tkinter as tk
 from tkinter import font as tkfont

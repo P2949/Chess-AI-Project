@@ -1,25 +1,27 @@
 """
 tune_engine.py — Tune team_goraieb eval weights with the generic optimizer.
 
-Improvements over original:
-  • Each player gets its own engine instance (TT not wasted)
-  • Game adjudication: decisive positions end early
-  • Opening book diversity: games start from common openings
-  • Shared NN model across threads (read-only, safe to share)
-  • Better scoring: win=1, draw=0.5, loss=0; adjudicated wins count
+Modes:
+  self_play     — Candidate vs default-weights opponent (win rate)
+  vs_stockfish  — Candidate vs Stockfish; fitness = avg SF eval of positions
+                  reached after candidate moves (rewards good positional play)
+  test_suite    — Fraction of EPD best-moves found
+  texel         — MSE of sigmoid(static_eval) vs game results
+  demo          — Built-in 5-position test
 
-Thread-safe: each worker gets two engine instances (candidate + opponent)
+Thread-safe: each worker gets its own engine + Stockfish instances
 via threading.local(), zero shared mutable state.
 
 Run:
-    python tune_engine.py                  # demo mode
+    python tune_engine.py --mode vs_stockfish --games 8 --depth 2
+    python tune_engine.py --mode vs_stockfish --strategy genetic --pop 30 --gen 40
     python tune_engine.py --mode self_play --games 20 --depth 2
-    python tune_engine.py --mode self_play --strategy genetic --pop 30 --gen 20
 """
 
 from __future__ import annotations
 
 import argparse
+import atexit
 import copy
 import csv
 import importlib
@@ -27,11 +29,13 @@ import importlib.util
 import math
 import os
 import random
+import shutil
 import sys
 import threading
 import time
 
 import chess
+import chess.engine
 import chess.polyglot
 
 import team_goraieb as _engine_template
@@ -41,43 +45,64 @@ DEFAULT_WEIGHTS = dict(_engine_template.WEIGHTS)
 
 N_WORKERS = os.cpu_count() or 1
 
+# ── Stockfish configuration ──────────────────────────────────────────────────
+SF_PATH = shutil.which("stockfish") or "stockfish"
+
+# Opponent strength (plays the moves against the candidate)
+SF_PLAY_DEPTH = 8        # FIX #2: was 20, way too slow for optimizer
+SF_PLAY_SKILL = 20       # skill level 0-20
+
+# Evaluation depth (judges positions after candidate moves)
+SF_EVAL_DEPTH = 10       # FIX #1: was 200 (!), would never finish
+
+# Game settings
+SF_DECISIVE_CP  = 900
+SF_DECISIVE_N   = 4
+SF_MAX_MOVES    = 150
+SF_RANDOM_OPEN  = 0
+
 
 # ── Opening positions for game diversity ──────────────────────────────────────
-# Starting from different openings prevents the optimizer from overfitting
-# to one specific opening line. These are positions after 2-4 common moves.
 OPENING_POSITIONS = [
-    # Starting position
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    # Italian Game
     "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
-    # Sicilian Defense
     "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
-    # French Defense
     "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
-    # Caro-Kann
     "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
-    # Queen's Gambit
     "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2",
-    # King's Indian
     "rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3",
-    # Scotch Game
     "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",
-    # Ruy Lopez
     "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
-    # English Opening
     "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 1",
-    # Pirc Defense
     "rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
-    # Slav Defense
     "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3",
 ]
 
 
 _thread_local = threading.local()
 
+# Track all SF engines for cleanup
+_all_sf_engines: list[chess.engine.SimpleEngine] = []
+_all_sf_lock = threading.Lock()
+
+
+def _register_sf(engine: chess.engine.SimpleEngine):
+    with _all_sf_lock:
+        _all_sf_engines.append(engine)
+
+
+@atexit.register
+def _cleanup_all_sf():
+    with _all_sf_lock:
+        for eng in _all_sf_engines:
+            try:
+                eng.quit()
+            except Exception:
+                pass
+        _all_sf_engines.clear()
+
 
 def _make_engine():
-    """Load a fresh engine module instance with its own globals."""
     spec = importlib.util.find_spec("team_goraieb")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -85,25 +110,44 @@ def _make_engine():
 
 
 def _get_engines():
-    """
-    Return TWO per-thread engine instances: one for candidate, one for opponent.
-    Each has its own TT, killers, history — no cross-contamination.
-    """
     if not hasattr(_thread_local, "eng_candidate"):
         _thread_local.eng_candidate = _make_engine()
         _thread_local.eng_opponent = _make_engine()
     return _thread_local.eng_candidate, _thread_local.eng_opponent
 
 
+def _get_stockfish():
+    if not hasattr(_thread_local, "sf_play"):
+        try:
+            sf_play = chess.engine.SimpleEngine.popen_uci(SF_PATH)
+            sf_play.configure({"Threads": 1, "Hash": 64, "Skill Level": SF_PLAY_SKILL})
+            _register_sf(sf_play)
+
+            sf_eval = chess.engine.SimpleEngine.popen_uci(SF_PATH)
+            sf_eval.configure({"Threads": 1, "Hash": 32})
+            _register_sf(sf_eval)
+
+            _thread_local.sf_play = sf_play
+            _thread_local.sf_eval = sf_eval
+        except Exception as e:
+            print(f"[error] Failed to start Stockfish: {e}", file=sys.stderr)
+            print(f"  Looked for: {SF_PATH}", file=sys.stderr)
+            raise
+
+    return _thread_local.sf_play, _thread_local.sf_eval
+
+
 def _reset_engine(eng) -> None:
-    """Clear TT / killers / history between games (NOT between moves)."""
+    """Clear TT / killers / history / EVAL_CACHE between games."""
     eng.TRANSPOSITION_TABLE.clear()
     eng._HISTORY.clear()
     eng._KILLERS[:] = [[None, None] for _ in range(64)]
+    # FIX #4: Clear EVAL_CACHE — stale cache from previous WEIGHTS poisons results
+    if hasattr(eng, 'EVAL_CACHE'):
+        eng.EVAL_CACHE.clear()
 
 
 def _material_balance(board) -> int:
-    """Quick material count for adjudication (positive = white advantage)."""
     values = {chess.PAWN: 100, chess.KNIGHT: 320, chess.BISHOP: 330,
               chess.ROOK: 500, chess.QUEEN: 900}
     score = 0
@@ -114,12 +158,6 @@ def _material_balance(board) -> int:
 
 
 def build_params(coarse: bool = False) -> list[Parameter]:
-    """
-    Build the list of tunable parameters.
-
-    Set coarse=True for a fast first pass with wide steps,
-    then re-run with coarse=False to refine around the winner.
-    """
     s = 2 if coarse else 1
 
     return [
@@ -147,40 +185,176 @@ def build_params(coarse: bool = False) -> list[Parameter]:
         Parameter("king_tropism",     0.0,  5.0, step=0.5*s),
         Parameter("tempo",            0.0, 25.0, step=5.0*s),
 
+        # FIX #5: New WEIGHTS keys that were missing
+        Parameter("hanging_piece",   20.0, 90.0, step=10.0*s),
+        Parameter("king_attack",      0.0, 30.0, step=3.0*s),
+        Parameter("pin_penalty",     10.0, 50.0, step=5.0*s),
+        Parameter("center_control",   0.0, 20.0, step=2.0*s),
+        Parameter("uncastled_king",  15.0, 80.0, step=5.0*s),
+        Parameter("rook_doubled_file", 5.0, 40.0, step=5.0*s),
+
+        # ── Development ───────────────────────────────────────────────────
+        Parameter("early_queen_pen", 10.0, 60.0, step=5.0*s),
+        Parameter("development",      0.0, 25.0, step=3.0*s),
+
         # ── NN blend ──────────────────────────────────────────────────────
         Parameter("nn_weight",       0.0,  0.5,  step=0.05*s),
+        Parameter("policy_weight",   0.0,  0.1,  step=0.01*s),
+        Parameter("nn_phase_boost",  0.5,  2.0,  step=0.25*s),
     ]
 
 
-# ── Adjudication thresholds ───────────────────────────────────────────────────
-ADJUDICATE_MATERIAL = 800   # centipawns material advantage to adjudicate
-ADJUDICATE_MOVES    = 5     # must persist for this many consecutive half-moves
+# ══════════════════════════════════════════════════════════════════════════════
+#  VS STOCKFISH FITNESS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _sf_eval_cp(sf_eval: chess.engine.SimpleEngine, board: chess.Board,
+                depth: int) -> float:
+    try:
+        info = sf_eval.analyse(board, chess.engine.Limit(depth=depth))
+    except chess.engine.EngineTerminatedError:
+        raise
+    except Exception:
+        return 0.0
+
+    score = info["score"].white()
+    if score.is_mate():
+        m = score.mate()
+        return 15000.0 if m > 0 else -15000.0
+    return float(score.score())
+
+
+def _play_one_vs_stockfish(candidate_w: dict, candidate_is_white: bool,
+                           depth: int, opening_fen: str | None = None,
+                           ) -> tuple[list[float], str]:
+    eng_cand, _ = _get_engines()
+    sf_play, sf_eval = _get_stockfish()
+
+    eng_cand.WEIGHTS.update(candidate_w)
+    _reset_engine(eng_cand)
+
+    board = chess.Board(opening_fen) if opening_fen else chess.Board()
+    sign = 1.0 if candidate_is_white else -1.0
+
+    evals = []
+    decisive_streak = 0
+
+    for move_num in range(SF_MAX_MOVES):
+        if board.is_game_over():
+            break
+
+        is_candidate_turn = (board.turn == chess.WHITE) == candidate_is_white
+
+        if is_candidate_turn:
+            try:
+                move = eng_cand.get_next_move(board, board.turn, depth=depth)
+            except Exception:
+                evals.append(-10000.0)
+                break
+            board.push(move)
+
+            if board.is_game_over():
+                r = board.result(claim_draw=True)
+                if r == "1-0":
+                    evals.append(15000.0 * sign)
+                elif r == "0-1":
+                    evals.append(-15000.0 * sign)
+                else:
+                    evals.append(0.0)
+                break
+
+            cp = _sf_eval_cp(sf_eval, board, SF_EVAL_DEPTH) * sign
+            evals.append(cp)
+
+            if abs(cp) >= SF_DECISIVE_CP:
+                decisive_streak += 1
+            else:
+                decisive_streak = 0
+
+            if decisive_streak >= SF_DECISIVE_N:
+                break
+        else:
+            try:
+                result = sf_play.play(board, chess.engine.Limit(depth=SF_PLAY_DEPTH))
+                board.push(result.move)
+            except chess.engine.EngineTerminatedError:
+                try:
+                    sf_play = chess.engine.SimpleEngine.popen_uci(SF_PATH)
+                    sf_play.configure({"Threads": 1, "Hash": 64,
+                                       "Skill Level": SF_PLAY_SKILL})
+                    _register_sf(sf_play)
+                    _thread_local.sf_play = sf_play
+                except Exception:
+                    break
+
+    if board.is_game_over():
+        r = board.result(claim_draw=True)
+        if candidate_is_white:
+            outcome = "win" if r == "1-0" else ("loss" if r == "0-1" else "draw")
+        else:
+            outcome = "win" if r == "0-1" else ("loss" if r == "1-0" else "draw")
+    elif decisive_streak >= SF_DECISIVE_N:
+        last_cp = evals[-1] if evals else 0
+        outcome = "adjudicated_win" if last_cp > 0 else "adjudicated_loss"
+    else:
+        outcome = "draw"
+
+    return evals, outcome
+
+
+def vs_stockfish_fitness(values: dict[str, float],
+                         games: int = 8,
+                         depth: int = 2) -> float:
+    candidate_w = {**DEFAULT_WEIGHTS, **values}
+
+    all_evals = []
+    wins = 0
+    losses = 0
+
+    for i in range(games):
+        candidate_is_white = (i % 2 == 0)
+        opening = OPENING_POSITIONS[i % len(OPENING_POSITIONS)]
+
+        evals, outcome = _play_one_vs_stockfish(
+            candidate_w, candidate_is_white, depth, opening_fen=opening)
+
+        all_evals.extend(evals)
+
+        if "win" in outcome:
+            wins += 1
+        elif "loss" in outcome:
+            losses += 1
+
+    if not all_evals:
+        return -10000.0
+
+    avg_eval = sum(all_evals) / len(all_evals)
+    outcome_bonus = (wins - losses) * 30.0
+
+    return avg_eval + outcome_bonus
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SELF-PLAY FITNESS
+# ══════════════════════════════════════════════════════════════════════════════
+
+ADJUDICATE_MATERIAL = 800
+ADJUDICATE_MOVES    = 5
 
 
 def _play_one_game(candidate_w: dict, candidate_is_white: bool,
                    depth: int, max_moves: int = 200,
                    opening_fen: str | None = None) -> float:
-    """
-    Play one game using SEPARATE engine instances per player.
-    TT accumulates properly throughout the game.
-    Adjudication ends clearly decided games early.
-
-    Returns score for candidate: 1.0=win, 0.5=draw, 0.0=loss
-    """
     eng_cand, eng_opp = _get_engines()
 
-    # Set weights ONCE per game, not per move
     eng_cand.WEIGHTS.update(candidate_w)
     eng_opp.WEIGHTS.update(DEFAULT_WEIGHTS)
 
-    # Clear between games, not between moves
     _reset_engine(eng_cand)
     _reset_engine(eng_opp)
 
-    # Start from opening position
     board = chess.Board(opening_fen) if opening_fen else chess.Board()
-
-    adjudicate_count = 0  # consecutive moves with decisive material gap
+    adjudicate_count = 0
 
     for move_num in range(max_moves):
         if board.is_game_over():
@@ -195,7 +369,6 @@ def _play_one_game(candidate_w: dict, candidate_is_white: bool,
 
         board.push(move)
 
-        # Adjudication: if one side has overwhelming material for N moves, end it
         mat = _material_balance(board)
         if abs(mat) >= ADJUDICATE_MATERIAL:
             adjudicate_count += 1
@@ -203,14 +376,12 @@ def _play_one_game(candidate_w: dict, candidate_is_white: bool,
             adjudicate_count = 0
 
         if adjudicate_count >= ADJUDICATE_MOVES:
-            # Determine winner by material
             white_winning = mat > 0
             if candidate_is_white:
                 return 1.0 if white_winning else 0.0
             else:
                 return 0.0 if white_winning else 1.0
 
-    # Game ended naturally
     r = board.result(claim_draw=True)
     if candidate_is_white:
         return 1.0 if r == "1-0" else (0.0 if r == "0-1" else 0.5)
@@ -221,24 +392,21 @@ def _play_one_game(candidate_w: dict, candidate_is_white: bool,
 def selfplay_fitness(values: dict[str, float],
                      games: int = 20,
                      depth: int = 2) -> float:
-    """
-    Fitness = win rate over N games, alternating colors.
-    Uses opening diversity to prevent opening-line overfitting.
-    """
     candidate_w = {**DEFAULT_WEIGHTS, **values}
-
     total = 0.0
     for i in range(games):
         candidate_is_white = (i % 2 == 0)
-        # Pick an opening position (cycle through the list)
         opening = OPENING_POSITIONS[i % len(OPENING_POSITIONS)]
         total += _play_one_game(candidate_w, candidate_is_white, depth,
                                 opening_fen=opening)
     return total / games
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  TEST SUITE / TEXEL FITNESS
+# ══════════════════════════════════════════════════════════════════════════════
+
 def load_epd_suite(path: str) -> list[tuple[str, str]]:
-    """Load an EPD file. Returns list of (fen, best_move_san)."""
     positions = []
     with open(path) as f:
         for line in f:
@@ -258,9 +426,9 @@ def load_epd_suite(path: str) -> list[tuple[str, str]]:
 def testsuite_fitness(values: dict[str, float],
                       positions: list[tuple[str, str]],
                       depth: int = 3) -> float:
-    """Fitness = fraction of positions where engine finds the best move."""
     eng_cand, _ = _get_engines()
     eng_cand.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
+    _reset_engine(eng_cand)  # FIX: clear cache for new WEIGHTS
     correct = 0
     for fen, expected_san in positions:
         board = chess.Board(fen)
@@ -272,7 +440,6 @@ def testsuite_fitness(values: dict[str, float],
 
 
 def load_texel_data(path: str) -> list[tuple[str, float]]:
-    """Load CSV with columns: fen, result (1.0/0.5/0.0)."""
     data = []
     with open(path) as f:
         reader = csv.DictReader(f)
@@ -288,9 +455,9 @@ def _sigmoid(x: float, K: float = 0.0073) -> float:
 def texel_fitness(values: dict[str, float],
                   data: list[tuple[str, float]],
                   K: float = 0.0073) -> float:
-    """Fitness = -MSE between sigmoid(static_eval) and game result."""
     eng_cand, _ = _get_engines()
     eng_cand.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
+    _reset_engine(eng_cand)  # FIX: clear cache for new WEIGHTS
     total_error = 0.0
     for fen, result in data:
         board = chess.Board(fen)
@@ -310,7 +477,6 @@ BUILTIN_POSITIONS = [
 
 
 def demo_testsuite_fitness(values: dict[str, float], depth: int = 3) -> float:
-    """Use the built-in positions as a mini test suite."""
     eng_cand, _ = _get_engines()
     eng_cand.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
     correct = 0
@@ -326,16 +492,24 @@ def demo_testsuite_fitness(values: dict[str, float], depth: int = 3) -> float:
     return correct / len(BUILTIN_POSITIONS)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  MAIN
+# ══════════════════════════════════════════════════════════════════════════════
+
 def main():
+    global SF_PLAY_DEPTH, SF_EVAL_DEPTH, SF_PLAY_SKILL
+
     ap = argparse.ArgumentParser(description="Tune chess engine eval weights")
-    ap.add_argument("--mode", choices=["self_play", "test_suite", "texel", "demo"],
+    ap.add_argument("--mode",
+                    choices=["self_play", "vs_stockfish", "test_suite", "texel", "demo"],
                     default="demo", help="Fitness function to use")
-    ap.add_argument("--strategy", choices=["genetic", "hillclimb", "random", "grid", "sweep"],
+    ap.add_argument("--strategy",
+                    choices=["genetic", "hillclimb", "random", "grid", "sweep"],
                     default="genetic")
     ap.add_argument("--depth", type=int, default=2,
-                    help="Search depth for engine during evaluation (lower = faster)")
-    ap.add_argument("--games", type=int, default=10,
-                    help="Games per evaluation (self_play mode)")
+                    help="Search depth for candidate engine (lower = faster)")
+    ap.add_argument("--games", type=int, default=8,
+                    help="Games per fitness evaluation")
     ap.add_argument("--epd-file", type=str, default=None,
                     help="Path to EPD test suite (test_suite mode)")
     ap.add_argument("--texel-file", type=str, default=None,
@@ -348,12 +522,42 @@ def main():
                     help="Use wider step sizes for fast first pass")
     ap.add_argument("--workers", type=int, default=N_WORKERS,
                     help=f"Number of threads (default: {N_WORKERS} = all CPUs)")
+
+    # vs_stockfish specific
+    ap.add_argument("--sf-play-depth", type=int, default=None,
+                    help=f"SF opponent depth (default: {SF_PLAY_DEPTH})")
+    ap.add_argument("--sf-eval-depth", type=int, default=None,
+                    help=f"SF position eval depth (default: {SF_EVAL_DEPTH})")
+    ap.add_argument("--sf-skill", type=int, default=None,
+                    help=f"SF skill level 0-20 (default: {SF_PLAY_SKILL})")
+
     args = ap.parse_args()
+
+    if args.sf_play_depth is not None:
+        SF_PLAY_DEPTH = args.sf_play_depth
+    if args.sf_eval_depth is not None:
+        SF_EVAL_DEPTH = args.sf_eval_depth
+    if args.sf_skill is not None:
+        SF_PLAY_SKILL = args.sf_skill
 
     n_workers = args.workers
     params = build_params(coarse=args.coarse)
 
-    if args.mode == "self_play":
+    if args.mode == "vs_stockfish":
+        games, depth = args.games, args.depth
+        print(f"═══ vs_stockfish mode ═══")
+        print(f"  Candidate depth : {depth}")
+        print(f"  SF play depth   : {SF_PLAY_DEPTH}  (skill {SF_PLAY_SKILL})")
+        print(f"  SF eval depth   : {SF_EVAL_DEPTH}")
+        print(f"  Games/eval      : {games}")
+        print(f"  Decisive        : >{SF_DECISIVE_CP}cp × {SF_DECISIVE_N} moves")
+        print(f"  Max moves/game  : {SF_MAX_MOVES}")
+        print()
+
+        def fitness(values):
+            return vs_stockfish_fitness(values, games=games, depth=depth)
+
+    elif args.mode == "self_play":
         games, depth = args.games, args.depth
         def fitness(values):
             return selfplay_fitness(values, games=games, depth=depth)
@@ -385,7 +589,8 @@ def main():
 
     strat_kwargs = {}
     if args.strategy == "genetic":
-        strat_kwargs = {"population_size": args.pop, "generations": args.gen, "mutation_rate": 0.2}
+        strat_kwargs = {"population_size": args.pop, "generations": args.gen,
+                        "mutation_rate": 0.2}
     elif args.strategy == "hillclimb":
         strat_kwargs = {"iterations": args.pop * args.gen, "restarts": 3}
     elif args.strategy == "random":
