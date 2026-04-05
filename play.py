@@ -32,7 +32,7 @@ import os
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 DEPTH       = 3       # bot search depth  (keep ≤3 for sub-second moves)
-MOVE_DELAY  = 1200    # ms pause after each bot move so you can see the board
+MOVE_DELAY  = 100    # ms pause after each bot move so you can see the board
 SQUARE_SIZE = 72      # pixels per square
 BOARD_SIZE  = SQUARE_SIZE * 8
 
@@ -666,12 +666,16 @@ class ModeSelectScreen:
             bg="#555555", fg="white", activebackground="#777777",
             font=("Arial", 14, "bold"), relief=tk.FLAT,
             padx=30, pady=12, cursor="hand2", width=22,
-            command=self._launch_bot_vs_bot
+            command=self._show_bot_options
         ).pack(pady=6)
 
         # Human-options panel (packed on demand)
         self._human_panel = tk.Frame(self.root, bg=BG)
         self._build_human_panel()
+
+        # Bot-vs-Bot options panel (packed on demand)
+        self._bot_panel = tk.Frame(self.root, bg=BG)
+        self._build_bot_panel()
 
         # Bottom padding
         tk.Label(self.root, text="", bg=BG).pack(pady=16)
@@ -712,6 +716,7 @@ class ModeSelectScreen:
 
     def _show_human_options(self):
         """Reveal the human-vs-AI option panel (idempotent)."""
+        self._bot_panel.pack_forget()
         self._human_panel.pack(pady=(0, 10))
 
     def _launch_human_vs_ai(self):
@@ -737,13 +742,52 @@ class ModeSelectScreen:
         game_root.protocol("WM_DELETE_WINDOW", on_close)
         game_root.mainloop()
 
+    def _build_bot_panel(self):
+        panel = self._bot_panel
+
+        tk.Frame(panel, bg="#444444", height=1).pack(fill=tk.X,
+                                                     padx=30, pady=(16, 10))
+
+        tk.Label(panel, text="Choose Bot A:",
+                 bg=BG, fg=TEXT_COL, font=("Arial", 11)).pack()
+        self.bot_a_var = tk.StringVar(value=self.names[0])
+        for name in self.names:
+            tk.Radiobutton(panel, text=name, variable=self.bot_a_var, value=name,
+                           bg=BG, fg=TEXT_COL, selectcolor="#444444",
+                           activebackground=BG,
+                           font=("Arial", 11)).pack(anchor="w", padx=80)
+
+        tk.Label(panel, text="Choose Bot B:",
+                 bg=BG, fg=TEXT_COL, font=("Arial", 11)).pack(pady=(10, 0))
+        self.bot_b_var = tk.StringVar(
+            value=self.names[1] if len(self.names) > 1 else self.names[0])
+        for name in self.names:
+            tk.Radiobutton(panel, text=name, variable=self.bot_b_var, value=name,
+                           bg=BG, fg=TEXT_COL, selectcolor="#444444",
+                           activebackground=BG,
+                           font=("Arial", 11)).pack(anchor="w", padx=80)
+
+        tk.Button(
+            panel, text="▶  Start Battle",
+            bg="#27AE60", fg="white", activebackground="#1E8449",
+            font=("Arial", 12, "bold"), relief=tk.FLAT,
+            padx=18, pady=8, cursor="hand2",
+            command=self._launch_bot_vs_bot
+        ).pack(pady=(14, 4))
+
+    def _show_bot_options(self):
+        """Reveal the bot-vs-bot option panel (idempotent)."""
+        self._human_panel.pack_forget()
+        self._bot_panel.pack(pady=(0, 10))
+
     def _launch_bot_vs_bot(self):
-        mod_list  = list(self.mods.values())
-        name_list = list(self.mods.keys())
+        name_a = self.bot_a_var.get()
+        name_b = self.bot_b_var.get()
+        mod_a  = self.mods[name_a]
+        mod_b  = self.mods[name_b]
         self.root.destroy()
         draw_root = tk.Tk()
-        ColorDrawScreen(draw_root, mod_list[0], mod_list[1],
-                        name_list[0], name_list[1])
+        ColorDrawScreen(draw_root, mod_a, mod_b, name_a, name_b)
         draw_root.mainloop()
 
 
