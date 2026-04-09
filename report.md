@@ -1,19 +1,54 @@
-# Chess Report
+---
+pdf-engine: xelatex
 
-Names, roles, contributions, attributions, etc.
+mainfont: Ubuntu
+monofont: JetBrains Mono
+
+title: Chess Bot
+documentclass: article
+fontsize: 12pt
+geometry: margin=0.7in
+---
+
+Team "Я don't falo angielsku"
+
+| Name | Student ID |
+| -- | -- |
+| Mykhailo Fedenko | 24426806 |
+| Shay Power | 24377295 |
+| Pedro Goraieb Fernandes | 24377619 |
+| Kuba Rodak | 24436755 |
+
+**Contributions**  
+Mykhailo: Creepers engine  
+Shay: Blunderbuss engine  
+Pedro: AAAA engine  
+Kuba: Compiling report
 
 ## Introduction
 
-- Define problem (heuristic hard/arbitrary w/e)
-- define objective here (create heuristic algo etc)
-- define constraints (minmax depth 3, etc)
-- outline our approach/philosophy
+The challenge is to create a minimax-based chessbot with a limited look-ahead search. While the base architecture is provided, the difficulty comes from the open problem of designing a heuristic function that can accurately tell whether a scenario is favorable or not.
+
+Our objective therefore is to make an advanced `evaluate()` function that follows standards where positive values favor White, negative Black, and zero represents a balance or stalemate.
+
+Our function must use the `python-chess` library, be contained in a `.py` file, and must not make use of external engines such as Stockfish. Additionally, we must not modify the code that allows our function to integrate with other teams in the tournament. The engine operates at a depth of 3, meaning that considering performance is not as immediately important as when designing for higher depths.
+
+Our team adopted a divide-and-conquer strategy. We developed multiple unique functions, ranging from pure minimax + alpha-beta material weighting to a complex hybrid neural network. This let us determine not just the best implementation, but also the best overall approach.
 
 ## Background / Theory / Prior Knowledge
 
-We wanna show we understand what we're doing.
-Outline some basic chess & engine knowledge, alpha beta pruning, game tree, minmax, etc
-Evaluation functions, heuristic algorithms, existing chess engines
+At the core of the engine is the minimax algorithm, a simple decision making framework using a branching tree of paths to find the most favorable outcome. Additionally, Alpha-Beta pruning is used to eliminate branches that cannot possibly influence the final decision.
+
+The average number of legal moves in chess is ~30-50, which makes it impossible to calculate every move to the end of each game. We instead use a heuristic `evaluate()` function at the leaf nodes of the search tree - this assigns a numerical value to the board state, based on metrics like material advantage, king safety, and control of the center.
+
+To interface with the chess board, we import the `python-chess` library. The `chess.Board` object gives access to the data we need; piece positions, legal move counts, and checkmate detection.
+
+In general, existing chess engines follow these metrics:
+
+- Material, assigning weighted values to different piece types;
+- Mobility, a higher number of available legal moves correlates with a better position;
+- King Safety, eliminates blunders and allows for high value of castling;
+- Positioning, encourages pieces to move to places where they are most useful, using Piece-Square tables. This maximizes piece potential.
 
 ## Work / Approaches / Individual (maybe? since we did a few algos each)
 
@@ -29,11 +64,11 @@ Essentially, here we want to show not just what we have done and thought about, 
 
 ### Team Shay
 
-After our initial discuession on how we would tackle this project, we concluded that it would be best to approach this from a divide-and-conquer prospective. 3 of us would each impliment our own evalation, upon completition we would then pit each implimentation against each other. The winner would then be the evalation method selected to be submitted for the assigment. My original idea was to impliment a Convolutional neural network (CNN) to play against stockfish and learn from it, and also include rounds of self play. after a quick prototype was developed, i quickly realized this approach was not viable due to the lack of computation power and research indicating CNN's arent actually great at chess, even with thousands of compute hours. i decided to then go back to the basics of making a classical heuristic evalation, and building upon that. after researching how stockfish functions, i became intrested in what is known as the Efficiently updatable neural network (NNUE). this functions as a small neural network that works in combination with the classical heuristics to improve overall performance.
+After our initial discussion on how we would tackle this project, we concluded that it would be best to approach this from a divide-and-conquer prospective. We would each implement our own evaluation, upon completion we would then pit each implementation against each other. The winner would then be the evaluation method selected to be submitted for the assigment. My original idea was to implement a Convolutional Neural Network (CNN) to play against Stockfish and learn from it, and also include rounds of self play. After a quick prototype was developed, I quickly realized this approach was not viable due to the lack of computation power and research indicating CNNs aren't actually great at chess, even with thousands of compute hours. I decided to then go back to the basics of making a classic heuristic evaluation, and building upon that. After researching how Stockfish functions, I became interested in what is known as the Efficiently Updatable Neural Network (NNUE). This functions as a small neural network that works in conjunction with the classic heuristics to improve overall performance.
 
-#### Overview of the approach (phases or steps)
+#### Overview of Approach
 
-1. **Phase 1 - Classical baseline (`team_shay.py`)**
+1. **Phase 1 - Baseline**
    Build a strong hand-crafted evaluator first (material + positional terms), then optimize search stability and speed.
 2. **Phase 2 - Search quality improvements**
    Keep depth practical (`depth=3`) but improve move quality through ordering and pruning (transposition table, killer/history, quiescence, null move, LMR/PVS).
@@ -68,13 +103,15 @@ After our initial discuession on how we would tackle this project, we concluded 
 
 #### Strengths / weaknesses
 
-**Strengths**
+##### Strengths
+
 - Robust classical fallback: if NNUE is weak/unavailable, engine still plays coherent chess.
 - Good practical speed-quality tradeoff for constrained compute.
 - Hybrid design improves positional nuance without fully depending on expensive deep learning.
 - Training pipeline in `BlunderBus/train_nnue.py` includes symmetry checks and mirror augmentation, which improves consistency.
 
-**Weaknesses**
+##### Weaknesses
+
 - The limitation of depth 3 highly limits the maximium peformance
 - NNUE quality is hit or miss and can sometimes actually hurt the peformance compared to classical.
 - Manual feature/weight tuning can be time-consuming and may overfit to observed matchups.
@@ -82,6 +119,9 @@ After our initial discuession on how we would tackle this project, we concluded 
 
 ## Internal Tournament
 
+Pedro and Misha pitted their implementations against eachother, by playing on Chess.com.
+
+Cover in depth heuristic comparison
 We pitted our different solutions against eachother, both to directly improve the engines and to indirectly learn from eachother what works best. We can mention things like what metrics we used, ELO rating on chess.com or otherwise, why/why not. We can give concrete results, even show them over time in a table as we improved the engine.
 
 Go into detail why one engine beat the other. Mention tradeoffs, speed vs accuracy vs depth vs precompute etc.
@@ -90,13 +130,37 @@ This is probably also an important section, they love introspection
 
 ## Final engine we settled on
 
-Whatever that may be lol - this section should wrap up the previous one with definite conclusions. What we used in the final engine, why. explain
+Whatever that may be lol - this section should wrap up the previous one with definite conclusions. What we used in the final engine, why. explain with explicit justification.
 
 Final eval function in detail - what features, what piece value, aggresiveness, pawn advantage, etc. Good to link the actual results (higher elo etc) with specific design decisions
 
+Mention that `evaluate()` explicitly returns 0 for stalemates, threefold repetition, and fifty move rule.
+
 ## Complexity analysis
 
-Depending on how much we can write about this, we either take this out into its own section, or tack it onto the end of the last one. We want to show analysis of the time complexity of the algorithm. We can definitely include the minmax itself in this, even though its provided from the start. Talk about the practicality of using this engine in real life, with real constraints on resources, talking about how its not just theoretically a good engine, but practically too. Why it is so.
+We analyzed the final engine in two parts: search complexity first, then evaluation complexity.
+
+### Search
+
+Search is by far the dominant cost. As is well known, the base case for minimax without pruning is $O(b^{d})$ in both time and space, where $b$ is the branching factor (average legal moves) and $d$ is the search depth. As we are operating at a fixed depth of 3, the growth is polynomial relative to the branching factor but exponential relative to depth.
+
+Alpha-beta pruning in the best case (with perfect move ordering) reduces time to $O(b^{d/2})$ - this effectively doubles the depth we can search in the same time. In the worst case scenario with terrible ordering, the advantage degrades back to $O(b^{d})$. In practice, with average ordering, we can expect to get somewhere inbetween, which we have seen to be often cited as $O(b^{3d/4})$. The space complexity remains at $O(d)$ for the entire call stack since we only need to store the current path.
+
+### Evaluation
+
+The `evaluate()` function is called at every leaf node of the search tree. Each call is $O(n)$, where $n$ is the number of owned pieces on the board. The worst case $n = 32$ is effectively equal to $O(1)$ for asymptotic analysis.
+
+Each call to `evaluate()` is $O(n)$ linear time, where $n$ is the number of pieces on the board. The worst case $n = 32$ is effectively equal to $O(1)$ for asymptotic analysis, though this is a consideration for real world performance.
+
+### Real world performance
+
+Given our constraints, we can estimate the workload for typical mid-game positions:
+
+- Branching factor $b$, $$ moves;
+- Depth $d$, fixed to 3;
+- Nodes visited: at most ~42,000.
+
+At this scale, the bot is expected to complete its move calculation well within realtime play. However, as shown in our depth analysis, the complexity jump to $d$ = 5 and beyond will require much more aggresive pruning and efficient ordering.
 
 ## Actual Tourament
 
@@ -109,8 +173,9 @@ Why did our different engines behave different from each other?
 
 ## Appendix
 
-If we want to include pseudocode and code snippets, here they go.
-We could add graphs and tables/logs, or whatever else here.
+Code snippets for teams.
+Annotated & simplified `evaluate()` for the final engine.
+Graph for time & space complexity
 
 ### Team Shay snippets
 
