@@ -150,8 +150,6 @@ Alpha-beta pruning in the best case (with perfect move ordering) reduces time to
 
 The `evaluate()` function is called at every leaf node of the search tree. Each call is $O(n)$, where $n$ is the number of owned pieces on the board. The worst case $n = 32$ is effectively equal to $O(1)$ for asymptotic analysis.
 
-Each call to `evaluate()` is $O(n)$ linear time, where $n$ is the number of pieces on the board. The worst case $n = 32$ is effectively equal to $O(1)$ for asymptotic analysis, though this is a consideration for real world performance.
-
 ### Real world performance
 
 Given our constraints, we can estimate the workload for typical mid-game positions:
