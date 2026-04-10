@@ -221,18 +221,41 @@ def _teacher_label_position(
     target_scale: float,
     samples_per_position: int,
     random_fraction: float,
+    delta_mode: bool = False,
 ) -> list[Sample]:
-    """Label a board by scoring its candidate child positions."""
+    """
+    Label a board by scoring its candidate child positions.
+
+    In delta_mode: target = how much each move changes the position
+    (delta = child_eval - parent_eval, from mover's perspective).
+    Positive delta = position improved, negative = worsened.
+    This teaches the policy to rank moves by quality, not absolute eval.
+    """
     moves = candidate_moves(board, max_moves=max_moves)
     if not moves:
         return []
+
+    # In delta mode, first score the parent position
+    parent_score = 0.0
+    if delta_mode:
+        parent_score = teacher_score(board, max(1, teacher_depth))
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
 
     scored_children: list[tuple[np.ndarray, float]] = []
     for move in moves:
         child = board.copy(stack=False)
         child.push(move)
         cp = teacher_score(child, max(1, teacher_depth - 1))
-        target = normalized_target(cp, target_scale)
+
+        if delta_mode:
+            # Delta from mover's perspective:
+            # White moving: higher child eval = good = positive delta
+            # Black moving: lower child eval = good for black = positive delta
+            delta_cp = (cp - parent_score) * sign
+            target = normalized_target(delta_cp, target_scale)
+        else:
+            target = normalized_target(cp, target_scale)
+
         scored_children.append((board_to_vec(child), target))
 
     scored_children.sort(key=lambda x: x[1], reverse=True)
@@ -255,6 +278,13 @@ def _teacher_label_position(
         second = scored_children[1][1]
         margin = abs(top - second)
         weight = float(np.clip(0.75 + 1.5 * margin, 0.75, 2.0))
+
+        if delta_mode:
+            # In delta mode, also boost weight for positions where the
+            # best move is much better than alternatives (clear best move)
+            worst = scored_children[-1][1]
+            spread = abs(top - worst)
+            weight *= float(np.clip(0.8 + spread, 0.8, 3.0))
     else:
         weight = 1.0
 
@@ -278,6 +308,7 @@ def generate_from_pgn(
     samples_per_position: int,
     random_fraction: float,
     seed: int,
+    delta_mode: bool = False,
 ) -> list[Sample]:
     random.seed(seed)
     np.random.seed(seed)
@@ -306,7 +337,8 @@ def generate_from_pgn(
                     b, teacher_depth=teacher_depth, max_moves=max_moves,
                     target_scale=target_scale,
                     samples_per_position=samples_per_position,
-                    random_fraction=random_fraction))
+                    random_fraction=random_fraction,
+                    delta_mode=delta_mode))
                 pbar.update(1)
 
         pbar.close()
@@ -344,6 +376,7 @@ def generate_from_selfplay(
     opening_fens: Sequence[str], teacher_depth: int,
     max_moves: int, target_scale: float,
     samples_per_position: int, random_fraction: float, seed: int,
+    delta_mode: bool = False,
 ) -> list[Sample]:
     random.seed(seed)
     np.random.seed(seed)
@@ -360,7 +393,8 @@ def generate_from_selfplay(
                 b, teacher_depth=teacher_depth, max_moves=max_moves,
                 target_scale=target_scale,
                 samples_per_position=samples_per_position,
-                random_fraction=random_fraction))
+                random_fraction=random_fraction,
+                delta_mode=delta_mode))
         pbar.update(1)
 
     pbar.close()
@@ -373,14 +407,14 @@ def generate_from_selfplay(
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _worker_label_fen(args):
-    fen, teacher_depth, max_moves, target_scale, samples_per_position, random_fraction, seed = args
+    fen, teacher_depth, max_moves, target_scale, samples_per_position, random_fraction, seed, delta_mode = args
     random.seed(seed)
     np.random.seed(seed)
     board = chess.Board(fen)
     return _teacher_label_position(
         board, teacher_depth=teacher_depth, max_moves=max_moves,
         target_scale=target_scale, samples_per_position=samples_per_position,
-        random_fraction=random_fraction)
+        random_fraction=random_fraction, delta_mode=delta_mode)
 
 
 def _fen_positions_from_pgn(
@@ -667,6 +701,11 @@ def main() -> None:
     gen.add_argument("--samples-per-position", type=int, default=100)
     gen.add_argument("--random-fraction", type=float, default=1.00)
     gen.add_argument("--target-scale", type=float, default=1.0)
+    gen.add_argument("--delta-mode", action="store_true",
+                     help="Use delta-based labeling: target = how much each move "
+                          "changes position quality (mover's perspective). "
+                          "Teaches policy to rank moves by quality, not absolute eval. "
+                          "Only works with --pgn or --use-selfplay, not --npz.")
     gen.add_argument("--processes", type=int, default=max(1, os.cpu_count() or 1))
     gen.add_argument("--parallel", action="store_true")
 
@@ -701,6 +740,9 @@ def main() -> None:
 
     # ── Load or generate samples ─────────────────────────────────────────────
     if args.npz:
+        if getattr(args, 'delta_mode', False):
+            print("[warning] --delta-mode is ignored with --npz (needs boards to compute "
+                  "deltas). Use --pgn or --use-selfplay for delta-mode training.")
         print(f"Opening {args.npz} with memory mapping...")
         data = np.load(args.npz, mmap_mode='r')
         X_all = data['X']
@@ -733,6 +775,8 @@ def main() -> None:
     else:
         samples: list[Sample] = []
         if args.pgn:
+            if args.delta_mode:
+                print("[delta-mode] Labels = move quality delta (mover's perspective)")
             if args.parallel:
                 fens = _fen_positions_from_pgn(
                     args.pgn, position_budget=args.position_budget,
@@ -741,7 +785,7 @@ def main() -> None:
                 jobs = [
                     (fen, args.teacher_depth, args.max_moves_per_position,
                      args.target_scale, args.samples_per_position,
-                     args.random_fraction, args.seed + i)
+                     args.random_fraction, args.seed + i, args.delta_mode)
                     for i, fen in enumerate(fens)
                 ]
                 print(f"Labeling {len(jobs)} positions with {args.processes} workers...")
@@ -758,7 +802,8 @@ def main() -> None:
                     max_moves=args.max_moves_per_position,
                     target_scale=args.target_scale,
                     samples_per_position=args.samples_per_position,
-                    random_fraction=args.random_fraction, seed=args.seed)
+                    random_fraction=args.random_fraction, seed=args.seed,
+                    delta_mode=args.delta_mode)
         elif args.use_selfplay:
             opening_fens = [chess.STARTING_FEN]
             if args.opening_fens:
@@ -772,7 +817,8 @@ def main() -> None:
                 opening_fens=opening_fens, teacher_depth=args.teacher_depth,
                 max_moves=args.max_moves_per_position, target_scale=args.target_scale,
                 samples_per_position=args.samples_per_position,
-                random_fraction=args.random_fraction, seed=args.seed)
+                random_fraction=args.random_fraction, seed=args.seed,
+                delta_mode=args.delta_mode)
         else:
             raise SystemExit("Choose a source: --npz PATH, --pgn PATH, or --use-selfplay")
 
@@ -854,6 +900,7 @@ def main() -> None:
         meta={
             "arch": "PolicyEvaluator(773 -> 512 -> ResBlock(512) x2 -> 128 -> 1)",
             "source": "npz" if args.npz else ("pgn" if args.pgn else "selfplay"),
+            "delta_mode": getattr(args, 'delta_mode', False),
             "teacher_depth": args.teacher_depth,
             "target_scale": args.target_scale,
             "rank_weight": args.rank_weight,

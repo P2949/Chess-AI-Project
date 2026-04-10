@@ -165,3 +165,56 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 thread 'main' (550674) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:703:52:
 called `Option::unwrap()` on a `None` value
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+(waybar:1817300): Gdk-WARNING **: 12:06:34.687: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Settings” on object at path /org/freedesktop/portal/desktop
+[2026-04-05 12:06:34.765] [info] Using configuration file /home/p2949/.config/waybar/config.jsonc
+[2026-04-05 12:06:34.767] [info] Unable to receive desktop appearance: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Settings” on object at path /org/freedesktop/portal/desktop
+[2026-04-05 12:06:34.767] [info] Using CSS file /etc/xdg/waybar/style.css
+[2026-04-05 12:06:34.777] [warning] Niri is not running, niri IPC will not be available.
+[2026-04-05 12:06:34.794] [warning] 'swap-icon-label' must be a bool.
+[2026-04-05 12:06:34.794] [warning] 'swap-icon-label' must be a bool.
+[2026-04-05 12:06:34.952] [warning] Requested height: 20 is less than the minimum height: 24 required by the modules
+[2026-04-05 12:06:34.952] [info] Bar configured (width: 1920, height: 24) for output: DP-4
+[2026-04-05 12:06:34.965] [error] [wireplumber]: '4294967295' is not a valid source node ID. Ignoring source volume update.
+[2026-04-05 12:06:34.965] [warning] [wireplumber]: '4294967295' is not a valid source node ID. Ignoring source name update.
+ 2026-04-05T11:06:36.330Z INFO  xwayland_satellite > Starting xwayland-satellite version 0.8.0
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > > Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > >                   Using F23, ignoring XF86TouchpadOff
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK23> redefined
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > > Warning:          Symbol map for key <FK24> redefined
+ 2026-04-05T11:06:36.495Z INFO  xwayland_process   > >                   Using last definition for conflicting fields
+ 2026-04-05T11:06:36.501Z INFO  xwayland_process   > Errors from xkbcomp are not fatal to the X server
+ 2026-04-05T11:06:36.504Z INFO  xwayland_satellite::xstate > xfixes version: 1.0
+ 2026-04-05T11:06:36.505Z INFO  xwayland_satellite         > Connected to Xwayland on :0
+ 2026-04-05T11:06:36.505Z INFO  xwayland_satellite         > Systemd support disabled.
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > The XKEYBOARD keymap compiler (xkbcomp) reports:
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > > Warning:          Unsupported maximum keycode 709, clipping.
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > >                   X11 cannot support keycodes above 255.
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > > Warning:          Virtual modifier Hyper multiply defined
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > > Warning:          Virtual modifier ScrollLock multiply defined
+ 2026-04-05T11:06:36.520Z INFO  xwayland_process           > >                   Using 0, ignoring 0
+ 2026-04-05T11:06:36.521Z INFO  xwayland_process           > Errors from xkbcomp are not fatal to the X server
+ 2026-04-05T11:06:54.608Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194382 }
+ 2026-04-05T11:07:20.722Z WARN  xwayland_satellite::server > No last focused toplevel, cannot focus window Window { res_id: 4194656 }
+[2026-04-05 12:07:21.860] [warning] [wireplumber]: (onMixerChanged: Audio/Sink) - Object with id 55 not found
+[2026-04-05 12:07:21.866] [warning] [wireplumber]: (onMixerChanged: Audio/Sink) - Object with id 55 not found
+[2026-04-05 12:14:14.411] [warning] [wireplumber]: (onMixerChanged: Audio/Sink) - Object with id 63 not found
+[2026-04-05 12:15:19.538] [warning] [wireplumber]: (onMixerChanged: Audio/Sink) - Object with id 63 not found
+[2026-04-05 12:15:34.243] [warning] [wireplumber]: (onMixerChanged: Audio/Sink) - Object with id 55 not found
+[2026-04-05 12:24:57.578] [error] Window: Unable to receive IPC header
+Io error: Gdk-Message: 12:24:57.578: Error reading events from display: Broken pipe
+Broken pipe[2026-04-05 12:24:57.578] [error] Window: Unable to receive IPC header
+ (os error 32)
+
+thread 'main' (1817467) panicked at /var/tmp/portage/gui-apps/xwayland-satellite-0.8.1/work/xwayland-satellite-0.8.1/src/server/mod.rs:770:21:
+Failed flushing clientside events: Io(
+    Os {
+        code: 32,
+        kind: BrokenPipe,
+        message: "Broken pipe",
+    },
+)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

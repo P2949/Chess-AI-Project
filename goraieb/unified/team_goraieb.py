@@ -14,8 +14,13 @@ Enhanced eval terms beyond original:
   • Hanging pieces: penalty for undefended pieces under attack
   • King attack pressure: bonus for attacking squares near enemy king
 
-Search: TT, quiescence, killer moves, history heuristic, MVV-LVA ordering
-        Iterative deepening, policy-guided root ordering
+Search: TT, quiescence with delta/bad-capture pruning, killer moves,
+        history heuristic with malus, countermove heuristic, MVV-LVA ordering
+        Iterative deepening with aspiration windows, PVS (Principal Variation Search)
+        Null-move pruning, LMR (Late Move Reductions), LMP (Late Move Pruning)
+        Futility pruning, check/single-reply/recapture extensions
+        Mate-distance pruning, draw contempt, opening book
+        Policy-guided root ordering
 Eval:   PeSTO tapered + structure + NN correction (tunable blend)
 """
 
@@ -25,6 +30,7 @@ import torch
 import numpy as np
 import sys
 from pathlib import Path
+import math
 
 # Ensure this file's directory is in sys.path so fast_chess.so can be found
 _THIS_DIR = str(Path(__file__).resolve().parent)
@@ -107,6 +113,220 @@ class PolicyEvaluator(nn.Module):
         return self.head(x)
 
 SCORE_CLAMP = 1500
+MATE_SCORE = 100_000
+
+# ── Feature toggles ──────────────────────────────────────────────────────────
+USE_OPENING_BOOK = False
+
+# ── Search tuning constants ───────────────────────────────────────────────────
+# Switch this later to "normal" or "aggressive" without touching the search code.
+PRUNING_PROFILE = "off"  # "off", "conservative", "normal", "aggressive"
+
+PRUNING_PRESETS = {
+    "off": {
+        "NULL_MOVE_ENABLE": False,
+        "NULL_MOVE_MIN_DEPTH": 99,
+        "NULL_MOVE_REDUCTION": 0,
+        "LMR_MIN_DEPTH": 99,
+        "LMR_START_MOVE": 99,
+        "LMR_REDUCTION": 0,
+        "LMP_CUTOFFS": {1: 999, 2: 999, 3: 999},
+        "FUTILITY_MARGIN_CP": 0,
+        "BAD_CAPTURE_MARGIN": -999,
+    },
+    "conservative": {
+        "NULL_MOVE_ENABLE": True,
+        "NULL_MOVE_MIN_DEPTH": 4,
+        "NULL_MOVE_REDUCTION": 1,
+        "LMR_MIN_DEPTH": 4,
+        "LMR_START_MOVE": 6,
+        "LMR_REDUCTION": 1,
+        "LMP_CUTOFFS": {1: 36, 2: 54, 3: 72},
+        "FUTILITY_MARGIN_CP": 120,
+        "BAD_CAPTURE_MARGIN": 120,
+    },
+    "normal": {
+        "NULL_MOVE_ENABLE": True,
+        "NULL_MOVE_MIN_DEPTH": 3,
+        "NULL_MOVE_REDUCTION": 1,
+        "LMR_MIN_DEPTH": 3,
+        "LMR_START_MOVE": 5,
+        "LMR_REDUCTION": 1,
+        "LMP_CUTOFFS": {1: 28, 2: 40, 3: 56},
+        "FUTILITY_MARGIN_CP": 160,
+        "BAD_CAPTURE_MARGIN": 150,
+    },
+    "aggressive": {
+        "NULL_MOVE_ENABLE": True,
+        "NULL_MOVE_MIN_DEPTH": 3,
+        "NULL_MOVE_REDUCTION": 2,
+        "LMR_MIN_DEPTH": 3,
+        "LMR_START_MOVE": 4,
+        "LMR_REDUCTION": 1,
+        "LMP_CUTOFFS": {1: 24, 2: 36, 3: 48},
+        "FUTILITY_MARGIN_CP": 200,
+        "BAD_CAPTURE_MARGIN": 180,
+    },
+}
+
+_SEARCH = PRUNING_PRESETS[PRUNING_PROFILE]
+
+# Draw contempt
+DRAW_CONTEMPT_CP = 15.0
+
+# Null-move pruning
+NULL_MOVE_ENABLE = _SEARCH["NULL_MOVE_ENABLE"]
+NULL_MOVE_MIN_DEPTH = _SEARCH["NULL_MOVE_MIN_DEPTH"]
+NULL_MOVE_REDUCTION = _SEARCH["NULL_MOVE_REDUCTION"]
+NULL_MOVE_MARGIN_CP = 120
+
+# Late Move Reductions
+LMR_MIN_DEPTH = _SEARCH["LMR_MIN_DEPTH"]
+LMR_START_MOVE = _SEARCH["LMR_START_MOVE"]
+LMR_REDUCTION = _SEARCH["LMR_REDUCTION"]
+
+# Late Move Pruning
+LMP_CUTOFFS = _SEARCH["LMP_CUTOFFS"]
+
+# Futility pruning margin
+FUTILITY_MARGIN_CP = _SEARCH["FUTILITY_MARGIN_CP"]
+
+# Bad capture threshold for qsearch filtering
+BAD_CAPTURE_MARGIN = _SEARCH["BAD_CAPTURE_MARGIN"]
+
+# Aspiration window half-width
+ASP_WINDOW = 80
+
+
+# ── Opening book ──────────────────────────────────────────────────────────────
+_OPENING_BOOK_MAX_PLIES = 16
+
+_OPENING_BOOK = {
+    # Root moves
+    (): ["e2e4", "d2d4", "c2c4", "g1f3", "b1c3", "g2g3"],
+
+    # 1.e4
+    ("e2e4",): ["e7e5", "c7c5", "e7e6", "c7c6", "d7d5", "g7g6"],
+    ("e2e4", "e7e5"): ["g1f3", "f1c4", "b1c3", "f2f4"],
+    ("e2e4", "e7e5", "g1f3"): ["b8c6", "g8f6", "d7d6"],
+    ("e2e4", "e7e5", "g1f3", "b8c6"): ["f1b5", "f1c4", "d2d4", "b1c3"],
+    ("e2e4", "e7e5", "g1f3", "g8f6"): ["b1c3", "d2d4", "f1c4"],
+    ("e2e4", "e7e5", "f1c4"): ["g8f6", "b8c6", "c7c6"],
+    ("e2e4", "e7e5", "b1c3"): ["g8f6", "b8c6"],
+    ("e2e4", "e7e5", "f2f4"): ["e5f4", "g1f3", "g8f6"],
+    ("e2e4", "e7e5", "g1f3", "b8c6", "f1b5"): ["a7a6", "g8f6"],
+    ("e2e4", "e7e5", "g1f3", "b8c6", "f1c4"): ["f8c5", "g8f6"],
+
+    ("e2e4", "c7c5"): ["g1f3", "b1c3", "c2c3", "d2d4"],
+    ("e2e4", "c7c5", "g1f3"): ["d7d6", "b8c6", "e7e6", "g7g6"],
+    ("e2e4", "c7c5", "g1f3", "d7d6"): ["d2d4", "b1c3"],
+    ("e2e4", "c7c5", "g1f3", "b8c6"): ["d2d4", "b1c3"],
+    ("e2e4", "c7c5", "g1f3", "e7e6"): ["d2d4", "b1c3"],
+    ("e2e4", "c7c5", "d2d4"): ["c5d4", "g1f3", "b1c3"],
+    ("e2e4", "c7c5", "d2d4", "c5d4"): ["d1d4", "g1f3"],
+    ("e2e4", "c7c5", "c2c3"): ["d7d5", "e4d5"],
+    ("e2e4", "c7c5", "b1c3"): ["b8c6", "g1f3"],
+    ("e2e4", "c7c5", "g1f3", "d7d6", "d2d4"): ["c5d4", "g1f3"],
+    ("e2e4", "c7c5", "g1f3", "b8c6", "d2d4"): ["c5d4", "g1f3"],
+
+    ("e2e4", "e7e6"): ["d2d4", "g1f3", "b1c3"],
+    ("e2e4", "e7e6", "d2d4"): ["d7d5", "g8f6", "c7c5"],
+    ("e2e4", "e7e6", "d2d4", "d7d5"): ["b1c3", "g1f3"],
+    ("e2e4", "e7e6", "g1f3"): ["d7d5", "d7d6", "c7c5"],
+    ("e2e4", "e7e6", "b1c3"): ["d7d5", "g8f6"],
+
+    ("e2e4", "c7c6"): ["d2d4", "g1f3"],
+    ("e2e4", "c7c6", "d2d4"): ["d7d5", "g8f6"],
+    ("e2e4", "c7c6", "d2d4", "d7d5"): ["b1c3", "g1f3"],
+
+    ("e2e4", "d7d5"): ["e4d5", "d2d4", "g1f3"],
+    ("e2e4", "d7d5", "e4d5"): ["d8d5", "g8f6", "e7e6"],
+    ("e2e4", "d7d5", "e4d5", "d8d5"): ["b1c3", "g1f3"],
+
+    ("e2e4", "g7g6"): ["d2d4", "g1f3"],
+    ("e2e4", "g7g6", "d2d4"): ["f8g7", "d7d6"],
+    ("e2e4", "g7g6", "g1f3"): ["f8g7", "d7d6"],
+
+    # 1.d4
+    ("d2d4",): ["d7d5", "g8f6", "e7e6", "g7g6", "c7c6"],
+    ("d2d4", "d7d5"): ["c2c4", "g1f3", "b1c3"],
+    ("d2d4", "d7d5", "c2c4"): ["e7e6", "c7c6", "d5c4", "g8f6"],
+    ("d2d4", "d7d5", "c2c4", "e7e6"): ["b1c3", "g1f3"],
+    ("d2d4", "d7d5", "c2c4", "c7c6"): ["g1f3", "b1c3"],
+    ("d2d4", "d7d5", "g1f3"): ["g8f6", "e7e6", "c7c6"],
+    ("d2d4", "d7d5", "b1c3"): ["g8f6", "e7e6"],
+
+    ("d2d4", "g8f6"): ["c2c4", "g1f3", "g2g3"],
+    ("d2d4", "g8f6", "c2c4"): ["e7e6", "g7g6", "c7c5", "d7d5"],
+    ("d2d4", "g8f6", "c2c4", "e7e6"): ["g1f3", "b1c3"],
+    ("d2d4", "g8f6", "c2c4", "g7g6"): ["b1c3", "g1f3"],
+    ("d2d4", "g8f6", "g1f3"): ["d7d5", "e7e6", "g7g6"],
+
+    ("d2d4", "e7e6"): ["c2c4", "g1f3", "b1c3"],
+    ("d2d4", "e7e6", "c2c4"): ["d7d5", "g8f6"],
+    ("d2d4", "g7g6"): ["c2c4", "g1f3"],
+    ("d2d4", "g7g6", "c2c4"): ["f8g7", "d7d6"],
+
+    ("d2d4", "c7c6"): ["c2c4", "g1f3"],
+    ("d2d4", "c7c6", "c2c4"): ["d7d5", "g8f6"],
+
+    # 1.c4
+    ("c2c4",): ["e7e5", "g8f6", "c7c5", "e7e6", "g7g6"],
+    ("c2c4", "e7e5"): ["g1f3", "b1c3", "g2g3"],
+    ("c2c4", "e7e5", "g1f3"): ["g8f6", "b8c6"],
+    ("c2c4", "e7e5", "b1c3"): ["g8f6", "b8c6"],
+
+    ("c2c4", "g8f6"): ["b1c3", "g1f3", "g2g3"],
+    ("c2c4", "g8f6", "g1f3"): ["e7e6", "g7g6", "c7c5"],
+    ("c2c4", "g8f6", "b1c3"): ["e7e6", "g7g6"],
+
+    ("c2c4", "c7c5"): ["g1f3", "b1c3", "g2g3"],
+    ("c2c4", "c7c5", "g1f3"): ["g8f6", "d7d6", "b8c6"],
+    ("c2c4", "c7c5", "b1c3"): ["g8f6", "b8c6"],
+
+    ("c2c4", "e7e6"): ["g1f3", "b1c3", "g2g3"],
+    ("c2c4", "g7g6"): ["b1c3", "g1f3"],
+
+    # 1.Nf3
+    ("g1f3",): ["d7d5", "g8f6", "c7c5", "e7e6", "g7g6"],
+    ("g1f3", "d7d5"): ["d2d4", "g2g3", "c2c4"],
+    ("g1f3", "d7d5", "d2d4"): ["g8f6", "e7e6"],
+    ("g1f3", "d7d5", "g2g3"): ["g8f6", "c7c6"],
+
+    ("g1f3", "g8f6"): ["d2d4", "c2c4", "g2g3"],
+    ("g1f3", "g8f6", "d2d4"): ["d7d5", "e7e6", "g7g6"],
+    ("g1f3", "g8f6", "c2c4"): ["e7e6", "g7g6", "c7c5"],
+
+    ("g1f3", "c7c5"): ["d2d4", "g2g3"],
+    ("g1f3", "e7e6"): ["d2d4", "c2c4"],
+    ("g1f3", "g7g6"): ["d2d4", "c2c4"],
+
+    # 1.Nc3
+    ("b1c3",): ["d7d5", "e7e5", "g8f6", "c7c6"],
+    ("b1c3", "d7d5"): ["d2d4", "e2e4"],
+    ("b1c3", "e7e5"): ["e2e4", "g1f3"],
+    ("b1c3", "g8f6"): ["d2d4", "e2e4"],
+
+    # 1.g3
+    ("g2g3",): ["d7d5", "g8f6", "e7e5"],
+    ("g2g3", "d7d5"): ["f1g2", "g1f3"],
+    ("g2g3", "g8f6"): ["f1g2", "d2d4"],
+    ("g2g3", "e7e5"): ["f1g2", "g1f3"],
+}
+
+
+def _opening_book_move(board):
+    """Return a principled opening move if in the small internal repertoire."""
+    if not USE_OPENING_BOOK:
+        return None
+    if len(board.move_stack) > _OPENING_BOOK_MAX_PLIES:
+        return None
+    key = tuple(m.uci() for m in board.move_stack)
+    for uci in _OPENING_BOOK.get(key, []):
+        move = chess.Move.from_uci(uci)
+        if move in board.legal_moves:
+            return move
+    return None
 
 # ── Load model ────────────────────────────────────────────────────────────────
 _device = torch.device("cpu")
@@ -141,54 +361,55 @@ if _HAS_NN:
 #  TUNABLE WEIGHTS — optimizer patches this dict directly
 # ══════════════════════════════════════════════════════════════════════════════
 
+MATERIAL_MULT = 1.5
+
 WEIGHTS = {
-    # ── Piece values ──────────────────────────────────────────────────────
-    "pawn":             120,
-    "knight":           350,
-    "bishop":           380,
-    "rook":             540,
-    "queen":            900,
-    "king":           20000,
-
-    # ── Eval terms ────────────────────────────────────────────────────────
-    "mobility":          3.0,
-    "bishop_pair":      50.0,
-    "doubled_penalty":  17.0,
-    "isolated_penalty": 14.0,
-    "backward_penalty":  1.0,
-    "rook_open_file":   25.0,
-    "rook_semi_open":   13.0,
-    "connected_rooks":   1.0,
-    "king_shield":       9.0,
-    "king_shield_miss":  0.5,
-    "knight_outpost":   40.0,
-    "king_tropism":      1.0,
-    "tempo":             1.0,
-    "hanging_piece":    45.0,
-    "king_attack":      12.0,
-    "pin_penalty":      25.0,     # penalty per pinned piece (scaled by piece value)
-    "center_control":    8.0,     # bonus per piece/pawn attacking central squares
-    "uncastled_king":   40.0,     # penalty for uncastled king when center is open
-    "rook_doubled_file": 20.0,   # bonus for two rooks on same open file
-    "policy_weight":     0.01,
-    "nn_phase_boost":    1.0,
-    "early_queen_pen":  45.0,     # penalty for queen leaving back rank before development
-    "development":      12.0,     # bonus per developed minor piece (off back rank)
-
-    # ── Passed pawn bonuses by rank ───────────────────────────────────────
-    "passed_r1":  0,  "passed_r2": 10, "passed_r3": 20, "passed_r4": 35,
-    "passed_r5": 60,  "passed_r6": 90, "passed_r7": 130, "passed_r8": 0,
-
-    # ── NN blend ──────────────────────────────────────────────────────────
-    "nn_weight":        0.35,
-}
+      "pawn": 100 * MATERIAL_MULT,
+      "knight": 320 * MATERIAL_MULT,
+      "bishop": 330 * MATERIAL_MULT,
+      "rook": 500 * MATERIAL_MULT,
+      "queen": 900 * MATERIAL_MULT,
+      "king": 20000,
+      "mobility": 4.0,
+      "bishop_pair": 40.0,
+      "doubled_penalty": 32.0,
+      "isolated_penalty": 5.0,
+      "backward_penalty": 24.0,
+      "rook_open_file": 30.0,
+      "rook_semi_open": 10.0,
+      "connected_rooks": 25.0,
+      "king_shield": 12.0,
+      "king_shield_miss": 0.0,
+      "knight_outpost": 40.0,
+      "king_tropism": 4.0,
+      "tempo": 10.0,
+      "hanging_piece": 40.0,
+      "king_attack": 0.0,
+      "pin_penalty": 25.0,
+      "center_control": 0.0,
+      "uncastled_king": 50.0,
+      "rook_doubled_file": 35.0,
+      "policy_weight": 0.01,
+      "nn_phase_boost": 1.5,
+      "early_queen_pen": 35.0,
+      "development": 12.0,
+      "passed_r1": 0,
+      "passed_r2": 10,
+      "passed_r3": 20,
+      "passed_r4": 35,
+      "passed_r5": 60,
+      "passed_r6": 90,
+      "passed_r7": 130,
+      "passed_r8": 0,
+      "nn_weight": 0.02,
+  }
 
 # ── Eval cache ────────────────────────────────────────────────────────────────
 # FIX #6: Cache is keyed by zobrist hash. Must be cleared whenever WEIGHTS
 # changes (the optimizer does this via _reset_engine). The cache only stores
 # HCE results which depend on WEIGHTS.
 EVAL_CACHE = {}
-EVAL_CACHE_MAX = 200_000
+EVAL_CACHE_MAX = 200_000_000_000_000_000
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -374,6 +595,21 @@ TRANSPOSITION_TABLE = {}
 TT_EXACT, TT_LOWER, TT_UPPER = 0, 1, 2
 _KILLERS = [[None, None] for _ in range(64)]
 _HISTORY = {}
+_COUNTERMOVE = {}   # (from_sq, to_sq) -> best reply Move
+
+
+def _has_non_pawn_material(board, color):
+    """True if side has any piece besides pawns and king. Used by null-move."""
+    return any(
+        board.pieces(pt, color)
+        for pt in (chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN)
+    )
+
+
+def _update_history(move, bonus):
+    """History with clamping to avoid runaway scores."""
+    key = (move.from_square, move.to_square)
+    _HISTORY[key] = max(-50_000, min(50_000, _HISTORY.get(key, 0) + bonus))
 
 _SQ_FILE = [chess.square_file(s) for s in chess.SQUARES]
 _SQ_RANK = [chess.square_rank(s) for s in chess.SQUARES]
@@ -521,15 +757,72 @@ def _king_safety(board, color):
     if king_sq is None:
         return 0.0
 
-    shield_sqs = _SHIELD_SQUARES[king_sq].get(color, [])
-    if not shield_sqs:
-        return 0.0
+    enemy = not color
+    score = 0.0
 
+    # Pawn shield in front of the king.
+    shield_sqs = _SHIELD_SQUARES[king_sq].get(color, [])
     our_pawns = board.pieces(chess.PAWN, color)
     shield_count = sum(1 for sq in shield_sqs if sq in our_pawns)
     missing = len(shield_sqs) - shield_count
 
-    return shield_count * WEIGHTS["king_shield"] - missing * WEIGHTS["king_shield_miss"]
+    score += shield_count * WEIGHTS["king_shield"]
+    score -= missing * max(WEIGHTS["king_shield_miss"], 4.0)
+
+    # Direct attacks on the king square.
+    attackers = board.attackers(enemy, king_sq)
+    defenders = board.attackers(color, king_sq)
+    score -= 20.0 * len(attackers)
+    if attackers and not defenders:
+        score -= 18.0
+
+    # Weighted pressure on the king ring.
+    piece_weight = {
+        chess.PAWN: 1.0,
+        chess.KNIGHT: 1.8,
+        chess.BISHOP: 1.8,
+        chess.ROOK: 2.4,
+        chess.QUEEN: 3.2,
+    }
+    ring_pressure = 0.0
+    for sq in _KING_RING[king_sq]:
+        for atk_sq in board.attackers(enemy, sq):
+            atk_piece = board.piece_at(atk_sq)
+            if atk_piece is not None:
+                ring_pressure += piece_weight.get(atk_piece.piece_type, 1.0)
+    score -= 2.0 * ring_pressure
+
+    # Missing pawns on the king file and adjacent files.
+    own_pawn_files = {_SQ_FILE[s] for s in our_pawns}
+    king_file = _SQ_FILE[king_sq]
+    for f in (king_file - 1, king_file, king_file + 1):
+        if 0 <= f <= 7 and f not in own_pawn_files:
+            score -= 3.5 if f == king_file else 2.0
+
+    # Enemy rook/queen aligned with the king on an open file.
+    for pt, weight in ((chess.ROOK, 8.0), (chess.QUEEN, 10.0)):
+        for sq in board.pieces(pt, enemy):
+            if _SQ_FILE[sq] != king_file:
+                continue
+            step = 8 if _SQ_RANK[sq] < _SQ_RANK[king_sq] else -8
+            clear = True
+            for between in range(sq + step, king_sq, step):
+                if board.piece_at(between) is not None:
+                    clear = False
+                    break
+            if clear:
+                score -= weight
+
+    # Preference for actual castled squares; central king squares are worse.
+    if king_sq in (chess.G1, chess.C1, chess.G8, chess.C8):
+        score += 6.0
+    elif king_sq in (chess.E1, chess.D1, chess.F1, chess.E8, chess.D8, chess.F8):
+        score -= 8.0
+    elif king_file in (2, 3, 4, 5):
+        score -= 4.0
+
+    return score
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -821,58 +1114,42 @@ def _center_control(board, color):
 
 def _uncastled_king_penalty(board, color):
     """
-    Penalize having an uncastled king when the center is open.
-
-    An open center + uncastled king is extremely dangerous because rooks
-    and queens can exploit the open files. This encourages the engine to
-    castle early or at least not delay it when the center opens up.
-
-    This addresses move 8 (Nxe4 instead of Bg4): after Nxe4, the king
-    is stuck in the center and can be pinned by Re1. With this penalty,
-    the engine will prefer Bg4 (developing toward castling) over grabbing
-    the pawn.
+    Penalize an exposed king even when castling rights are already gone.
+    This stays broad on purpose: many bad positions are "moved king, still unsafe".
     """
     king_sq = board.king(color)
     if king_sq is None:
+        return 0.0
+
+    if king_sq in (chess.G1, chess.C1, chess.G8, chess.C8):
         return 0.0
 
     back_rank = 0 if color == chess.WHITE else 7
     king_rank = _SQ_RANK[king_sq]
     king_file = _SQ_FILE[king_sq]
 
-    # Already castled or king moved off back rank (intentional)
-    # We check: has the king already castled? If no castling rights remain
-    # AND king is on back rank in files a-c or f-h, it likely castled.
-    # If king is still on e-file back rank, it hasn't castled.
-    has_castling = board.has_castling_rights(color)
-
-    # King still on or near starting square, hasn't castled
-    if king_rank != back_rank:
-        return 0.0  # King moved, not our concern here
-    if not has_castling and king_file not in (4,):
-        return 0.0  # Likely already castled (king on a-c or f-h)
-    if not has_castling:
-        return 0.0  # Lost castling rights but may have castled
-
-    # Still has castling rights = hasn't castled yet
-    # Check if center is open (no pawns on e-file for either side)
-    w_pawns_e = any(_SQ_FILE[s] == 4 for s in board.pieces(chess.PAWN, chess.WHITE))
-    b_pawns_e = any(_SQ_FILE[s] == 4 for s in board.pieces(chess.PAWN, chess.BLACK))
+    # Open center = no full pawn barrier on d/e files.
     w_pawns_d = any(_SQ_FILE[s] == 3 for s in board.pieces(chess.PAWN, chess.WHITE))
+    w_pawns_e = any(_SQ_FILE[s] == 4 for s in board.pieces(chess.PAWN, chess.WHITE))
     b_pawns_d = any(_SQ_FILE[s] == 3 for s in board.pieces(chess.PAWN, chess.BLACK))
+    b_pawns_e = any(_SQ_FILE[s] == 4 for s in board.pieces(chess.PAWN, chess.BLACK))
+    open_center = int(not (w_pawns_d and b_pawns_d)) + int(not (w_pawns_e and b_pawns_e))
 
-    # Count open central files (d and e files without pawns blocking)
-    open_files = 0
-    if not w_pawns_e or not b_pawns_e:
-        open_files += 1
-    if not w_pawns_d or not b_pawns_d:
-        open_files += 1
+    penalty = 0.0
 
-    if open_files == 0:
-        return 0.0  # Center is closed, not urgent
+    if king_rank == back_rank and king_file == 4:
+        penalty = 1.2 * WEIGHTS["uncastled_king"] + 0.7 * open_center * WEIGHTS["uncastled_king"]
+    elif king_rank == back_rank and king_file in (3, 5):
+        penalty = 0.8 * WEIGHTS["uncastled_king"] + 0.4 * open_center * WEIGHTS["uncastled_king"]
+    elif king_rank in (1, 6):
+        penalty = 0.6 * WEIGHTS["uncastled_king"] + 0.3 * open_center * WEIGHTS["uncastled_king"]
+    elif king_file in (2, 3, 4, 5):
+        penalty = 0.35 * WEIGHTS["uncastled_king"]
 
-    # Penalty scales with number of open central files
-    return -WEIGHTS["uncastled_king"] * open_files
+    if not board.has_castling_rights(color) and king_sq not in (chess.C1, chess.G1, chess.C8, chess.G8):
+        penalty += 0.2 * WEIGHTS["uncastled_king"]
+
+    return -penalty
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -904,16 +1181,15 @@ def _hce(board):
 
     # FIX #7: Mobility — in-place turn flip, no board copy
     mob = WEIGHTS["mobility"]
-    if board.turn == chess.WHITE:
-        w_mob = sum(1 for _ in board.legal_moves)
-        board.turn = chess.BLACK
-        b_mob = sum(1 for _ in board.legal_moves)
-        board.turn = chess.WHITE
-    else:
-        b_mob = sum(1 for _ in board.legal_moves)
-        board.turn = chess.WHITE
-        w_mob = sum(1 for _ in board.legal_moves)
-        board.turn = chess.BLACK
+    w_mob = b_mob = 0
+    for sq in chess.SQUARES:
+        piece = board.piece_at(sq)
+        if piece and piece.piece_type in (chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN):
+            attacks = len(board.attacks(sq))
+            if piece.color == chess.WHITE:
+                w_mob += attacks
+            else:
+                b_mob += attacks
     score += mob * (w_mob - b_mob)
 
     # Bishop pair
@@ -1031,10 +1307,12 @@ def _raw_material(board):
 
 def evaluate(board):
     if board.is_checkmate():
-        return -99999.0 if board.turn == chess.WHITE else 99999.0
-    if (board.is_stalemate() or board.is_insufficient_material() or
-            board.is_repetition(3) or board.is_fifty_moves()):
+        return -float(MATE_SCORE) if board.turn == chess.WHITE else float(MATE_SCORE)
+    if board.is_stalemate() or board.is_insufficient_material():
         return 0.0
+    if board.is_repetition(3) or board.is_fifty_moves():
+        # Draw contempt: slightly penalize the side that could avoid the draw
+        return -DRAW_CONTEMPT_CP if board.turn == chess.WHITE else DRAW_CONTEMPT_CP
 
     hce_score = _cached_hce(board)
 
@@ -1067,10 +1345,11 @@ def evaluate(board):
 # ── Fast eval for quiescence (HCE only — speed matters here) ─────────────────
 def _fast_evaluate(board):
     if board.is_checkmate():
-        return -99999.0 if board.turn == chess.WHITE else 99999.0
-    if (board.is_stalemate() or board.is_insufficient_material() or
-            board.is_repetition(3) or board.is_fifty_moves()):
+        return -float(MATE_SCORE) if board.turn == chess.WHITE else float(MATE_SCORE)
+    if board.is_stalemate() or board.is_insufficient_material():
         return 0.0
+    if board.is_repetition(3) or board.is_fifty_moves():
+        return -DRAW_CONTEMPT_CP if board.turn == chess.WHITE else DRAW_CONTEMPT_CP
     return _cached_hce(board)
 
 
@@ -1078,9 +1357,14 @@ def _fast_evaluate(board):
 #  MOVE ORDERING
 # ══════════════════════════════════════════════════════════════════════════════
 
-def score_move(board, move, ply=0, tt_move=None):
+def score_move(board, move, ply=0, tt_move=None, prev_move=None):
     pv = _piece_values()
     if tt_move and move == tt_move:           return 20_000
+    # Countermove heuristic: if this move previously refuted prev_move, try it early
+    if prev_move is not None:
+        cm = _COUNTERMOVE.get((prev_move.from_square, prev_move.to_square))
+        if cm == move:
+            return 18_500
     if board.is_capture(move):
         victim   = board.piece_at(move.to_square)
         attacker = board.piece_at(move.from_square)
@@ -1088,8 +1372,8 @@ def score_move(board, move, ply=0, tt_move=None):
         a = pv.get(attacker.piece_type, 100) if attacker else 100
         return 10_000 + v * 10 - a
     if move.promotion:                        return 9_000 + pv.get(move.promotion, 0)
-    if move == _KILLERS[ply][0]:              return 8_000
-    if move == _KILLERS[ply][1]:              return 7_000
+    if move == _KILLERS[ply % 64][0]:              return 8_000
+    if move == _KILLERS[ply % 64][1]:              return 7_000
     # FIX #10: only check for giving check at root (ply==0), not every node
     if ply == 0 and board.gives_check(move):
         return 11_000
@@ -1097,47 +1381,91 @@ def score_move(board, move, ply=0, tt_move=None):
 
 
 # FIX #9: only use policy at root (root_policy=True), never at ply <= 1
-def order_moves(board, moves, ply=0, tt_move=None, root_policy=False):
-    pw = WEIGHTS.get("policy_weight", 0.0)
-    if pw > 0.0 and root_policy:
-        return sorted(
-            moves,
-            key=lambda m: score_move(board, m, ply, tt_move) + pw * _root_policy_bias(board, m),
-            reverse=True
-        )
-    return sorted(moves, key=lambda m: score_move(board, m, ply, tt_move), reverse=True)
+def order_moves(board, moves, ply=0, tt_move=None, root_policy=False, prev_move=None):
+    """
+    Optimized move ordering. 
+    At depth 3, we minimize dictionary lookups and restrict NN usage to the root.
+    """
+    pw = WEIGHTS["policy_weight"]
+    
+    # Pre-calculating scores in a list is generally faster than 
+    # repeated lambda calls inside sorted() in high-frequency functions.
+    scored_moves = []
+    
+    # We only use the expensive NN bias if we are at the root (ply 0).
+    # Even if root_policy is passed as True, we guard it with ply == 0.
+    use_policy = (pw > 0.0 and root_policy and ply == 0 and _HAS_POLICY)
+
+    for m in moves:
+        # 1. Start with the base heuristic score (MVV-LVA, Killers, etc.)
+        score = score_move(board, m, ply, tt_move, prev_move)
+        
+        # 2. Add NN policy boost ONLY at the root
+        if use_policy:
+            score += pw * _root_policy_bias(board, m)
+            
+        scored_moves.append((score, m))
+
+    # Sort based on the calculated scores
+    scored_moves.sort(key=lambda x: x[0], reverse=True)
+    
+    # Return just the moves
+    return [m for _, m in scored_moves]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  QUIESCENCE SEARCH
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _mvv_lva_score(board, move):
+    """MVV-LVA score for capture ordering; also used for bad capture filtering."""
+    victim = board.piece_at(move.to_square)
+    attacker = board.piece_at(move.from_square)
+    v = _piece_values().get(victim.piece_type, 100) if victim else 100
+    a = _piece_values().get(attacker.piece_type, 100) if attacker else 100
+    return v * 10 - a
+
+
 def qsearch(board, alpha, beta, maximizing, qs_depth=0):
     # Hard limit on qsearch recursion (checks can cause deep chains)
     if qs_depth >= 12:
         return _fast_evaluate(board)
 
+    in_check = board.is_check()
     stand_pat = _fast_evaluate(board)
 
-    if maximizing:
-        if stand_pat >= beta:
-            return beta
-        alpha = max(alpha, stand_pat)
-    else:
-        if stand_pat <= alpha:
-            return alpha
-        beta = min(beta, stand_pat)
+    if not in_check:
+        if maximizing:
+            if stand_pat >= beta:
+                return beta
+            # Delta pruning: if even capturing the queen can't raise alpha, prune
+            if stand_pat + WEIGHTS["queen"] + 75 < alpha:
+                return alpha
+            alpha = max(alpha, stand_pat)
+        else:
+            if stand_pat <= alpha:
+                return alpha
+            if stand_pat - WEIGHTS["queen"] - 75 > beta:
+                return beta
+            beta = min(beta, stand_pat)
 
     # In check: must consider all legal moves (evasions)
-    if board.is_check():
+    if in_check:
         tactical = order_moves(board, list(board.legal_moves))
     else:
-        tactical = order_moves(
-            board,
-            [m for m in board.legal_moves if board.is_capture(m) or m.promotion]
-        )
+        # Generates much faster by skipping quiet move validation entirely
+        tactical = [m for m in board.legal_moves if board.is_capture(m) or m.promotion == chess.QUEEN]
+        tactical = order_moves(board, tactical)
 
     for move in tactical:
+        # Bad capture filtering: skip captures where we lose material
+        # (e.g., queen takes defended pawn) unless it gives check
+        if (not in_check and board.is_capture(move)
+                and not move.promotion
+                and _mvv_lva_score(board, move) < -BAD_CAPTURE_MARGIN
+                and not board.gives_check(move)):
+            continue
+
         board.push(move)
         score = qsearch(board, alpha, beta, not maximizing, qs_depth + 1)
         board.pop()
@@ -1158,78 +1486,260 @@ def qsearch(board, alpha, beta, maximizing, qs_depth=0):
 #  MINIMAX WITH ALPHA-BETA
 # ══════════════════════════════════════════════════════════════════════════════
 
-def minimax(board, depth, alpha, beta, maximizing, ply=0):
+def minimax(board, depth, alpha, beta, maximizing, ply=0,
+            prev_move=None, last_capture_sq=None, allow_null=True):
+    orig_alpha = alpha
+    orig_beta = beta
+    alpha = max(alpha, -MATE_SCORE + ply)
+    beta = min(beta, MATE_SCORE - ply)
+    if alpha >= beta:
+        return alpha
+
+    in_check = board.is_check()
+    # Check extension: add 1 ply when in check (few evasions, cheap)
+    rem = depth + (1 if in_check else 0)
+
     hash_key = chess.polyglot.zobrist_hash(board)
     tt_move  = None
     if hash_key in TRANSPOSITION_TABLE:
         entry = TRANSPOSITION_TABLE[hash_key]
         tt_depth, tt_flag, tt_score = entry[0], entry[1], entry[2]
         tt_move = entry[3] if len(entry) > 3 else None
-        if tt_depth >= depth:
+        if tt_depth >= rem:
             if   tt_flag == TT_EXACT: return tt_score
             elif tt_flag == TT_LOWER: alpha = max(alpha, tt_score)
             elif tt_flag == TT_UPPER: beta  = min(beta,  tt_score)
             if alpha >= beta:         return tt_score
 
-    if depth <= 0:       return qsearch(board, alpha, beta, maximizing)
-    if board.is_game_over(): return evaluate(board)
+    # ── Mate-distance pruning ────────────────────────────────────────────
+    # Prefer shorter mates: can't do better than mate-in-ply
+    if board.is_checkmate():
+        return -float(MATE_SCORE - ply) if board.turn == chess.WHITE else float(MATE_SCORE - ply)
+    if board.is_stalemate() or board.is_insufficient_material():
+        return 0.0
+    if board.is_repetition(3) or board.is_fifty_moves():
+        return -DRAW_CONTEMPT_CP if board.turn == chess.WHITE else DRAW_CONTEMPT_CP
 
-    # ── Search extensions ────────────────────────────────────────────────
-    # Check extension: when in check, don't decrement depth. There are
-    # typically only 1-5 legal evasions, so cost is minimal.
-    # Single-reply extension: when there's only one legal move, extending
-    # is completely free (no branching) and gives 1 extra ply of vision.
-    # Cap at ply 20 to prevent pathological cases.
-    in_check = board.is_check()
+    if rem <= 0:
+        return qsearch(board, alpha, beta, maximizing)
 
-    moves      = order_moves(board, list(board.legal_moves), ply, tt_move)
-    extend     = (in_check or len(moves) == 1) and ply < 20
-    orig_alpha, orig_beta = alpha, beta
+    # ── Null-move pruning ────────────────────────────────────────────────
+    # If "doing nothing" still fails high, this node is likely cuttable.
+    # Guards: not in check, not at root, both sides have pieces (no zugzwang).
+    if (NULL_MOVE_ENABLE
+            and allow_null
+            and rem > NULL_MOVE_MIN_DEPTH
+            and ply > 0
+            and not in_check
+            and _has_non_pawn_material(board, board.turn)
+            and _has_non_pawn_material(board, not board.turn)
+            and abs(alpha) < MATE_SCORE - 1000
+            and abs(beta) < MATE_SCORE - 1000):
+        
+        static_eval = _fast_evaluate(board)
+        # Scale reduction based on depth (like team_shay does)
+        R = NULL_MOVE_REDUCTION + (rem // 4) 
+        
+        if maximizing and static_eval >= beta - NULL_MOVE_MARGIN_CP:
+            board.push(chess.Move.null())
+            null_score = minimax(board, rem - 1 - R, beta - 1, beta, False, ply + 1, allow_null=False)
+            board.pop()
+            if null_score >= beta:
+                return beta
+                
+        elif not maximizing and static_eval <= alpha + NULL_MOVE_MARGIN_CP:
+            board.push(chess.Move.null())
+            null_score = minimax(board, rem - 1 - R, alpha, alpha + 1, True, ply + 1, allow_null=False)
+            board.pop()
+            if null_score <= alpha:
+                return alpha
+
+    # ── Futility pruning (depth 1, not in check) ────────────────────────
+    futility_eval = None
+    if rem == 1 and not in_check:
+        futility_eval = _fast_evaluate(board)
+
+    moves = order_moves(board, list(board.legal_moves), ply, tt_move, prev_move=prev_move)
+
+    # Single-reply extension
+    extend_single = (len(moves) == 1) and ply < 20
+
+
     best_score = float('-inf') if maximizing else float('inf')
     best_move  = None
+    quiet_count = 0
+    quiet_tried = []   # for history malus
 
     if maximizing:
-        for move in moves:
+        for move_idx, move in enumerate(moves):
+            is_capture = board.is_capture(move)
+            is_quiet = not is_capture and not move.promotion
+
+            # ── Futility pruning: skip hopeless quiet moves at depth 1 ──
+            if (futility_eval is not None and is_quiet
+                    and not board.gives_check(move)
+                    and futility_eval + FUTILITY_MARGIN_CP <= alpha):
+                quiet_count += 1
+                continue
+
+            # ── LMP: skip late quiet moves at shallow depth ──────────────
+            if (is_quiet and not in_check
+                    and rem in LMP_CUTOFFS
+                    and quiet_count >= LMP_CUTOFFS[rem]
+                    and not board.gives_check(move)):
+                continue
+
+            # ── Recapture extension ──────────────────────────────────────
+            recapture = (last_capture_sq is not None
+                         and is_capture
+                         and move.to_square == last_capture_sq)
+            child_depth = rem - 1 + (1 if recapture else 0)
+            if extend_single:
+                child_depth = rem  # don't decrement for forced moves
+
+            cap_sq = move.to_square if is_capture else None
+
+            # ── LMR: reduce depth for late quiet moves ───────────────────
+            do_lmr = (rem >= LMR_MIN_DEPTH
+                       and move_idx >= LMR_START_MOVE
+                       and is_quiet
+                       and not in_check
+                       and not recapture)
+
             board.push(move)
-            # If extended (check or single reply), don't reduce depth
-            new_depth = depth if extend else depth - 1
-            score = minimax(board, new_depth, alpha, beta, False, ply + 1)
+
+            if move_idx == 0:
+                # First move: full window
+                score = minimax(board, child_depth, alpha, beta, False,
+                                ply + 1, move, cap_sq, allow_null=True)
+            elif do_lmr:
+                # LMR: reduced null-window search
+                reduced = max(0, child_depth - LMR_REDUCTION)
+                score = minimax(board, reduced, alpha, alpha + 1, False,
+                                ply + 1, move, cap_sq, allow_null=True)
+                if score > alpha:
+                    # Re-search at full depth + full window
+                    score = minimax(board, child_depth, alpha, beta, False,
+                                    ply + 1, move, cap_sq, allow_null=True)
+            else:
+                # PVS: null-window probe
+                score = minimax(board, child_depth, alpha, alpha + 1, False,
+                                ply + 1, move, cap_sq, allow_null=True)
+                if alpha < score < beta:
+                    score = minimax(board, child_depth, alpha, beta, False,
+                                    ply + 1, move, cap_sq, allow_null=True)
+
             board.pop()
+
+            if is_quiet:
+                quiet_count += 1
+                quiet_tried.append(move)
+
             if score > best_score:
                 best_score, best_move = score, move
             alpha = max(alpha, score)
             if beta <= alpha:
-                if not board.is_capture(move) and not move.promotion:
-                    if move != _KILLERS[ply][0]:
-                        _KILLERS[ply][1] = _KILLERS[ply][0]
-                        _KILLERS[ply][0] = move
-                    k = (move.from_square, move.to_square)
-                    _HISTORY[k] = _HISTORY.get(k, 0) + depth * depth
+                # ── Cutoff: update killers, history, countermove ──────────
+                if is_quiet:
+                    if move != _KILLERS[ply % 64][0]:
+                        _KILLERS[ply % 64][1] = _KILLERS[ply % 64][0]
+                        _KILLERS[ply % 64][0] = move
+                    _update_history(move, rem * rem)
+                    # History malus: penalize quiet moves that didn't cause cutoff
+                    malus = max(1, rem)
+                    for qm in quiet_tried:
+                        if qm != move:
+                            _update_history(qm, -malus)
+                    # Countermove: remember this move as the refutation
+                    if prev_move is not None:
+                        _COUNTERMOVE[(prev_move.from_square, prev_move.to_square)] = move
                 break
     else:
-        for move in moves:
+        for move_idx, move in enumerate(moves):
+            is_capture = board.is_capture(move)
+            is_quiet = not is_capture and not move.promotion
+
+            if (futility_eval is not None and is_quiet
+                    and not board.gives_check(move)
+                    and futility_eval - FUTILITY_MARGIN_CP >= beta):
+                quiet_count += 1
+                continue
+
+            if (is_quiet and not in_check
+                    and rem in LMP_CUTOFFS
+                    and quiet_count >= LMP_CUTOFFS[rem]
+                    and not board.gives_check(move)):
+                continue
+
+            recapture = (last_capture_sq is not None
+                         and is_capture
+                         and move.to_square == last_capture_sq)
+            child_depth = rem - 1 + (1 if recapture else 0)
+            if extend_single:
+                child_depth = rem
+
+            cap_sq = move.to_square if is_capture else None
+
+            do_lmr = (rem >= LMR_MIN_DEPTH
+                       and move_idx >= LMR_START_MOVE
+                       and is_quiet
+                       and not in_check
+                       and not recapture)
+
             board.push(move)
-            new_depth = depth if extend else depth - 1
-            score = minimax(board, new_depth, alpha, beta, True, ply + 1)
+
+            if move_idx == 0:
+                score = minimax(board, child_depth, alpha, beta, True,
+                                ply + 1, move, cap_sq, allow_null=True)
+            elif do_lmr:
+                reduced = max(0, child_depth - LMR_REDUCTION)
+                score = minimax(board, reduced, beta - 1, beta, True,
+                                ply + 1, move, cap_sq, allow_null=True)
+                if score < beta:
+                    score = minimax(board, child_depth, alpha, beta, True,
+                                    ply + 1, move, cap_sq, allow_null=True)
+            else:
+                score = minimax(board, child_depth, beta - 1, beta, True,
+                                ply + 1, move, cap_sq, allow_null=True)
+                if alpha < score < beta:
+                    score = minimax(board, child_depth, alpha, beta, True,
+                                    ply + 1, move, cap_sq, allow_null=True)
+
             board.pop()
+
+            if is_quiet:
+                quiet_count += 1
+                quiet_tried.append(move)
+
             if score < best_score:
                 best_score, best_move = score, move
             beta = min(beta, score)
             if beta <= alpha:
-                if not board.is_capture(move) and not move.promotion:
+                if is_quiet:
                     if move != _KILLERS[ply][0]:
                         _KILLERS[ply][1] = _KILLERS[ply][0]
                         _KILLERS[ply][0] = move
-                    k = (move.from_square, move.to_square)
-                    _HISTORY[k] = _HISTORY.get(k, 0) + depth * depth
+                    _update_history(move, rem * rem)
+                    malus = max(1, rem)
+                    for qm in quiet_tried:
+                        if qm != move:
+                            _update_history(qm, -malus)
+                    if prev_move is not None:
+                        _COUNTERMOVE[(prev_move.from_square, prev_move.to_square)] = move
                 break
+
+    # If no move was searched (all pruned), return futility eval or static eval
+    if best_move is None:
+        if futility_eval is not None:
+            return futility_eval
+        return _fast_evaluate(board)
 
     tt_flag = TT_EXACT
     if best_score <= orig_alpha:
         tt_flag = TT_UPPER
     elif best_score >= orig_beta:
         tt_flag = TT_LOWER
-    TRANSPOSITION_TABLE[hash_key] = (depth, tt_flag, best_score, best_move)
+    TRANSPOSITION_TABLE[hash_key] = (rem, tt_flag, best_score, best_move)
     return best_score
 
 
@@ -1242,9 +1752,29 @@ def _root_search(board, depth, maximizing, alpha, beta):
     best_score = float('-inf') if maximizing else float('inf')
     best_move = None
 
-    for move in moves:
+    for idx, move in enumerate(moves):
+        cap_sq = move.to_square if board.is_capture(move) else None
+
         board.push(move)
-        score = minimax(board, depth - 1, alpha, beta, not maximizing, 1)
+
+        if idx == 0:
+            score = minimax(board, depth - 1, alpha, beta, not maximizing,
+                            1, move, cap_sq, allow_null=True)
+        else:
+            # PVS at root
+            if maximizing:
+                score = minimax(board, depth - 1, alpha, alpha + 1, False,
+                                1, move, cap_sq, allow_null=True)
+                if alpha < score < beta:
+                    score = minimax(board, depth - 1, alpha, beta, False,
+                                    1, move, cap_sq, allow_null=True)
+            else:
+                score = minimax(board, depth - 1, beta - 1, beta, True,
+                                1, move, cap_sq, allow_null=True)
+                if alpha < score < beta:
+                    score = minimax(board, depth - 1, alpha, beta, True,
+                                    1, move, cap_sq, allow_null=True)
+
         board.pop()
 
         if maximizing:
@@ -1263,7 +1793,12 @@ def _root_search(board, depth, maximizing, alpha, beta):
 
 
 def get_next_move(board, color, depth=3):
-    global TRANSPOSITION_TABLE, _KILLERS, _HISTORY, EVAL_CACHE
+    global TRANSPOSITION_TABLE, _KILLERS, _HISTORY, EVAL_CACHE, _COUNTERMOVE
+
+    # ── Opening book: instant return, no search ──────────────────────────
+    book_move = _opening_book_move(board)
+    if book_move is not None:
+        return book_move
 
     if len(TRANSPOSITION_TABLE) > 500_000:
         TRANSPOSITION_TABLE.clear()
@@ -1271,6 +1806,8 @@ def get_next_move(board, color, depth=3):
         _HISTORY.clear()
     if len(EVAL_CACHE) > EVAL_CACHE_MAX:
         EVAL_CACHE.clear()
+    if len(_COUNTERMOVE) > 80_000:
+        _COUNTERMOVE.clear()
 
     _KILLERS[:] = [[None, None] for _ in range(64)]
 
@@ -1278,11 +1815,51 @@ def get_next_move(board, color, depth=3):
     best_move = None
     best_score = float('-inf') if maximizing else float('inf')
 
-    # FIX #11: Iterative deepening — TT from previous depth helps ordering
+    # Iterative deepening with resilient aspiration windows
+    prev_score = 0.0
     for d in range(1, depth + 1):
-        score, move = _root_search(board, d, maximizing, float('-inf'), float('inf'))
-        if move is not None:
-            best_score, best_move = score, move
+        use_asp = d >= 2 and best_move is not None
+        window = float(ASP_WINDOW)
+
+        if use_asp:
+            alpha = prev_score - window
+            beta = prev_score + window
+        else:
+            alpha = float("-inf")
+            beta = float("inf")
+
+        retries = 0
+        while True:
+            score, move = _root_search(board, d, maximizing, alpha, beta)
+
+            if move is not None:
+                best_score, best_move = score, move
+                prev_score = score
+
+            if not use_asp:
+                break
+
+            if score <= alpha:
+                alpha -= window
+                window *= 2.0
+                retries += 1
+                if retries >= 5:
+                    alpha = float("-inf")
+                    beta = float("inf")
+                    use_asp = False
+                continue
+
+            if score >= beta:
+                beta += window
+                window *= 2.0
+                retries += 1
+                if retries >= 5:
+                    alpha = float("-inf")
+                    beta = float("inf")
+                    use_asp = False
+                continue
+
+            break
 
     return best_move if best_move else next(iter(board.legal_moves), None)
 

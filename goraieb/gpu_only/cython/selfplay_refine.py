@@ -17,7 +17,9 @@ Build Cython first:
 Run:
     python selfplay_refine.py
 """
+
 from dataclasses import dataclass, field
+import shutil
 import time
 import os
 import gc
@@ -82,7 +84,7 @@ INF = float('inf')
 # ── Config ────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = str(BASE_DIR / "model.pt")
-OUTPUT_PATH = str(BASE_DIR / "model_selfplay.pt")
+BEST_MODEL_PATH = str(BASE_DIR / "model_best_probe.pt")
 SCORE_CLAMP = 1500
 
 PROBE_PATH = BASE_DIR / "probe_set.pt"
@@ -93,7 +95,7 @@ BATCH_GAMES = 12
 RANDOM_OPENING   = 3
 DEPTH            = 4
 ROUNDS           = 100
-GAMES_PER_ROUND  = 120
+GAMES_PER_ROUND  = 100
 CONCURRENT       = 8       # 4 concurrent games — fits buffer, avoids thread overcommit
 MAX_MOVES        = 200
 SKIP_OPENING     = RANDOM_OPENING
@@ -108,13 +110,20 @@ AUGMENT          = True
 # ── Opponent config ───────────────────────────────────────────────────────────
 OPPONENT        = "stockfish"
 SF_PATH         = "/usr/bin/stockfish"
-SF_DEPTH        = 20       # play depth (10 ≈ 3000 ELO, fast)
+SF_DEPTH        = 10       # play depth (10 ≈ 3000 ELO, fast)
 SF_SKILL        = 20
 SF_THREADS      = 2        # per play-engine instance (4 instances × 1 = 4 threads)
 SF_HASH         = 256
 
-LABEL_MODE      = "stockfish"
-SF_LABEL_DEPTH  = 20       # labeling depth (12 is accurate + fast, ~100ms/pos)
+LABEL_MODE      = "blunder_repair"
+# Options: "stockfish"       — absolute SF eval labels (original)
+#          "move_quality"    — SF eval labels, weighted by move delta (blunders 3×)
+#          "blunder_repair"  — ONLY keep blunder positions + SF's best alternative
+SF_LABEL_DEPTH  = 12
+
+# Blunder thresholds (centipawns, from NN's perspective)
+BLUNDER_THRESH_CP = -80    # delta worse than this = blunder (3× weight)
+INACCURACY_THRESH_CP = -30 # delta worse than this = inaccuracy (2× weight)
 
 SF_MOVE_TIMEOUT_S = 20.0
 SF_LABEL_TIMEOUT_S = 50.0
@@ -122,8 +131,8 @@ SF_LABEL_THREADS = 6
 SF_LABEL_HASH = 256
 
 # Early termination
-DECISIVE_SCORE  = 900
-DECISIVE_COUNT  = 6
+DECISIVE_SCORE  = 1400
+DECISIVE_COUNT  = 12
 
 RESULT_MAP = {"1-0": 1.0, "0-1": -1.0, "1/2-1/2": 0.0}
 
@@ -163,16 +172,30 @@ def save_probe_set(X, y):
         PROBE_PATH,
     )
 
+def ensure_probe_set_exists(X, y):
+    """
+    Create the probe set exactly once, then keep it fixed forever.
+    """
+    if PROBE_PATH.exists():
+        return False
+    if len(y) < PROBE_SIZE:
+        return False
+    save_probe_set(X, y)
+    print(f"[probe] Created fixed probe set at {PROBE_PATH}")
+    return True
+
 def eval_probe_set(model, device):
     data = torch.load(PROBE_PATH, map_location="cpu")
-    ds = TensorDataset(data["X"], data["y"].unsqueeze(1))
+    X_p, y_p = data["X"], data["y"].unsqueeze(1)
+    w_p = torch.ones_like(y_p)
+    ds = TensorDataset(X_p, y_p, w_p)
     dl = DataLoader(ds, batch_size=BATCH_SIZE)
     crit = nn.SmoothL1Loss()
     total = 0.0
     count = 0
     model.eval()
     with torch.no_grad():
-        for X_b, y_b in dl:
+        for X_b, y_b, _ in dl:
             loss = crit(model(X_b.to(device)), y_b.to(device)).item()
             total += loss * len(y_b)
             count += len(y_b)
@@ -233,24 +256,26 @@ class LeafBuffer:
 
 
 class HarvestBuffer:
-    __slots__ = ['X', 'y', 'count', 'capacity']
+    __slots__ = ['X', 'y', 'w', 'count', 'capacity']
 
     def __init__(self, capacity):
         self.capacity = capacity
         self.X = np.zeros((capacity, 773), dtype=np.float32)
         self.y = np.zeros(capacity, dtype=np.float32)
+        self.w = np.ones(capacity, dtype=np.float32)  # default weight = 1.0
         self.count = 0
 
-    def write(self, vec, label):
+    def write(self, vec, label, weight=1.0):
         if self.count >= self.capacity:
             return False
         self.X[self.count] = vec
         self.y[self.count] = label
+        self.w[self.count] = weight
         self.count += 1
         return True
 
     def get_data(self):
-        return self.X[:self.count], self.y[:self.count]
+        return self.X[:self.count], self.y[:self.count], self.w[:self.count]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -617,12 +642,13 @@ class ChessEvaluator(nn.Module):
 
 
 class TensorDataset(Dataset):
-    def __init__(self, X, y):
+    def __init__(self, X, y, w=None):
         self.X = X; self.y = y
+        self.w = w if w is not None else torch.ones_like(y)
     def __len__(self):
         return len(self.y)
     def __getitem__(self, i):
-        return self.X[i], self.y[i]
+        return self.X[i], self.y[i], self.w[i]
 
 
 def build_flip_perm():
@@ -637,7 +663,7 @@ def build_flip_perm():
 
 FLIP_PERM = build_flip_perm()
 
-def augment_gpu(X, y, device):
+def augment_gpu(X, y, device, w=None):
     perm = FLIP_PERM.to(device)
     CHUNK = 500_000
     fX = torch.empty_like(X)
@@ -648,7 +674,12 @@ def augment_gpu(X, y, device):
         fX[s:e] = f.cpu()
         del c, f
     torch.cuda.empty_cache()
-    return torch.cat([X, fX], 0), torch.cat([y, -y], 0)
+    X_out = torch.cat([X, fX], 0)
+    y_out = torch.cat([y, -y], 0)
+    if w is not None:
+        w_out = torch.cat([w, w], 0)  # same weight for flipped position
+        return X_out, y_out, w_out
+    return X_out, y_out, None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -656,13 +687,14 @@ def augment_gpu(X, y, device):
 # ══════════════════════════════════════════════════════════════════════════════
 
 class GameState:
-    __slots__ = ['board', 'positions', 'position_boards', 'move_count',
-                 'done', 'decisive_streak', 'position_hashes',
+    __slots__ = ['board', 'positions', 'position_boards', 'boards_after_move',
+                 'move_count', 'done', 'decisive_streak', 'position_hashes',
                  'nn_is_white', 'sf_index']
     def __init__(self):
         self.board = chess.Board()
         self.positions = []
         self.position_boards = []
+        self.boards_after_move = []   # board AFTER each NN move (for delta)
         self.move_count = 0
         self.done = False
         self.decisive_streak = 0
@@ -752,50 +784,125 @@ def play_games(model, device, num_games, depth, concurrent, buf, gpu_tensor,
         for game in games:
             if game.done:
                 total = len(game.positions)
-                if total > 0:
+                if total > 0 and sf_label_engine_ref[0] is not None:
+                    n_pos = len(game.position_boards)
+                    if n_pos > 20:
+                        print(f"  [labeling {n_pos} pos, mode={LABEL_MODE}...]",
+                              end="", flush=True)
+                    t0 = time.perf_counter()
 
-                    if LABEL_MODE == "stockfish" and sf_label_engine_ref[0] is not None:
-                        n_pos = len(game.position_boards)
-                        if n_pos > 20:
-                            print(f"  [labeling {n_pos} pos...]",
-                                  end="", flush=True)
-                        t0 = time.perf_counter()
-                        try:
-                            sf_labels = label_positions_with_stockfish(
-                                game.position_boards, sf_label_engine_ref[0], SF_LABEL_DEPTH, timeout_s=10)
-                        except chess.engine.EngineTerminatedError:
-                            stats.sf_timeouts += 1
-                            print(f"  [labeling engine died, restarting]", flush=True)
-                            try:
-                                sf_label_engine_ref[0].quit()
-                            except Exception:
-                                pass
-                            sf_label_engine_ref[0] = chess.engine.SimpleEngine.popen_uci(SF_PATH)
-                            sf_label_engine_ref[0].configure({"Threads": SF_LABEL_THREADS, "Hash": SF_LABEL_HASH})
-                            sf_labels = [0.0] * len(game.positions)
-                        stats.label_seconds += time.perf_counter() - t0
+                    def _restart_label_engine():
+                        stats.sf_timeouts += 1
+                        print(f"  [labeling engine died, restarting]", flush=True)
+                        try: sf_label_engine_ref[0].quit()
+                        except: pass
+                        sf_label_engine_ref[0] = chess.engine.SimpleEngine.popen_uci(SF_PATH)
+                        sf_label_engine_ref[0].configure({"Threads": SF_LABEL_THREADS, "Hash": SF_LABEL_HASH})
+
+                    try:
+                        sf_labels = label_positions_with_stockfish(
+                            game.position_boards, sf_label_engine_ref[0],
+                            SF_LABEL_DEPTH, timeout_s=10)
+                    except chess.engine.EngineTerminatedError:
+                        _restart_label_engine()
+                        sf_labels = [0.0] * n_pos
+
+                    if LABEL_MODE == "stockfish":
+                        # Original: label with absolute SF eval, weight=1
                         for vec, label in zip(game.positions, sf_labels):
-                            if(harvest.write(vec, label)):
+                            if harvest.write(vec, label, 1.0):
                                 stats.positions += 1
-                    else:
-                        result = game.board.result()
-                        if use_sf:
-                            if game.nn_is_white:
-                                outcome = RESULT_MAP.get(result, 0.0)
-                            else:
-                                flipped = {"1-0": -1.0, "0-1": 1.0,
-                                           "1/2-1/2": 0.0}
-                                outcome = flipped.get(result, 0.0)
-                        else:
+
+                    elif LABEL_MODE in ("move_quality", "blunder_repair"):
+                        # Eval boards AFTER each NN move to compute deltas
+                        n_after = len(game.boards_after_move)
+                        n_use = min(n_pos, n_after)  # safety
+
+                        try:
+                            sf_labels_after = label_positions_with_stockfish(
+                                game.boards_after_move[:n_use],
+                                sf_label_engine_ref[0],
+                                SF_LABEL_DEPTH, timeout_s=10)
+                        except chess.engine.EngineTerminatedError:
+                            _restart_label_engine()
+                            sf_labels_after = [0.0] * n_use
+
+                        sign = 1.0 if game.nn_is_white else -1.0
+                        blunder_count = 0
+
+                        for i in range(n_use):
+                            e_before = sf_labels[i]   # white-perspective, [-1, 1]
+                            e_after = sf_labels_after[i]
+                            # Delta from NN's perspective (positive = improved)
+                            delta = (e_after - e_before) * sign
+                            delta_cp = delta * SCORE_CLAMP
+
+                            if LABEL_MODE == "move_quality":
+                                # All positions kept, weighted by delta
+                                if delta_cp < BLUNDER_THRESH_CP:
+                                    weight = 3.0
+                                elif delta_cp < INACCURACY_THRESH_CP:
+                                    weight = 2.0
+                                else:
+                                    weight = 1.0
+                                if harvest.write(game.positions[i], e_before, weight):
+                                    stats.positions += 1
+
+                            else:  # blunder_repair
+                                if delta_cp >= BLUNDER_THRESH_CP:
+                                    continue  # skip non-blunders
+
+                                blunder_count += 1
+
+                                # 1) Position BEFORE blunder with SF's correct eval
+                                if harvest.write(game.positions[i], e_before, 3.0):
+                                    stats.positions += 1
+
+                                # 2) Position after SF's BEST move (what NN should learn)
+                                try:
+                                    sf_best = sf_label_engine_ref[0].play(
+                                        game.position_boards[i],
+                                        chess.engine.Limit(depth=SF_LABEL_DEPTH, time=10))
+                                    board_sf = game.position_boards[i].copy()
+                                    board_sf.push(sf_best.move)
+                                    sf_best_labels = label_positions_with_stockfish(
+                                        [board_sf], sf_label_engine_ref[0],
+                                        SF_LABEL_DEPTH, timeout_s=10)
+                                    vec_sf = board_to_vector(board_sf)
+                                    if harvest.write(vec_sf, sf_best_labels[0], 3.0):
+                                        stats.positions += 1
+                                except chess.engine.EngineTerminatedError:
+                                    _restart_label_engine()
+                                except Exception:
+                                    pass  # skip this blunder's SF alternative
+
+                        if LABEL_MODE == "blunder_repair" and blunder_count > 0:
+                            print(f"  [{blunder_count} blunders found]",
+                                  end="", flush=True)
+
+                    stats.label_seconds += time.perf_counter() - t0
+
+                elif total > 0:
+                    # No SF engine — fallback to game outcome labeling
+                    result = game.board.result()
+                    if use_sf:
+                        if game.nn_is_white:
                             outcome = RESULT_MAP.get(result, 0.0)
-                        for i, vec in enumerate(game.positions):
-                            w = sqrt((i + 1) / total)
-                            if not harvest.write(vec, outcome * w):
-                                break
-                            else:
-                                stats.positions += 1
+                        else:
+                            outcome = {"1-0": -1.0, "0-1": 1.0,
+                                       "1/2-1/2": 0.0}.get(result, 0.0)
+                    else:
+                        outcome = RESULT_MAP.get(result, 0.0)
+                    for i, vec in enumerate(game.positions):
+                        w = sqrt((i + 1) / total)
+                        if not harvest.write(vec, outcome * w, 1.0):
+                            break
+                        else:
+                            stats.positions += 1
+
                 game.positions.clear()
                 game.position_boards.clear()
+                game.boards_after_move.clear()
                 completed += 1
                 pbar.update(1)
                 stats.games_finished += 1
@@ -899,20 +1006,25 @@ def play_games(model, device, num_games, depth, concurrent, buf, gpu_tensor,
 
             if game.decisive_streak >= DECISIVE_COUNT:
                 game.positions.append(board_to_vector(game.board))
-                if LABEL_MODE == "stockfish":
-                    game.position_boards.append(game.board.copy())
+                game.position_boards.append(game.board.copy())
                 game.board.push(best_move)
+                game.boards_after_move.append(game.board.copy())
                 game.move_count += 1
                 game.done = True
                 continue
 
+            _collected = False
             if game.move_count >= SKIP_OPENING:
                 game.positions.append(board_to_vector(game.board))
-                if LABEL_MODE == "stockfish":
-                    game.position_boards.append(game.board.copy())
+                game.position_boards.append(game.board.copy())
+                _collected = True
 
             game.board.push(best_move)
             game.move_count += 1
+
+            if _collected:
+                game.boards_after_move.append(game.board.copy())
+
             game.position_hashes.add(chess.polyglot.zobrist_hash(game.board))
 
             if game.board.is_game_over() or game.move_count >= MAX_MOVES:
@@ -923,52 +1035,74 @@ def play_games(model, device, num_games, depth, concurrent, buf, gpu_tensor,
         sf_pool.close_all()
 
     if harvest.count == 0:
-        return None, None
+        return None, None, None
 
-    X, y = harvest.get_data()
+    X, y, w = harvest.get_data()
     print(f"Generated {harvest.count} positions from {num_games} games")
-    return X.copy(), y.copy()
+    return X.copy(), y.copy(), w.copy()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  TRAINING
 # ══════════════════════════════════════════════════════════════════════════════
 
-def train(model, train_loader, val_loader, epochs, lr, device, save_path):
+def train(model, train_loader, val_loader, epochs, lr, device, save_path,
+          probe_eval_fn=None):
     model = model.to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
-    crit = nn.SmoothL1Loss()
+    crit = nn.SmoothL1Loss(reduction='none')  # per-sample for weighting
     sched = torch.optim.lr_scheduler.OneCycleLR(
         opt, max_lr=lr, steps_per_epoch=len(train_loader), epochs=epochs)
 
+    best_probe = INF
     best_val = INF
+
     for epoch in range(1, epochs + 1):
         model.train()
         tl = 0.0
-        for X_b, y_b in train_loader:
-            X_b, y_b = X_b.to(device), y_b.to(device)
+        for X_b, y_b, w_b in train_loader:
+            X_b = X_b.to(device)
+            y_b = y_b.to(device)
+            w_b = w_b.to(device)
+
             opt.zero_grad()
-            loss = crit(model(X_b), y_b)
-            loss.backward(); opt.step(); sched.step()
+            loss_per = crit(model(X_b), y_b)
+            loss = (loss_per * w_b).mean()
+            loss.backward()
+            opt.step()
+            sched.step()
             tl += loss.item() * len(y_b)
 
         model.eval()
         vl = 0.0
         with torch.no_grad():
-            for X_b, y_b in val_loader:
-                vl += crit(model(X_b.to(device)), y_b.to(device)).item() * len(y_b)
+            for X_b, y_b, w_b in val_loader:
+                pred = model(X_b.to(device))
+                vl += nn.functional.smooth_l1_loss(
+                    pred, y_b.to(device)
+                ).item() * len(y_b)
 
         tl /= len(train_loader.dataset)
         vl /= len(val_loader.dataset)
-        tag = ""
-        if vl < best_val:
-            best_val = vl
-            torch.save(model.state_dict(), save_path)
-            tag = "  ← saved"
-        print(f"  Epoch {epoch:3d}/{epochs}  train: {tl:.6f}  val: {vl:.6f}{tag}")
 
-    model.load_state_dict(torch.load(save_path, map_location=device))
-    return best_val
+        probe_val = float("nan")
+        probe_tag = ""
+        if probe_eval_fn is not None:
+            probe_val = probe_eval_fn(model, device)
+            if probe_val < best_probe:
+                best_probe = probe_val
+                best_val = vl
+                torch.save(model.state_dict(), save_path)
+                probe_tag = "  ← saved (probe best)"
+
+        print(
+            f"  Epoch {epoch:3d}/{epochs}  train: {tl:.6f}  "
+            f"val: {vl:.6f}  probe: {probe_val:.6f}{probe_tag}"
+        )
+
+    if os.path.exists(save_path):
+        model.load_state_dict(torch.load(save_path, map_location=device))
+    return best_probe, best_val
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -981,9 +1115,13 @@ if __name__ == "__main__":
           (f" ({torch.cuda.get_device_name(0)})" if torch.cuda.is_available() else ""))
 
     model = ChessEvaluator()
-    if os.path.exists(MODEL_PATH):
+
+    if os.path.exists(BEST_MODEL_PATH):
+        model.load_state_dict(torch.load(BEST_MODEL_PATH, map_location=device))
+        print(f"Loaded best-probe checkpoint: {BEST_MODEL_PATH}")
+    elif os.path.exists(MODEL_PATH):
         model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-        print(f"Loaded {MODEL_PATH}")
+        print(f"Loaded base model: {MODEL_PATH}")
     else:
         print("No model found. Starting fresh.")
     model = model.to(device)
@@ -1015,13 +1153,14 @@ if __name__ == "__main__":
     print(f"  Opponent:    {OPPONENT}" +
           (f" (depth={SF_DEPTH}, skill={SF_SKILL})" if OPPONENT == "stockfish" else ""))
     print(f"  Labeling:    {LABEL_MODE}" +
-          (f" (depth={SF_LABEL_DEPTH})" if LABEL_MODE == "stockfish" else ""))
+          (f" (depth={SF_LABEL_DEPTH})" if LABEL_MODE == "stockfish" else
+           f" (depth={SF_LABEL_DEPTH}, blunder<{BLUNDER_THRESH_CP}cp, inaccuracy<{INACCURACY_THRESH_CP}cp)"))
     print(f"  Decisive:    >{DECISIVE_SCORE}cp × {DECISIVE_COUNT} moves → end early")
     print(f"{'='*60}\n")
 
     # Persistent labeling engine — created ONCE, reused across all rounds
     sf_label_engine = [None]
-    if LABEL_MODE == "stockfish":
+    if LABEL_MODE in ("stockfish", "move_quality", "blunder_repair"):
         sf_label_engine[0] = chess.engine.SimpleEngine.popen_uci(SF_PATH)
         sf_label_engine[0].configure({"Threads": SF_LABEL_THREADS, "Hash": SF_LABEL_HASH})
         print(f"[stockfish] Labeling engine: depth={SF_LABEL_DEPTH}, threads={SF_LABEL_THREADS}")
@@ -1030,6 +1169,7 @@ if __name__ == "__main__":
         print(f"\n── Round {rnd}/{ROUNDS} ──")
         round_X = []
         round_y = []
+        round_w = []
         remaining = GAMES_PER_ROUND
 
         while remaining > 0:
@@ -1038,7 +1178,7 @@ if __name__ == "__main__":
             while True:
                 try:
                     TT.clear()
-                    X_np, y_np = play_games(
+                    X_np, y_np, w_np = play_games(
                         model, device, n, DEPTH,
                         min(n, CONCURRENT), buf, gpu_tensor,
                         sf_label_engine_ref=sf_label_engine,
@@ -1046,6 +1186,7 @@ if __name__ == "__main__":
                     if X_np is not None and len(y_np) > 0:
                         round_X.append(X_np)
                         round_y.append(y_np)
+                        round_w.append(w_np)
                     break
 
                 except BufferOverflowError as e:
@@ -1062,47 +1203,73 @@ if __name__ == "__main__":
 
         X_np = np.concatenate(round_X, axis=0)
         y_np = np.concatenate(round_y, axis=0)
+        w_np = np.concatenate(round_w, axis=0)
 
         X = torch.from_numpy(X_np)
         y = torch.from_numpy(y_np)
-        print(f"Dataset: {len(y):,} samples | y_mean={y.float().mean():+.4f} | y_std={y.float().std(unbiased=False):.4f}")
-        del X_np, y_np; gc.collect()
-        if not PROBE_PATH.exists() and len(y) >= PROBE_SIZE:
-            save_probe_set(X, y)
+        w = torch.from_numpy(w_np)
+
+        # Log weight distribution for move_quality/blunder_repair
+        if LABEL_MODE in ("move_quality", "blunder_repair"):
+            n_w1 = int((w == 1.0).sum())
+            n_w2 = int((w == 2.0).sum())
+            n_w3 = int((w == 3.0).sum())
+            print(f"Weights: ×1={n_w1}  ×2={n_w2}  ×3={n_w3} "
+                  f"(blunders={n_w3}, {100*n_w3/max(1,len(w)):.1f}%)")
+
+        print(f"Dataset: {len(y):,} samples | y_mean={y.float().mean():+.4f} "
+              f"| y_std={y.float().std(unbiased=False):.4f}")
+        del X_np, y_np, w_np; gc.collect()
+        ensure_probe_set_exists(X, y)
         if AUGMENT:
-            X, y = augment_gpu(X, y, device)
+            X, y, w = augment_gpu(X, y, device, w)
             print(f"Augmented to {len(y)} positions")
 
         n = len(y)
         perm = torch.randperm(n)
-        X, y = X[perm], y[perm]
+        X, y, w = X[perm], y[perm], w[perm]
         split = int(0.9 * n)
 
-        tl = DataLoader(TensorDataset(X[:split], y[:split].unsqueeze(1)),
+        tl = DataLoader(TensorDataset(X[:split], y[:split].unsqueeze(1),
+                                      w[:split].unsqueeze(1)),
                         batch_size=BATCH_SIZE, shuffle=True)
-        vl = DataLoader(TensorDataset(X[split:], y[split:].unsqueeze(1)),
+        vl = DataLoader(TensorDataset(X[split:], y[split:].unsqueeze(1),
+                                      w[split:].unsqueeze(1)),
                         batch_size=BATCH_SIZE)
         pre_probe_val = eval_probe_set(model, device) if PROBE_PATH.exists() else float("nan")
         t_train = time.perf_counter()
-        best = train(model, tl, vl, EPOCHS_PER_ROUND, LR, device, OUTPUT_PATH)
+        best_probe, best_val = train(
+            model, tl, vl, EPOCHS_PER_ROUND, LR, device, BEST_MODEL_PATH,
+            probe_eval_fn=eval_probe_set if PROBE_PATH.exists() else None
+        )
         train_wall = time.perf_counter() - t_train
         probe_val = eval_probe_set(model, device) if PROBE_PATH.exists() else float("nan")
 
         delta = ""
         if not np.isnan(pre_probe_val) and not np.isnan(probe_val):
             delta = f"  Δprobe={probe_val - pre_probe_val:+.6f}"
+
         print(
-            f"Round {rnd} done — best val: {best:.6f}  "
-            f"probe: {probe_val:.6f}  "
+            f"Round {rnd} done — best val: {best_val:.6f}  "
+            f"best probe: {best_probe:.6f}  "
+            f"current probe: {probe_val:.6f}  "
             f"pre: {pre_probe_val:.6f}  "
             f"train: {train_wall/60:.1f}m{delta}"
         )
-        prev_probe_val = probe_val
 
-        del X, y, tl, vl; gc.collect(); torch.cuda.empty_cache()
+        # Keep the in-memory model and on-disk checkpoint aligned with the best probe score
+        if os.path.exists(BEST_MODEL_PATH):
+            model.load_state_dict(torch.load(BEST_MODEL_PATH, map_location=device))
+
+        del X, y, w, tl, vl; gc.collect(); torch.cuda.empty_cache()
 
     if sf_label_engine[0] is not None:
         sf_label_engine[0].quit()
 
     del buf, gpu_tensor; gc.collect(); torch.cuda.empty_cache()
-    print(f"\nFinal model saved to {OUTPUT_PATH}")
+    if os.path.exists(BEST_MODEL_PATH):
+        shutil.copy2(BEST_MODEL_PATH, MODEL_PATH)
+        print(f"\nFinal best-probe model copied to {MODEL_PATH}")
+        print(f"Best checkpoint remains at {BEST_MODEL_PATH}")
+    else:
+        print("\nNo best-probe checkpoint was created.")
