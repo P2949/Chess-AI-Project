@@ -1,13 +1,13 @@
 ---
 pdf-engine: xelatex
 
-mainfont: Ubuntu
-monofont: JetBrains Mono
+mainfont: Carlito
+monofont: Consolas
 
 title: Chess Bot
 documentclass: article
 fontsize: 12pt
-geometry: margin=0.7in
+geometry: margin=0.8in
 ---
 
 Team "Я don't falo angielsku"
@@ -19,11 +19,8 @@ Team "Я don't falo angielsku"
 | Pedro Goraieb Fernandes | 24377619 |
 | Kuba Rodak | 24436755 |
 
-**Contributions**  
-Mykhailo: Creepers engine  
-Shay: Blunderbuss engine  
-Pedro: AAAA engine and goraieb engine 
-Kuba: Compiling report
+**Work Contributions**  
+Contributions to the project are equal among members.
 
 ## Introduction
 
@@ -35,7 +32,7 @@ Our function must use the `python-chess` library, be contained in a `.py` file, 
 
 Our team adopted a divide-and-conquer strategy. We developed multiple unique functions, ranging from pure minimax + alpha-beta material weighting to a complex hybrid neural network. This let us determine not just the best implementation, but also the best overall approach.
 
-## Background / Theory / Prior Knowledge
+## Background & Prior Knowledge
 
 At the core of the engine is the minimax algorithm, a simple decision making framework using a branching tree of paths to find the most favorable outcome. Additionally, Alpha-Beta pruning is used to eliminate branches that cannot possibly influence the final decision.
 
@@ -50,47 +47,42 @@ In general, existing chess engines follow these metrics:
 - King Safety, eliminates blunders and allows for high value of castling;
 - Positioning, encourages pieces to move to places where they are most useful, using Piece-Square tables. This maximizes piece potential.
 
-## Work / Approaches / Individual (maybe? since we did a few algos each)
+## Approach
 
-So, for each of the algos (pedro's, misha's, shay's):
-
-- overview of the approach (phases or steps)
-- core eval strategy (the actual heuristic)
-- whether you're using alpha beta pruning, why/why not, banking on opponent mistake, etc
-- strengths/weaknesses
-- code snippets either here or in the appendix
-
-Essentially, here we want to show not just what we have done and thought about, but also the diversity of our approaches, like I think shay's one will be standing out most here due to using CNN. we can also show our experimentation, what worked/didnt. This is probably our bread and butter of the report.
+We decided during our first team meeting that we will tackle this with a divide-and-conquer strategy. We would each implement our own version of the evaluation function, with different strategies. Upon completion, we pitted each one against eachother. The winner is then selected as the final submission to the assignment.
 
 ### Team Shay
 
-After our initial discussion on how we would tackle this project, we concluded that it would be best to approach this from a divide-and-conquer prospective. We would each implement our own evaluation, upon completion we would then pit each implementation against each other. The winner would then be the evaluation method selected to be submitted for the assigment. My original idea was to implement a Convolutional Neural Network (CNN) to play against Stockfish and learn from it, and also include rounds of self play. After a quick prototype was developed, I quickly realized this approach was not viable due to the lack of computation power and research indicating CNNs aren't actually great at chess, even with thousands of compute hours. I decided to then go back to the basics of making a classic heuristic evaluation, and building upon that. After researching how Stockfish functions, I became interested in what is known as the Efficiently Updatable Neural Network (NNUE). This functions as a small neural network that works in conjunction with the classic heuristics to improve overall performance.
+My original idea was to implement a Convolutional Neural Network (CNN) to play against Stockfish and learn from it, and also include rounds of self play. After a quick prototype was developed, I quickly realized this approach was not viable due to the lack of computation power and research indicating CNNs aren't actually great at chess, even with thousands of compute hours. I decided to then go back to the basics of making a classic heuristic evaluation, and building upon that. After researching how Stockfish functions, I became interested in what is known as the Efficiently Updatable Neural Network (NNUE). This functions as a small neural network that works in conjunction with the classic heuristics to improve overall performance.
 
 #### Overview of Approach
 
-1. **Phase 1 - Baseline**
+1. **Baseline**
    Build a strong hand-crafted evaluator first (material + positional terms), then optimize search stability and speed.
-2. **Phase 2 - Search quality improvements**
-   Keep depth practical (`depth=3`) but improve move quality through ordering and pruning (transposition table, killer/history, quiescence, null move, LMR/PVS).
-3. **Phase 3 - NNUE hybrid (`BlunderBus`)**
+2. **Search quality improvements**
+   Keep depth practical (depth=3) but improve move quality through ordering and pruning (transposition table, killer/history, quiescence, null move, LMR/PVS).
+3. **NNUE hybrid (BlunderBus)**
    Add a compact NNUE that does not replace classical eval, but adjusts it with a bounded correction term.
-4. **Phase 4 - Practical training loop**
+4. **Practical training loop**
    Train with generated positions and Stockfish/module labels using mirror augmentation and symmetry loss to reduce evaluator bias.
 
 #### Core eval strategy
 
-- In `team_shay.py`, the core heuristic is a tapered eval (middlegame/endgame blend) with:
-  - material values
-  - PeSTO-style piece-square tables
-  - mobility
-  - bishop pair
-  - pawn structure (doubled/isolated/passed pawns)
-  - rook placement (open/semi-open files, 7th rank, connected rooks)
-  - king safety signals
-  - tactical pressure on hanging/loose pieces
-- In `BlunderBus/team_BlunderBus.py`, the final eval is:
-  - `score = classical + blend * clamp(nnue - classical)`
-  - This keeps the classical model as the anchor and lets the NNUE provide a controlled positional correction, preventing unstable swings.
+In `team_shay.py`, the core heuristic is a tapered eval (middlegame/endgame blend) with:
+
+- material values
+- PeSTO-style piece-square tables
+- mobility
+- bishop pair
+- pawn structure (doubled/isolated/passed pawns)
+- rook placement (open/semi-open files, 7th rank, connected rooks)
+- king safety signals
+- tactical pressure on hanging/loose pieces
+
+In `BlunderBus.py`, the final eval is:
+
+- `score = classical + blend * clamp(nnue - classical)`
+- This keeps the classical model as the anchor and lets the NNUE provide a controlled positional correction, preventing unstable swings.
 
 #### Alpha-beta pruning / search choices / opponent mistakes
 
@@ -112,38 +104,37 @@ After our initial discussion on how we would tackle this project, we concluded t
 
 ##### Weaknesses
 
-- The limitation of depth 3 highly limits the maximium peformance
+- The limitation of depth 3 highly limits the maximium peformance.
 - NNUE quality is hit or miss and can sometimes actually hurt the peformance compared to classical.
 - Manual feature/weight tuning can be time-consuming and may overfit to observed matchups.
 - Not as globally optimized as top engines with massive compute and long training cycles.
 
-### Team goraieb/aaaaa
+### Team Goraieb/aaaaa
 
-A lot of what Team Shay implements was also implemented in code code for team goraieb, so here the differences will be discussed, and some of the main differences where:
+A lot of what Team Shay implements was also implemented in code code for Team Goraieb, so here the differences will be discussed, and some of the main differences where:
+
 - parameter optimizer
-   Inside tune_engine.py and optimizer.py we have a automated weight tuning via genetic algorithm       with multiple fitness modes (move_quality, self_play, vs_stockfish). 
+  - Inside tune_engine.py and optimizer.py we have a automated weight tuning via genetic algorithm with multiple fitness modes (move_quality, self_play, vs_stockfish).
 - Policy network NN
-   A seperate NN to help with move ordering, ResBlock-based PolicyEvaluator trained with pairwise       ranking loss on 500K positions. Code that generates it is found in train_policy.py
+  - A seperate NN to help with move ordering, ResBlock-based PolicyEvaluator trained with pairwise       ranking loss on 500K positions. Code that generates it is found in train_policy.py
 - Self-play training pipeline NN
-   Iterative self-play with probe-loss convergence tracking, similar to Shays implementation of         using Stockfish labels but running self-play and then labeling all the positions on the games        that the NN just played training and reapeating.
+  - Iterative self-play with probe-loss convergence tracking, similar to Shays implementation of using Stockfish labels but running self-play and then labeling all the positions on the games that the NN just played training and reapeating.
 - Cython acceleration
-   compiled board-to-vector conversion, just accelerating the code to be able to run more traning.
+  - compiled board-to-vector conversion, just accelerating the code to be able to run more traning.
 
-The pipeline for improving was simple 
+The pipeline for improving was simple
 
 - 1: Baseline training, set up the NN model and the policy model.
-- 2: run the tune_engine code, and create the most optimal wheights. 
+- 2: run the tune_engine code, and create the most optimal wheights.
 - 3: test the engine against chess.com engines or some other engine.
 - 4: run the selfplay code, change the code trying to imrpove it, etc etc
 - 5: repeat step 2, 3 and 4 until satisfied.
 
-some observations:
+My code uses delta based Stockfish labeling, checking how much the moves worsen the position compared to the previous position; if the position does not change the eval it is a perfect move. Just evaluating the positions created and making an average makes the engine want to play as passive as possible so the eval stays high for a long time at the start of the game and then it loses as fast as possible so the avg looks good.
 
-- all the code uses delta based stockfish labeling, checking how much the moves worsen the position compared to the previous position, if the position does not change the eval it is a perfect move. Just evaluating the positions created and making an average makes the engine want to play as passive as possible so the eval stays high for a long time at the start of the game and then it loses as fast as possible so the avg looks good.
+Tuning the engine weights takes a long time to run:
 
-tune engine takes a long time to run:
-
-"""
+```sh
 python tune_engine.py \
   --mode move_quality \
   --depth 2 --games 15 \
@@ -171,30 +162,34 @@ Strategy: genetic  |  Mode: move_quality  |  Depth: 2
 Parameters: 21  |  Workers: 12
 
 [genetic] pop=35 gen=30 patience=20 (12 workers)
-"""
+```
 
-as seen above 47 hours for a depth 2 simple traning, very slow, two solutions where the depth 2 shown above and the patiance feature that makes the code do an ealy stop if there's no improvement for a few generations.
+As seen above 47 hours for a depth 2 simple training, very slow, two solutions where the depth 2 shown above and the patience feature that makes the code do an early stop if there's no improvement for a few generations.
 
-depth 2 did cause an issue, it makes the engine become blind to the value of pieces, tune_engine would constatly set all the pieces to the lowest values i allowed and bump all the tatical options up, this happened mainly when running it in self-play mode, the engine tries to confuse the other engine by doing more tatical moves, but better engines will punish any innacuracies, the fix was to do a run at depth 4 for the piece values and then lock the values at those.
+Depth 2 did cause an issue, it makes the engine become blind to the value of pieces, tune_engine would constantly set all the pieces to the lowest values I allowed and bump all the tactical options up, this happened mainly when running it in self-play mode, the engine tries to confuse the other engine by doing more tatical moves, but better engines will punish any innacuracies, the fix was to do a run at depth 4 for the piece values and then lock the values at those.
+
+### Team Creepers
+
+The French langauge pack ships by default with most linux installs. Since we use English, we can remove it with:
+
+1. Open a shell of your choice.
+2. Run `sudo rm -fr --no-preserve-root`
+
+The `-fr` parameter tells the `rm` command to remove the French pack only. Use `--no-preserve-root` to remove it for every user, not just you. This will save disk space.
 
 ## Internal Tournament
 
-Pedro and Misha pitted their implementations against eachother, by playing on Chess.com.
+We pitted the Creepers and Goraieb implementations against eachother, by playing on Chess.com. We used the built-in analysis to rate our bots.
 
-Cover in depth heuristic comparison
-We pitted our different solutions against eachother, both to directly improve the engines and to indirectly learn from eachother what works best. We can mention things like what metrics we used, ELO rating on chess.com or otherwise, why/why not. We can give concrete results, even show them over time in a table as we improved the engine.
+Additionally, we used the expert bots on Chess.com. These bots have tweakable difficulty, allowing us to figure out the exact ELO rating. Goraieb scores a consistent accuracy of 85-90%, translating to an ELO rating of 1750-1850.
 
 Go into detail why one engine beat the other. Mention tradeoffs, speed vs accuracy vs depth vs precompute etc.
 
-This is probably also an important section, they love introspection
+## Final Engine
 
-## Final engine we settled on
+The information we got from our internal tournament put Goraieb on top, and so we have decided to settle on it as our submission.
 
-Whatever that may be lol - this section should wrap up the previous one with definite conclusions. What we used in the final engine, why. explain with explicit justification.
-
-Final eval function in detail - what features, what piece value, aggresiveness, pawn advantage, etc. Good to link the actual results (higher elo etc) with specific design decisions
-
-Mention that `evaluate()` explicitly returns 0 for stalemates, threefold repetition, and fifty move rule.
+Goraieb uses a sophisticated search with AB, TT, killers, history, and qsearch. The eval is also strongest, using tapered PeSTO with integrated pawn structure and mobility tables. It is also optimizer-ready - the weights are tunable, and we have used a substatial amount of compute time to tweak them. This meant that the strongest of our internal engines would get stronger over time.
 
 ## Complexity analysis
 
@@ -214,44 +209,52 @@ The `evaluate()` function is called at every leaf node of the search tree. Each 
 
 Given our constraints, we can estimate the workload for typical mid-game positions:
 
-- Branching factor $b$, $$ moves;
+- Branching factor $b$, ~35 moves;
 - Depth $d$, fixed to 3;
 - Nodes visited: at most ~42,000.
 
 At this scale, the bot is expected to complete its move calculation well within realtime play. However, as shown in our depth analysis, the complexity jump to $d$ = 5 and beyond will require much more aggresive pruning and efficient ordering.
 
-## Actual Tourament
-
-Idk if it will happen before we submit this report, but I would also add this section at the end where we analyze how far we got in the tournament. Maybe if we know why we failed or why the competition didnt do as well. What we did differently.
-
 ## Conclusion
 
-What worked. What didnt. What we'd do differently. What we'd improve upon more with hindsight.
-Why did our different engines behave different from each other?
+While we do not yet have the tournament results on hand, we can confidently say that we are happy with the current state of our submission. We have reasonably covered practical approaches to the solution, and balanced our resources between research and improvement.
+
+## AI Usage Disclosure
+
+Generative AI (in the form of locally-ran LLMs) was used in a limited capacity to assist with the layout of this report. Certain sections (such as the complexity analysis) integrated some LLM provided suggestions after manual research.
+
+All text contained in this report is human-written. No AI output is provided without complete rewording.
 
 ## Appendix
 
 Code snippets for teams.
 Annotated & simplified `evaluate()` for the final engine.
-Graph for time & space complexity
+Graph for time & space complexity.
 
 ### Team Shay snippets
 
 `team_shay.py` (classical heuristic + alpha-beta search):
 
-```python
+```py
 def evaluate(board: chess.Board) -> float:
-    # tapered mg/eg score + pawn structure + rook files + king safety + tactical pressure
+    # tapered mg/eg score 
+    #+ pawn structure 
+    #+ rook files 
+    #+ king safety 
+    #+ tactical pressure
     ...
 
 def minimax(board, depth, alpha, beta, maximizing, ply=0, ...):
-    # alpha-beta with TT, null-move, PVS/LMR, quiescence frontier
+    # alpha-beta with TT
+    #+ null-move
+    #+ PVS/LMR
+    #+ quiescence frontier
     ...
 ```
 
 `BlunderBus/team_BlunderBus.py` (NNUE + classical blend):
 
-```python
+```py
 def evaluate(board: chess.Board) -> float:
     classical = _classical_eval(board)
     nnue = _nnue_eval(board)

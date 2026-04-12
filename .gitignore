@@ -1,6 +1,12 @@
 #i don't want to upload the 300gb database
 *.pgn
 *.dat
+
+#report wip
+report.pdf
+specs.txt
+style.tex
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
