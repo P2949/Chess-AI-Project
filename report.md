@@ -22,7 +22,7 @@ Team "Я don't falo angielsku"
 **Contributions**  
 Mykhailo: Creepers engine  
 Shay: Blunderbuss engine  
-Pedro: AAAA engine  
+Pedro: AAAA engine and goraieb engine 
 Kuba: Compiling report
 
 ## Introduction
@@ -116,6 +116,66 @@ After our initial discussion on how we would tackle this project, we concluded t
 - NNUE quality is hit or miss and can sometimes actually hurt the peformance compared to classical.
 - Manual feature/weight tuning can be time-consuming and may overfit to observed matchups.
 - Not as globally optimized as top engines with massive compute and long training cycles.
+
+### Team goraieb/aaaaa
+
+A lot of what Team Shay implements was also implemented in code code for team goraieb, so here the differences will be discussed, and some of the main differences where:
+- parameter optimizer
+   Inside tune_engine.py and optimizer.py we have a automated weight tuning via genetic algorithm       with multiple fitness modes (move_quality, self_play, vs_stockfish). 
+- Policy network NN
+   A seperate NN to help with move ordering, ResBlock-based PolicyEvaluator trained with pairwise       ranking loss on 500K positions. Code that generates it is found in train_policy.py
+- Self-play training pipeline NN
+   Iterative self-play with probe-loss convergence tracking, similar to Shays implementation of         using Stockfish labels but running self-play and then labeling all the positions on the games        that the NN just played training and reapeating.
+- Cython acceleration
+   compiled board-to-vector conversion, just accelerating the code to be able to run more traning.
+
+The pipeline for improving was simple 
+
+- 1: Baseline training, set up the NN model and the policy model.
+- 2: run the tune_engine code, and create the most optimal wheights. 
+- 3: test the engine against chess.com engines or some other engine.
+- 4: run the selfplay code, change the code trying to imrpove it, etc etc
+- 5: repeat step 2, 3 and 4 until satisfied.
+
+some observations:
+
+- all the code uses delta based stockfish labeling, checking how much the moves worsen the position compared to the previous position, if the position does not change the eval it is a perfect move. Just evaluating the positions created and making an average makes the engine want to play as passive as possible so the eval stays high for a long time at the start of the game and then it loses as fast as possible so the avg looks good.
+
+tune engine takes a long time to run:
+
+"""
+python tune_engine.py \
+  --mode move_quality \
+  --depth 2 --games 15 \
+  --sf-play-depth 4 --sf-eval-depth 10 \
+  --pop 35 --gen 30  --sf-skill 20 \
+  --workers 12
+═══ move_quality mode (DELTA-BASED) ═══
+  Candidate depth : 2
+  SF play depth   : 4  (skill 20)
+  SF eval depth   : 10
+  Games/eval      : 15
+  Metric          : avg centipawn loss per move
+    fitness ~ 0   : perfect play
+    fitness ~ -30 : slight inaccuracies
+    fitness ~ -100: frequent blunders
+
+Threads: 12
+Benchmarking 12 parallel evaluations...
+1933.48s  (161.12s/eval)
+
+  ~1050 evals in ~88 batches
+  Estimated wall time: ~47h 15m
+
+Strategy: genetic  |  Mode: move_quality  |  Depth: 2
+Parameters: 21  |  Workers: 12
+
+[genetic] pop=35 gen=30 patience=20 (12 workers)
+"""
+
+as seen above 47 hours for a depth 2 simple traning, very slow, two solutions where the depth 2 shown above and the patiance feature that makes the code do an ealy stop if there's no improvement for a few generations.
+
+depth 2 did cause an issue, it makes the engine become blind to the value of pieces, tune_engine would constatly set all the pieces to the lowest values i allowed and bump all the tatical options up, this happened mainly when running it in self-play mode, the engine tries to confuse the other engine by doing more tatical moves, but better engines will punish any innacuracies, the fix was to do a run at depth 4 for the piece values and then lock the values at those.
 
 ## Internal Tournament
 
