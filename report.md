@@ -176,7 +176,7 @@ In internal depth-3 head-to-head testing, `team_shay` was the stronger practical
 
 Despite `team_shay` winning all 8 test games in my scripted comparison, I don't think that hybrid designs are invalid. Under my 'training budget' and the amount of compute available for data labelling, the classical evaluator simply remained stronger.
 
-### Team Goraieb/aaaaa
+### Team Goraieb
 
 A lot of what Team Shay implements was also implemented in code code for Team Goraieb, so here the differences will be discussed, and some of the main differences where:
 
@@ -305,34 +305,11 @@ While we do not yet have the tournament results on hand, we can confidently say 
 
 Generative AI (in the form of LLMs) was used in a limited capacity to assist with the layout of this report. Certain sections (such as the complexity analysis) integrated some LLM provided suggestions after manual research confirming their validity.
 
-All text contained in this report is human-written. No AI output is provided without complete rewording.
+All text contained in this report is human-written. No AI output is provided directly.
 
 ## Appendix
 
-Code snippets for teams.
-Annotated & simplified `evaluate()` for the final engine.
-Graph for time & space complexity.
-
 ### Team Shay snippets
-
-`team_shay.py` (classical heuristic + alpha-beta search):
-
-```py
-def evaluate(board: chess.Board) -> float:
-    # tapered mg/eg score 
-    #+ pawn structure 
-    #+ rook files 
-    #+ king safety 
-    #+ tactical pressure
-    ...
-
-def minimax(board, depth, alpha, beta, maximizing, ply=0, ...):
-    # alpha-beta with TT
-    #+ null-move
-    #+ PVS/LMR
-    #+ quiescence frontier
-    ...
-```
 
 `BlunderBus/team_BlunderBus.py` (NNUE + classical blend):
 
