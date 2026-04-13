@@ -373,46 +373,46 @@ if _NEED_TORCH:
 # ══════════════════════════════════════════════════════════════════════════════
 
 WEIGHTS = {
-      "pawn": 115,
-      "knight": 335,
-      "bishop": 360,
-      "rook": 545,
-      "queen": 935,
-      "king": 20000,
-      "mobility": 2.0,
-      "bishop_pair": 35.0,
-      "doubled_penalty": 15.0,
-      "isolated_penalty": 12.0,
-      "backward_penalty": 15.0,
-      "rook_open_file": 20.0,
-      "rook_semi_open": 12.0,
-      "connected_rooks": 20.0,
-      "king_shield": 6.0,
-      "king_shield_miss": 8.0,
-      "knight_outpost": 30.0,
-      "overextended_piece": 40.0,  # penalize unsupported pieces deep in enemy territory
-      "king_tropism": 2.5,
-      "tempo": 10.0,
-      "hanging_piece": 40.0,
-      "king_attack": 5.0,
-      "pin_penalty": 30.0,
-      "center_control": 8.0,
-      "uncastled_king": 18.0,
-      "rook_doubled_file": 8.0,
-      "policy_weight": 0.35,
-      "nn_phase_boost": 1.5,
-      "early_queen_pen": 20.0,
-      "development": 10.0,
-      "passed_r1": 0,
-      "passed_r2": 8,
-      "passed_r3": 16,
-      "passed_r4": 30,
-      "passed_r5": 50,
-      "passed_r6": 80,
-      "passed_r7": 120,
-      "passed_r8": 0,
-      "nn_weight": 0.15,
-  }
+    "pawn": 115,
+    "knight": 335,
+    "bishop": 360,
+    "rook": 545,
+    "queen": 935,
+    "king": 20000,
+    "mobility": 2.25,
+    "bishop_pair": 25.0,
+    "doubled_penalty": 6.0,        # optimizer
+    "isolated_penalty": 24.0,      # optimizer
+    "backward_penalty": 9.0,       # optimizer
+    "rook_open_file": 30.0,        # optimizer
+    "rook_semi_open": 12.0,        # optimizer
+    "connected_rooks": 10.0,       # optimizer
+    "king_shield": 2.0,            # optimizer
+    "king_shield_miss": 0.0,       # optimizer
+    "knight_outpost": 45.0,        # optimizer
+    "overextended_piece": 15.0,    # optimizer
+    "king_tropism": 2.0,           # optimizer
+    "tempo": 8.0,                  # optimizer
+    "hanging_piece": 45.0,         # CAPPED from 60 — prevents phantom compensation
+    "king_attack": 0.0,            # optimizer
+    "pin_penalty": 10.0,           # optimizer
+    "center_control": 6.0,         # optimizer
+    "uncastled_king": 22.0,        # CAPPED from 33 — prevents material masking
+    "rook_doubled_file": 18.0,     # optimizer
+    "policy_weight": 0.35,
+    "nn_phase_boost": 1.5,
+    "early_queen_pen": 10.0,       # optimizer
+    "development": 15.0,           # optimizer
+    "passed_r1": 0,
+    "passed_r2": 8,
+    "passed_r3": 16,
+    "passed_r4": 30,
+    "passed_r5": 50,
+    "passed_r6": 80,
+    "passed_r7": 120,
+    "passed_r8": 0,
+    "nn_weight": 0.15,
+}
 # ── Eval cache ────────────────────────────────────────────────────────────────
 # FIX #6: Cache is keyed by zobrist hash. Must be cleared whenever WEIGHTS
 # changes (the optimizer does this via _reset_engine). The cache only stores
