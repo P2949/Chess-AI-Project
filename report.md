@@ -1,4 +1,4 @@
----
+
 pdf-engine: xelatex
 
 mainfont: Carlito
@@ -8,7 +8,7 @@ title: Chess Bot
 documentclass: article
 fontsize: 12pt
 geometry: margin=0.8in
----
+
 
 Team "Я don't falo angielsku"
 
@@ -59,7 +59,6 @@ My second approach was more traditional, to build a simple classical heuristic-b
 
 This is how engines like Stockfish eventually overcame pure neural-network-style approaches in practical play. Stockfish specifically implements an Efficiently Updatable Neural Network (NNUE), a lightweight neural network that tracks board state and assists evaluation by spotting patterns that classical heuristics may miss.
 
----
 
 #### Search and quiescence
 
@@ -67,7 +66,6 @@ Search relies on minimax (White maximises, Black minimises) with alpha-beta prun
 
 Other important search components include the opening book, transposition table, killer moves, null-move pruning, and ordering heuristics. These live in search, not `evaluate()`, but they are still critical for practical strength at shallow depth.
 
----
 
 #### The most important evaluation metrics are the following
 
@@ -119,7 +117,6 @@ These rules reward safer king setups in middlegame and discourage exposed centra
 
 A dedicated tactical term scans non-king pieces using attacker/defender counts. Undefended attacked pieces receive larger penalties; pieces with fewer defenders than attackers receive partial penalties. An additional loose-piece penalty applies when a lower-value attacker can pressure a higher-value piece. This term is scaled down toward endgame to avoid excessive speculative caution.
 
----
 
 #### Team BlunderBus (classical + NNUE hybrid)
 
@@ -135,7 +132,6 @@ The difference (`nnue - classical`) is clamped by a phase-dependent cap and then
 
 The design goal is to keep classical stability while allowing the network to add positional pattern recognition where hand-crafted terms are weaker.
 
----
 
 #### Training the BlunderBus NNUE (`BlunderBus/train_nnue.py`)
 
@@ -149,7 +145,6 @@ python BlunderBus/train_nnue.py   --teacher-mode stockfish   --samples 95000   -
 
 At these settings, Stockfish labeling dominates wall time; the SGD phase is comparatively short.
 
----
 
 #### Team Shay vs BlunderBus
 
@@ -175,12 +170,6 @@ In internal depth-3 head-to-head testing, `team_shay` was the stronger practical
 - extra complexity does not guarantee immediate Elo gain.
 
 In our scripted comparison (`scripts/generate_shay_blunderbus_figures.py`, depth 3, alternating colours, fixed seed), `team_shay` won all 8 games. This does not imply the hybrid design is invalid, only that under this training budget and labeling quality, the classical evaluator remained stronger.
-
-![Head-to-head outcomes (eight games, depth 3, seed 13).](figures/shay_vs_blunderbus_outcomes.png)
-
-![Distribution of game lengths in plies for the same session.](figures/shay_vs_blunderbus_plies.png)
-
-![Static evaluation traces along the first game (White-positive centipawn scale).](figures/shay_vs_blunderbus_eval_trace.png)
 
 ### Team Goraieb/aaaaa
 
