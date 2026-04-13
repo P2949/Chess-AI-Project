@@ -89,7 +89,7 @@ Mobility estimates piece activity by counting attacked squares. I apply it to kn
 
 **Bishop pairs**  
 
-If a side keeps both bishops, the score shifts by $\plusmn$32 centipawns. Two bishops scale well in open positions. Without this term, many positions treat bishop+knight and bishop+bishop too similarly, which can become dangerous in endgames, forcing stalemates.
+If a side keeps both bishops, the score shifts by ±32 centipawns. Two bishops scale well in open positions. Without this term, many positions treat bishop+knight and bishop+bishop too similarly, which can become dangerous in endgames, forcing stalemates.
 
 **Pawn structure**  
 
