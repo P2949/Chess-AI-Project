@@ -1,4 +1,4 @@
-
+---
 pdf-engine: xelatex
 
 mainfont: Carlito
@@ -8,7 +8,7 @@ title: Chess Bot
 documentclass: article
 fontsize: 12pt
 geometry: margin=0.8in
-
+---
 
 Team "Я don't falo angielsku"
 
@@ -24,21 +24,21 @@ Contributions to the project are equal among members.
 
 ## Introduction
 
-The challenge is to create a minimax-based chessbot with a limited look-ahead search. While the base architecture is provided, the difficulty comes from the open problem of designing a heuristic function that can accurately tell whether a scenario is favorable or not.
+The challenge is to create an evaluation algorithm for a Minimax-based chessbot with a limited look-ahead search depth. While the base architecture is provided, the difficulty comes from the open problem of designing a heuristic function that can accurately tell whether a scenario is favorable or not.
 
 Our objective therefore is to make an advanced `evaluate()` function that follows standards where positive values favor White, negative Black, and zero represents a balance or stalemate.
 
 Our function must use the `python-chess` library, be contained in a `.py` file, and must not make use of external engines such as Stockfish. Additionally, we must not modify the code that allows our function to integrate with other teams in the tournament. The engine operates at a depth of 3, meaning that considering performance is not as immediately important as when designing for higher depths.
 
-Our team adopted a divide-and-conquer strategy. We developed multiple unique functions, ranging from pure minimax + alpha-beta material weighting to a complex hybrid neural network. This let us determine not just the best implementation, but also the best overall approach.
+Our team adopted a divide-and-conquer strategy. We developed multiple unique functions, ranging from pure Minimax + alpha-beta material weighting to a complex hybrid neural network. This let us determine not just the best implementation, but also the best overall approach.
 
 ## Background & Prior Knowledge
 
-At the core of the engine is the minimax algorithm, a simple decision making framework using a branching tree of paths to find the most favorable outcome. Additionally, Alpha-Beta pruning is used to eliminate branches that cannot possibly influence the final decision.
+At the core of the engine is the Minimax algorithm, a simple decision making framework using a branching tree of paths to find the most favorable outcome. Additionally, alpha-beta pruning is used to eliminate branches that cannot possibly influence the final decision.
 
-The average number of legal moves in chess is ~30-50, which makes it impossible to calculate every move to the end of each game. We instead use a heuristic `evaluate()` function at the leaf nodes of the search tree - this assigns a numerical value to the board state, based on metrics like material advantage, king safety, and control of the center.
+The average number of legal moves in chess is approximately $35$, and the average game length is about $40$, which gives use the impractically large $35^{40} \approx 10^{61}$ estimate of possible states. This in turn makes it impossible to brute-force calculate every move to the end of each game. We instead use a heuristic `evaluate()` function at the leaf nodes of the search tree - this assigns a numerical value to the board state, based on metrics like material advantage, king safety, and control of the center. The function acts as a compass, pointing the engine in the direction most favorable overall.
 
-To interface with the chess board, we import the `python-chess` library. The `chess.Board` object gives access to the data we need; piece positions, legal move counts, and checkmate detection.
+To interface with the chess board, we import the `python-chess` library. The `chess.Board` object gives access to the data we need; piece positions, legal move counts, and checkmate detection. It allows us to iterate through all pieces and possible moves, and is able to import/export a game using standard chess notation.
 
 In general, existing chess engines follow these metrics:
 
@@ -53,72 +53,71 @@ We decided during our first team meeting that we will tackle this with a divide-
 
 ### Team Shay
 
-My first initial idea was to build a convolutional neural network (CNN) to play chess. After my initial prototype, I determined that this would not be viable given our timescope and compute power. Further research also indicated that CNNs are not ideal for chess.
+My initial idea was to build a convolutional neural network (CNN) to play chess. After building my prototype, I determined that this would not be viable given our time constraints and available compute power. Further research also indicated that CNNs are not ideal for chess.
 
 My second approach was more traditional, to build a simple classical heuristic-based engine. This is where `team_shay.py` came from. After a few days of tweaking, I determined I had hit a hard limit at depth 3 and could no longer make significant gains in performance. I then further researched how chess engines evolved over time, and became interested in a dual approach of both classical heuristics working in conjunction with a small neural network.
 
 This is how engines like Stockfish eventually overcame pure neural-network-style approaches in practical play. Stockfish specifically implements an Efficiently Updatable Neural Network (NNUE), a lightweight neural network that tracks board state and assists evaluation by spotting patterns that classical heuristics may miss.
 
+**Search and quiescence**  
 
-#### Search and quiescence
+Search relies on Minimax (White maximizes, Black minimizes) with alpha-beta pruning and strong move ordering. When the main search hits the depth limit of 3 (excluding check extensions), the engine does not stop immediately. It moves into quiescence search and explores forcing lines, mainly captures and queen promotions, until a ply cap or cutoff condition stabilises the position. This is required to reduce horizon effect errors. If the side to move is in check, the search expands legal moves rather than only captures. Game-ending states are handled inside search, and static evaluations are cached using Zobrist hashing so repeated positions are not rescored from scratch.
 
-Search relies on minimax (White maximises, Black minimises) with alpha-beta pruning and strong move ordering. When the main search hits the depth limit of 3 (excluding check extensions), the engine does not stop immediately. It moves into quiescence search and explores forcing lines, mainly captures and queen promotions, until a ply cap or cutoff condition stabilises the position. This is required to reduce horizon effect errors. If the side to move is in check, the search expands legal moves rather than only captures. Game-ending states are handled inside search, and static evaluations are cached using Zobrist hashing so repeated positions are not rescored from scratch.
+I have also added important steps to the search, such as the transposition table, killer moves, null-move pruning, and ordering heuristics. They are really important for strength at shallow depths like 3.
 
-Other important search components include the opening book, transposition table, killer moves, null-move pruning, and ordering heuristics. These live in search, not `evaluate()`, but they are still critical for practical strength at shallow depth.
+Here is an outline of the most important eval metrics used:
 
+**Material + PeSTO-style piece-square tables (tapered)**  
 
-#### The most important evaluation metrics are the following
+Every piece adds a fixed centipawn value (pawn 100, knight 320, bishop 330, rook 500, queen 900, king 20000) in combination with two table bonuses: one for middlegame (`PST_MG`) and one for endgame (`PST_EG`), indexed by square. This encodes "good" squares for each phase of the game and guides piece development into useful board areas.
 
-#### Material + PeSTO-style piece-square tables (tapered)
+**Phase-based tapering**  
 
-Every piece adds a fixed centipawn value (pawn 100, knight 320, bishop 330, rook 500, queen 900, king 20000) in combination with two table bonuses: one for middlegame (`PST_MG`) and one for endgame (`PST_EG`), indexed by square. This encodes “good” squares for each phase of the game and guides piece development into useful board areas. Material alone cannot capture this.
+The evaluator tracks game phase from non-pawn material (knight/bishop +1, rook +2, queen +4 each, capped at 24). These values help transition from middlegame to endgame scores. A king in the center during middlegame is usually undesirable, while in endgame it can be normal. Tapering prevents phase-inappropriate penalties or bonuses from causing problems.
 
-#### Phase-based tapering
+**Tempo**  
 
-The evaluator tracks game phase from non-pawn material (knight/bishop +1, rook +2, queen +4 each, capped at 24). This phase value blends middlegame and endgame scores. A king in the centre during middlegame is usually undesirable, while in endgame it is often normal. Tapering prevents phase-inappropriate penalties or bonuses from dominating.
+Tempo is a bonus for the side to move, interpolated between middlegame (28 cp) and endgame (12 cp). Chess is not strictly symmetric; the side to move can act first, improve strategy, or create new threats. Without tempo, many practically favorable positions become false ties. This bonus is stronger in middlegame and reduced in endgame where precision and zugzwang-like effects matter more.
 
-#### Tempo
+**Mobility**  
 
-Tempo is a bonus for the side to move, interpolated between middlegame (28 cp) and endgame (12 cp). Chess is not strictly symmetric; the side to move can act first, improve activity, or create threats. Without tempo, many practically favourable positions become false ties. The bonus is stronger in middlegame and reduced in endgame where precision and zugzwang-like effects matter more.
+Mobility estimates piece activity by counting attacked squares. I apply it to knights, bishops, rooks, and queens. Attacked-square counts are weighted per piece (bishop 5, knight 4, rook 3, queen 2), summed White vs Black, and scaled by a mobility factor (0.06). More active pieces generally mean more tactical and positional options.
 
-#### Mobility
+**Bishop pairs**  
 
-Mobility approximates piece activity by counting attacked squares. It is applied to knights, bishops, rooks, and queens. Attacked-square counts are weighted per piece (bishop 5, knight 4, rook 3, queen 2), summed White vs Black, and scaled by a mobility factor (0.06). More active pieces generally mean more tactical and positional options.
+If a side keeps both bishops, the score shifts by $\plusmn$32 centipawns. Two bishops scale well in open positions. Without this term, many positions treat bishop+knight and bishop+bishop too similarly, which can become dangerous in endgames, forcing stalemates.
 
-#### Bishop pair
+**Pawn structure**  
 
-If a side retains both bishops, the score shifts by ±32 centipawns. Two bishops cover both colour complexes and scale well in open positions. Without this term, many positions treat bishop+knight and bishop+bishop too similarly.
-
-#### Pawn structure
+Pawns have more rules:
 
 - Doubled pawns on a file: penalty per extra pawn.
 - Isolated pawns (no friendly pawns on adjacent files): penalty.
 - Passed pawns: if enemy pawns cannot block/capture on forward adjacent files, apply a rank-based bonus scaled toward endgame.
 
-Pawn structure is long-term. Weak pawns become persistent targets, while passed pawns often decide endgames. Endgame scaling matters because depth-3 search often cannot see promotion directly.
+Pawn structure is treated as long-term. Weak pawns can become targets, while passed pawns often decide endgames. Endgame scaling matters because depth-3 search often cannot see promotion directly.
 
-#### Rook placement
+**Rook placement**  
 
-- No pawns on that file (open file): bonus.
-- No friendly pawns on that file (semi-open): smaller bonus.
-- White rook on rank 6 / Black rook on rank 1 (seventh-rank pressure): bonus.
-- Two friendly rooks connected on same rank/file with no blockers: bonus.
+Rooks receive bonuses to their positions in the following conditions:
 
-Rooks improve significantly on open files and seventh-rank access. Connected rooks increase coordination and practical pressure.
+- Open or semi-open file;
+- White rook on rank 6 / Black rook on rank 1 (seventh-rank pressure);
+- Two friendly rooks connected on same rank/file with no blockers, creating a rook battery.
 
-#### King safety
+Rooks improve a lot on open files and seventh-rank access. Rook batteries increase pressure by creating strong trades & protection for other pieces.
 
-- King on g1/c1 (mirrored for Black): bonus × middlegame weight.
-- King on e1/d1/f1 (mirrored) with no castling rights: penalty × middlegame weight.
+**King safety**  
 
-These rules reward safer king setups in middlegame and discourage exposed central kings once castling is no longer available.
+The king should remain on g1/c1 (or mirrored for Black), this gives a bonus in the middlegame. If this king is on e1/d1/f1 (also mirrored for Black), it receives a penalty, since it did not castle.
 
-#### Tactical pressure (hanging / loose pieces)
+This rewards safer king setups in middlegame and discourage exposed central kings once castling is not available.
 
-A dedicated tactical term scans non-king pieces using attacker/defender counts. Undefended attacked pieces receive larger penalties; pieces with fewer defenders than attackers receive partial penalties. An additional loose-piece penalty applies when a lower-value attacker can pressure a higher-value piece. This term is scaled down toward endgame to avoid excessive speculative caution.
+**Tactical pressure (hanging / loose pieces)**  
 
+I built a dedicated tactical term that scans non-king pieces using attacker/defender counts. Undefended attacked pieces receive larger penalties; pieces with fewer defenders than attackers receive partial penalties. An additional loose-piece penalty applies when a lower-value attacker can pressure a higher-value piece.
 
-#### Team BlunderBus (classical + NNUE hybrid)
+**Team BlunderBus (classical + NNUE hybrid)**  
 
 After finishing `team_shay`, I wanted to test whether a small NNUE could improve practical strength without removing the classical backbone. BlunderBus uses the same search philosophy but changes the evaluator into a hybrid.
 
@@ -132,10 +131,9 @@ The difference (`nnue - classical`) is clamped by a phase-dependent cap and then
 
 The design goal is to keep classical stability while allowing the network to add positional pattern recognition where hand-crafted terms are weaker.
 
+**Training the NNUE**  
 
-#### Training the BlunderBus NNUE (`BlunderBus/train_nnue.py`)
-
-Training is offline and exports a small weight file loaded by `team_BlunderBus.py` during runtime. In practice, the script samples positions from mixed rollouts (weighted-random plus shallow teacher-guided moves), encodes each board as sparse binary piece-square features plus castling and side-to-move bits, labels positions using either a teacher module or Stockfish centipawn scores, optionally mirror-augments data with sign-flipped labels, and then trains a compact two-layer network with minibatch SGD, weight decay, and optional symmetry loss. The best checkpoint is exported as `BlunderBus/team_blunderbus_nnue_weights.py`.
+Training is offline and exports a small weight file loaded by `team_BlunderBus.py` during runtime. In practice, my script samples positions from mixed rollouts (weighted-random plus shallow teacher-guided moves), encodes each board as sparse binary piece-square features plus castling and side-to-move bits, labels positions using either a teacher module or Stockfish centipawn scores, optionally mirror-augments data with sign-flipped labels, and then trains a compact two-layer network with minibatch SGD, weight decay, and optional symmetry loss.
 
 A representative heavier run, chosen to approximate around 40 hours on a Ryzen 5 3600 (mostly due to Stockfish labeling cost), was:
 
@@ -145,31 +143,34 @@ python BlunderBus/train_nnue.py   --teacher-mode stockfish   --samples 95000   -
 
 At these settings, Stockfish labeling dominates wall time; the SGD phase is comparatively short.
 
-
-#### Team Shay vs BlunderBus
+**Team Shay vs BlunderBus**  
 
 In internal depth-3 head-to-head testing, `team_shay` was the stronger practical baseline under our constraints.
 
-**Team Shay strengths:**
+**Team Shay strengths:**  
+
 - highly interpretable and easy to tune,
 - stable tactical behaviour at shallow depth,
 - strong hand-crafted phase-aware structure.
 
-**Team Shay weaknesses:**
+**Team Shay weaknesses:**  
+
 - diminishing returns once depth-3 tuning saturates,
 - some subtle positional patterns remain hard to encode manually.
 
-**BlunderBus strengths:**
+**BlunderBus strengths:**  
+
 - potential to capture positional patterns classical heuristics miss,
 - classical fallback keeps behaviour robust,
 - bounded blend reduces catastrophic NNUE errors.
 
-**BlunderBus weaknesses:**
+**BlunderBus weaknesses:**  
+
 - performance depends heavily on data quality and labeling depth,
 - limited compute/time can make NNUE corrections inconsistent,
 - extra complexity does not guarantee immediate Elo gain.
 
-In our scripted comparison (`scripts/generate_shay_blunderbus_figures.py`, depth 3, alternating colours, fixed seed), `team_shay` won all 8 games. This does not imply the hybrid design is invalid, only that under this training budget and labeling quality, the classical evaluator remained stronger.
+Despite `team_shay` winning all 8 test games in my scripted comparison, I don't think that hybrid designs are invalid. Under my 'training budget' and the amount of compute available for data labelling, the classical evaluator simply remained stronger.
 
 ### Team Goraieb/aaaaa
 
@@ -184,7 +185,7 @@ A lot of what Team Shay implements was also implemented in code code for Team Go
 - Cython acceleration
   - compiled board-to-vector conversion, just accelerating the code to be able to run more traning.
 
-The pipeline for improving was simple
+The pipeline for improving was simple;
 
 - 1: Baseline training, set up the NN model and the policy model.
 - 2: run the tune_engine code, and create the most optimal wheights.
@@ -192,11 +193,11 @@ The pipeline for improving was simple
 - 4: run the selfplay code, change the code trying to imrpove it, etc etc
 - 5: repeat step 2, 3 and 4 until satisfied.
 
-My code uses delta based Stockfish labeling, checking how much the moves worsen the position compared to the previous position; if the position does not change the eval it is a perfect move. Just evaluating the positions created and making an average makes the engine want to play as passive as possible so the eval stays high for a long time at the start of the game and then it loses as fast as possible so the avg looks good.
+My code uses delta based Stockfish labeling, checking how much the moves worsen the position compared to the previous position; if the position does not change the eval, it is a perfect move. Simply evaluating the positions created and making an average makes the engine want to play as passive as possible so the eval stays high for a long time at the start of the game and then it loses as fast as possible so the avg looks good.
 
 Tuning the engine weights takes a long time to run:
 
-```sh
+```py
 python tune_engine.py \
   --mode move_quality \
   --depth 2 --games 15 \
@@ -228,7 +229,7 @@ Parameters: 21  |  Workers: 12
 
 As seen above 47 hours for a depth 2 simple training, very slow, two solutions where the depth 2 shown above and the patience feature that makes the code do an early stop if there's no improvement for a few generations.
 
-Depth 2 did cause an issue, it makes the engine become blind to the value of pieces, tune_engine would constantly set all the pieces to the lowest values I allowed and bump all the tactical options up, this happened mainly when running it in self-play mode, the engine tries to confuse the other engine by doing more tatical moves, but better engines will punish any innacuracies, the fix was to do a run at depth 4 for the piece values and then lock the values at those.
+Depth 2 did cause an issue, it makes the engine become blind to the value of pieces, `tune_engine` would constantly set all the pieces to the lowest values I allowed and bump all the tactical options up, this happened mainly when running it in self-play mode, the engine tries to confuse the other engine by doing more tatical moves, but better engines will punish any innacuracies, the fix was to do a run at depth 4 for the piece values and then lock the values at those.
 
 ### Team Creepers
 
@@ -248,7 +249,7 @@ As I have played chess before my approach was just to represent in heuristics ba
 - Attackers and Defenders count
   - Basic principle to count how many pieces and pawns attack or defen a square so that engine wouldnt blunder so easily.
 
-The evaluatin for each of those parameters was adjusted by hand when It was playing agains team Goraieb.
+The evaluation for each of those parameters was adjusted by hand when it was playing against team Goraieb.
 
 ## Internal Tournament
 
@@ -294,7 +295,7 @@ While we do not yet have the tournament results on hand, we can confidently say 
 
 ## AI Usage Disclosure
 
-Generative AI (in the form of locally-ran LLMs) was used in a limited capacity to assist with the layout of this report. Certain sections (such as the complexity analysis) integrated some LLM provided suggestions after manual research.
+Generative AI (in the form of LLMs) was used in a limited capacity to assist with the layout of this report. Certain sections (such as the complexity analysis) integrated some LLM provided suggestions after manual research confirming their validity.
 
 All text contained in this report is human-written. No AI output is provided without complete rewording.
 
