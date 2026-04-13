@@ -1,0 +1,3 @@
+games=8 depth=3 seed=13
+shay_wins=8 draws=0 blunderbus_wins=0 unfinished=0
+match_points_shay=8.0

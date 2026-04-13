@@ -53,61 +53,134 @@ We decided during our first team meeting that we will tackle this with a divide-
 
 ### Team Shay
 
-My original idea was to implement a Convolutional Neural Network (CNN) to play against Stockfish and learn from it, and also include rounds of self play. After a quick prototype was developed, I quickly realized this approach was not viable due to the lack of computation power and research indicating CNNs aren't actually great at chess, even with thousands of compute hours. I decided to then go back to the basics of making a classic heuristic evaluation, and building upon that. After researching how Stockfish functions, I became interested in what is known as the Efficiently Updatable Neural Network (NNUE). This functions as a small neural network that works in conjunction with the classic heuristics to improve overall performance.
+My first initial idea was to build a convolutional neural network (CNN) to play chess. After my initial prototype, I determined that this would not be viable given our timescope and compute power. Further research also indicated that CNNs are not ideal for chess.
 
-#### Overview of Approach
+My second approach was more traditional, to build a simple classical heuristic-based engine. This is where `team_shay.py` came from. After a few days of tweaking, I determined I had hit a hard limit at depth 3 and could no longer make significant gains in performance. I then further researched how chess engines evolved over time, and became interested in a dual approach of both classical heuristics working in conjunction with a small neural network.
 
-1. **Baseline**
-   Build a strong hand-crafted evaluator first (material + positional terms), then optimize search stability and speed.
-2. **Search quality improvements**
-   Keep depth practical (depth=3) but improve move quality through ordering and pruning (transposition table, killer/history, quiescence, null move, LMR/PVS).
-3. **NNUE hybrid (BlunderBus)**
-   Add a compact NNUE that does not replace classical eval, but adjusts it with a bounded correction term.
-4. **Practical training loop**
-   Train with generated positions and Stockfish/module labels using mirror augmentation and symmetry loss to reduce evaluator bias.
+This is how engines like Stockfish eventually overcame pure neural-network-style approaches in practical play. Stockfish specifically implements an Efficiently Updatable Neural Network (NNUE), a lightweight neural network that tracks board state and assists evaluation by spotting patterns that classical heuristics may miss.
 
-#### Core eval strategy
+---
 
-In `team_shay.py`, the core heuristic is a tapered eval (middlegame/endgame blend) with:
+#### Search and quiescence
 
-- material values
-- PeSTO-style piece-square tables
-- mobility
-- bishop pair
-- pawn structure (doubled/isolated/passed pawns)
-- rook placement (open/semi-open files, 7th rank, connected rooks)
-- king safety signals
-- tactical pressure on hanging/loose pieces
+Search relies on minimax (White maximises, Black minimises) with alpha-beta pruning and strong move ordering. When the main search hits the depth limit of 3 (excluding check extensions), the engine does not stop immediately. It moves into quiescence search and explores forcing lines, mainly captures and queen promotions, until a ply cap or cutoff condition stabilises the position. This is required to reduce horizon effect errors. If the side to move is in check, the search expands legal moves rather than only captures. Game-ending states are handled inside search, and static evaluations are cached using Zobrist hashing so repeated positions are not rescored from scratch.
 
-In `BlunderBus.py`, the final eval is:
+Other important search components include the opening book, transposition table, killer moves, null-move pruning, and ordering heuristics. These live in search, not `evaluate()`, but they are still critical for practical strength at shallow depth.
 
-- `score = classical + blend * clamp(nnue - classical)`
-- This keeps the classical model as the anchor and lets the NNUE provide a controlled positional correction, preventing unstable swings.
+---
 
-#### Alpha-beta pruning / search choices / opponent mistakes
+#### The most important evaluation metrics are the following
 
-- Yes, alpha-beta pruning is used in both implementations (inside minimax), mainly to increase effective search quality under tight depth limits.
-- I did **not** bank on opponent mistakes as the main plan. The strategy is to force better move selection through:
-  - strong move ordering (TT move, MVV-LVA captures, killer/history/countermove)
-  - quiescence search (to reduce horizon blunders in tactical positions)
-  - selective pruning/reductions (null-move, futility, late-move pruning/reduction, aspiration windows)
-- Since competition depth is constrained, the goal was "smart depth 3" rather than brute-force deeper search.
+#### Material + PeSTO-style piece-square tables (tapered)
 
-#### Strengths / weaknesses
+Every piece adds a fixed centipawn value (pawn 100, knight 320, bishop 330, rook 500, queen 900, king 20000) in combination with two table bonuses: one for middlegame (`PST_MG`) and one for endgame (`PST_EG`), indexed by square. This encodes “good” squares for each phase of the game and guides piece development into useful board areas. Material alone cannot capture this.
 
-##### Strengths
+#### Phase-based tapering
 
-- Robust classical fallback: if NNUE is weak/unavailable, engine still plays coherent chess.
-- Good practical speed-quality tradeoff for constrained compute.
-- Hybrid design improves positional nuance without fully depending on expensive deep learning.
-- Training pipeline in `BlunderBus/train_nnue.py` includes symmetry checks and mirror augmentation, which improves consistency.
+The evaluator tracks game phase from non-pawn material (knight/bishop +1, rook +2, queen +4 each, capped at 24). This phase value blends middlegame and endgame scores. A king in the centre during middlegame is usually undesirable, while in endgame it is often normal. Tapering prevents phase-inappropriate penalties or bonuses from dominating.
 
-##### Weaknesses
+#### Tempo
 
-- The limitation of depth 3 highly limits the maximium peformance.
-- NNUE quality is hit or miss and can sometimes actually hurt the peformance compared to classical.
-- Manual feature/weight tuning can be time-consuming and may overfit to observed matchups.
-- Not as globally optimized as top engines with massive compute and long training cycles.
+Tempo is a bonus for the side to move, interpolated between middlegame (28 cp) and endgame (12 cp). Chess is not strictly symmetric; the side to move can act first, improve activity, or create threats. Without tempo, many practically favourable positions become false ties. The bonus is stronger in middlegame and reduced in endgame where precision and zugzwang-like effects matter more.
+
+#### Mobility
+
+Mobility approximates piece activity by counting attacked squares. It is applied to knights, bishops, rooks, and queens. Attacked-square counts are weighted per piece (bishop 5, knight 4, rook 3, queen 2), summed White vs Black, and scaled by a mobility factor (0.06). More active pieces generally mean more tactical and positional options.
+
+#### Bishop pair
+
+If a side retains both bishops, the score shifts by ±32 centipawns. Two bishops cover both colour complexes and scale well in open positions. Without this term, many positions treat bishop+knight and bishop+bishop too similarly.
+
+#### Pawn structure
+
+- Doubled pawns on a file: penalty per extra pawn.
+- Isolated pawns (no friendly pawns on adjacent files): penalty.
+- Passed pawns: if enemy pawns cannot block/capture on forward adjacent files, apply a rank-based bonus scaled toward endgame.
+
+Pawn structure is long-term. Weak pawns become persistent targets, while passed pawns often decide endgames. Endgame scaling matters because depth-3 search often cannot see promotion directly.
+
+#### Rook placement
+
+- No pawns on that file (open file): bonus.
+- No friendly pawns on that file (semi-open): smaller bonus.
+- White rook on rank 6 / Black rook on rank 1 (seventh-rank pressure): bonus.
+- Two friendly rooks connected on same rank/file with no blockers: bonus.
+
+Rooks improve significantly on open files and seventh-rank access. Connected rooks increase coordination and practical pressure.
+
+#### King safety
+
+- King on g1/c1 (mirrored for Black): bonus × middlegame weight.
+- King on e1/d1/f1 (mirrored) with no castling rights: penalty × middlegame weight.
+
+These rules reward safer king setups in middlegame and discourage exposed central kings once castling is no longer available.
+
+#### Tactical pressure (hanging / loose pieces)
+
+A dedicated tactical term scans non-king pieces using attacker/defender counts. Undefended attacked pieces receive larger penalties; pieces with fewer defenders than attackers receive partial penalties. An additional loose-piece penalty applies when a lower-value attacker can pressure a higher-value piece. This term is scaled down toward endgame to avoid excessive speculative caution.
+
+---
+
+#### Team BlunderBus (classical + NNUE hybrid)
+
+After finishing `team_shay`, I wanted to test whether a small NNUE could improve practical strength without removing the classical backbone. BlunderBus uses the same search philosophy but changes the evaluator into a hybrid.
+
+BlunderBus computes:
+
+1. a classical score,
+2. an NNUE score,
+3. a bounded correction based on the difference between them.
+
+The difference (`nnue - classical`) is clamped by a phase-dependent cap and then scaled by a blend factor. Final score is classical plus this bounded correction. If NNUE weights are missing or unusable, BlunderBus falls back to classical-only evaluation.
+
+The design goal is to keep classical stability while allowing the network to add positional pattern recognition where hand-crafted terms are weaker.
+
+---
+
+#### Training the BlunderBus NNUE (`BlunderBus/train_nnue.py`)
+
+Training is offline and exports a small weight file loaded by `team_BlunderBus.py` during runtime. In practice, the script samples positions from mixed rollouts (weighted-random plus shallow teacher-guided moves), encodes each board as sparse binary piece-square features plus castling and side-to-move bits, labels positions using either a teacher module or Stockfish centipawn scores, optionally mirror-augments data with sign-flipped labels, and then trains a compact two-layer network with minibatch SGD, weight decay, and optional symmetry loss. The best checkpoint is exported as `BlunderBus/team_blunderbus_nnue_weights.py`.
+
+A representative heavier run, chosen to approximate around 40 hours on a Ryzen 5 3600 (mostly due to Stockfish labeling cost), was:
+
+```sh
+python BlunderBus/train_nnue.py   --teacher-mode stockfish   --samples 95000   --stockfish-depth 13   --stockfish-depth-min 10   --min-plies 8   --max-plies 86   --teacher-prob 0.72   --epochs 20   --hidden 96   --batch-size 256   --lr 0.01   --symmetry-loss-weight 0.12   --seed 11
+```
+
+At these settings, Stockfish labeling dominates wall time; the SGD phase is comparatively short.
+
+---
+
+#### Team Shay vs BlunderBus
+
+In internal depth-3 head-to-head testing, `team_shay` was the stronger practical baseline under our constraints.
+
+**Team Shay strengths:**
+- highly interpretable and easy to tune,
+- stable tactical behaviour at shallow depth,
+- strong hand-crafted phase-aware structure.
+
+**Team Shay weaknesses:**
+- diminishing returns once depth-3 tuning saturates,
+- some subtle positional patterns remain hard to encode manually.
+
+**BlunderBus strengths:**
+- potential to capture positional patterns classical heuristics miss,
+- classical fallback keeps behaviour robust,
+- bounded blend reduces catastrophic NNUE errors.
+
+**BlunderBus weaknesses:**
+- performance depends heavily on data quality and labeling depth,
+- limited compute/time can make NNUE corrections inconsistent,
+- extra complexity does not guarantee immediate Elo gain.
+
+In our scripted comparison (`scripts/generate_shay_blunderbus_figures.py`, depth 3, alternating colours, fixed seed), `team_shay` won all 8 games. This does not imply the hybrid design is invalid, only that under this training budget and labeling quality, the classical evaluator remained stronger.
+
+![Head-to-head outcomes (eight games, depth 3, seed 13).](figures/shay_vs_blunderbus_outcomes.png)
+
+![Distribution of game lengths in plies for the same session.](figures/shay_vs_blunderbus_plies.png)
+
+![Static evaluation traces along the first game (White-positive centipawn scale).](figures/shay_vs_blunderbus_eval_trace.png)
 
 ### Team Goraieb/aaaaa
 
