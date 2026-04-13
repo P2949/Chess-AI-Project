@@ -253,11 +253,15 @@ The evaluation for each of those parameters was adjusted by hand when it was pla
 
 ## Internal Tournament
 
-We pitted the Creepers and Goraieb implementations against eachother, by playing on Chess.com. We used the built-in analysis to rate our bots.
+We pitted the Creepers, Shay, BlunderBus and Goraieb implementations against eachother, by playing on Chess.com. We used the built-in analysis to rate our bots.
 
-Additionally, we used the expert bots on Chess.com. These bots have tweakable difficulty, allowing us to figure out the exact ELO rating. Goraieb scores a consistent accuracy of 85-90%, translating to an ELO rating of 1750-1850.
+The main observations when watching the games were that many times inaccuracies would go unpunished, very different from what happens when you play against a semi-perfect engine like Stockfish. The engines had different flaws; a small amount of change in the values for Team Goraieb would give it a higher accuracy in theory, but it would start losing to Team Shay.
 
-Go into detail why one engine beat the other. Mention tradeoffs, speed vs accuracy vs depth vs precompute etc.
+The interesting information we gather from what was mentioned above is that having a stronger engine does not mean it is stronger against all other engines. An example is raising the value for center control usually improves the opening, but the engine suffers in the endgame against an engine that has a high value for king tropism. It makes analysis of "what engine is the best" very complicated; it's all about the weakness of the engine you are playing against.
+
+Team Creepers also caused us to see how important it was to stick with the main ideas of chess; a well-written and well-designed engine with fewer than 350 lines of code was better than anything we had done up to this point. Using the basics of chess and writing them as clearly as possible, we were achieving better results than adding as much information as possible and hoping it would fix the issues. Having more was important, but only after implementing the basics perfectly.
+
+Additionally, we used the expert bots on Chess.com. These bots have tweakable difficulty, allowing us to figure out the exact ELO rating. Goraieb scores a consistent accuracy of 80-82%, translating to an ELO rating of 1750-1850.
 
 ## Final Engine
 
