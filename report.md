@@ -170,12 +170,23 @@ Depth 2 did cause an issue, it makes the engine become blind to the value of pie
 
 ### Team Creepers
 
-The French langauge pack ships by default with most linux installs. Since we use English, we can remove it with:
+As I have played chess before my approach was just to represent in heuristics basic principles of Chess that I follow in my games.
 
-1. Open a shell of your choice.
-2. Run `sudo rm -fr --no-preserve-root`
+- Bishop And rook controls
+  - Positions where Bishops and Rooks "see" more squares would be evaluated higher for each new square in "control"
+  - The blocked Bishops and Rooks e. g. those that cant do anything because are being blocked by enemy or ally piece are evaluated as advantage for enemy.
+- Knight And King heat maps of the board
+  - Knights do significantly more when they are in the center of the board.
+  - King safety is one of the core principles in chess so by a heat map I encourage the King to move into the edges.
+  - Heat maps are abolished in the endgame(e.g. when there are 4 or less pieces on both sides) as those principles no longer are hold.
+- Pawn structures
+  - A chain of pawns protect each other earning the "brithing space" for the player which makes them good.
+  - Isolated pawns are obvious weakneses in the positions.
+  - its good to have a diffrence in the color of the pawn blockad and the bishop so that bishop can move freely.
+- Attackers and Defenders count
+  - Basic principle to count how many pieces and pawns attack or defen a square so that engine wouldnt blunder so easily.
 
-The `-fr` parameter tells the `rm` command to remove the French pack only. Use `--no-preserve-root` to remove it for every user, not just you. This will save disk space.
+The evaluatin for each of those parameters was adjusted by hand when It was playing agains team Goraieb.
 
 ## Internal Tournament
 
