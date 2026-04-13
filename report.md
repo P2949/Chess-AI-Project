@@ -4,7 +4,7 @@ pdf-engine: xelatex
 mainfont: Carlito
 monofont: Consolas
 
-title: Chess Bot
+title: Assignment 2 - Chess Bot
 documentclass: article
 fontsize: 12pt
 geometry: margin=0.8in
@@ -21,6 +21,10 @@ Team "Я don't falo angielsku"
 
 **Work Contributions**  
 Contributions to the project are equal among members.
+
+**Code Repository**
+The code is available on GitHub:  
+https://github.com/P2949/Chess-AI-Project
 
 ## Introduction
 
