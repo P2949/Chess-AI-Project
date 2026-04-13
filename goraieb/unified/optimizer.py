@@ -34,10 +34,16 @@ from typing import Any, Callable
 _DEFAULT_WORKERS = os.cpu_count() or 1
 
 
+
 def _candidate_key(values: dict) -> tuple:
     """Hashable key for duplicate detection. Rounds floats to avoid FP noise."""
     return tuple(round(v, 8) if isinstance(v, float) else v
-                 for v in sorted(values.items()))
+             for k, v in sorted(values.items()))
+
+
+def _fitness_value(c) -> float:
+    """Safe fitness accessor. Keeps 0.0 valid."""
+    return c.fitness if c.fitness is not None else float("-inf")
 
 
 def _batch_evaluate(
@@ -46,29 +52,33 @@ def _batch_evaluate(
     n_workers: int,
     pool: ThreadPoolExecutor | None = None,
     seen: dict | None = None,
-) -> None:
+) -> dict[str, int]:
     """
     Evaluate candidates with fitness=None in parallel.
 
-    Improvements:
-      • Accepts optional persistent pool (avoids per-call pool creation)
-      • Duplicate detection via `seen` dict (skip identical param sets)
-      • Exception handling (crashed evals get -inf instead of crashing run)
+    Returns stats:
+      - cache_hits: reused from `seen`
+      - evaluated : actually submitted / computed
+      - failed    : fitness exceptions mapped to -inf
     """
+    stats = {"cache_hits": 0, "evaluated": 0, "failed": 0}
+
     to_eval = []
     for c in candidates:
         if c.fitness is not None:
             continue
-        # Duplicate detection
+
         if seen is not None:
             key = _candidate_key(c.values)
             if key in seen:
                 c.fitness = seen[key]
+                stats["cache_hits"] += 1
                 continue
+
         to_eval.append(c)
 
     if not to_eval:
-        return
+        return stats
 
     if n_workers <= 1 or pool is None:
         for c in to_eval:
@@ -77,13 +87,14 @@ def _batch_evaluate(
             except Exception as e:
                 print(f"  [warn] fitness eval failed: {e}", file=sys.stderr)
                 c.fitness = float("-inf")
+                stats["failed"] += 1
             if seen is not None:
                 seen[_candidate_key(c.values)] = c.fitness
-        return
+            stats["evaluated"] += 1
+        return stats
 
-    future_to_candidate = {
-        pool.submit(fitness_fn, c.values): c for c in to_eval
-    }
+    future_to_candidate = {pool.submit(fitness_fn, c.values): c for c in to_eval}
+
     for future in as_completed(future_to_candidate):
         c = future_to_candidate[future]
         try:
@@ -91,8 +102,12 @@ def _batch_evaluate(
         except Exception as e:
             print(f"  [warn] fitness eval failed: {e}", file=sys.stderr)
             c.fitness = float("-inf")
+            stats["failed"] += 1
         if seen is not None:
             seen[_candidate_key(c.values)] = c.fitness
+        stats["evaluated"] += 1
+
+    return stats
 
 
 @dataclass
@@ -188,11 +203,11 @@ class Report:
                 print(f"    {label:.<40s} best={best_f:.4f}{avg_str}{extra}")
             print()
 
-        ranked = sorted(self.all_evaluated, key=lambda c: c.fitness or float("-inf"), reverse=True)
+        ranked = sorted(self.all_evaluated, key=_fitness_value, reverse=True)
         print(f"  Top {min(top_n, len(ranked))} candidates:")
         for i, c in enumerate(ranked[:top_n]):
             vals = ", ".join(f"{k}={v}" for k, v in c.values.items())
-            print(f"    #{i + 1:>3d}  fitness={c.fitness:<12.4f}  {vals}")
+            print(f"    #{i + 1:>3d}  fitness={_fitness_value(c):<12.4f}  {vals}")
         print("=" * 70 + "\n")
 
     def to_dict(self) -> dict:
@@ -239,7 +254,7 @@ class GridSearch(Strategy):
         with ThreadPoolExecutor(max_workers=n_workers) as pool:
             _batch_evaluate(candidates, fitness_fn, n_workers, pool=pool)
 
-        best = max(candidates, key=lambda c: c.fitness or float("-inf"))
+        best = max(candidates, key=_fitness_value)
 
         if verbose:
             print(f"  [{total}/{total}] best={best.fitness:.4f}")
@@ -273,7 +288,7 @@ class LinearSweep(Strategy):
                 _batch_evaluate(sweep, fitness_fn, n_workers, pool=pool)
                 evaluated.extend(sweep)
 
-                best_p = max(sweep, key=lambda c: c.fitness or float("-inf"))
+                best_p = max(sweep, key=_fitness_value)
                 history.append({
                     "label": f"sweep_{param.name}",
                     "best_fitness": best_p.fitness,
@@ -311,7 +326,7 @@ class RandomSearch(Strategy):
         best = None
         history = []
         for i, c in enumerate(candidates):
-            if best is None or (c.fitness or float("-inf")) > (best.fitness or float("-inf")):
+            if best is None or _fitness_value(c) > _fitness_value(best):
                 best = c.copy()
             if verbose and (i + 1) % max(1, self.n_samples // 10) == 0:
                 history.append({"label": f"sample_{i+1}", "best_fitness": best.fitness})
@@ -432,7 +447,7 @@ class Genetic(Strategy):
         crossover_rate: float = 0.7,
         mutation_rate: float = 0.15,
         tournament_size: int = 3,
-        patience: int = 0,  # 0 = no early stopping; N = stop after N gens no improvement
+        patience: int = 20,  # 0 = no early stopping; N = stop after N gens no improvement
     ):
         self.population_size = population_size
         self.generations = generations
@@ -444,7 +459,7 @@ class Genetic(Strategy):
 
     def _tournament_select(self, population: list[Candidate]) -> Candidate:
         contestants = random.sample(population, min(self.tournament_size, len(population)))
-        return max(contestants, key=lambda c: c.fitness or float("-inf"))
+        return max(contestants, key=_fitness_value)
 
     def _crossover(self, a: Candidate, b: Candidate, params: list[Parameter]) -> Candidate:
         child_vals = {}
@@ -485,11 +500,11 @@ class Genetic(Strategy):
         history = []
         global_best = None
         n_elite = max(1, int(self.population_size * self.elite_ratio))
-        seen = {}  # duplicate detection cache
+        seen = {}
 
-        # Adaptive mutation state
         current_mutation_rate = self.mutation_rate
         gens_without_improvement = 0
+        total_cache_hits = 0
 
         if verbose:
             print(f"[genetic] pop={self.population_size} gen={self.generations} "
@@ -499,28 +514,32 @@ class Genetic(Strategy):
         try:
             for gen in range(self.generations):
                 unevaluated_before = [c for c in population if c.fitness is None]
-                _batch_evaluate(population, fitness_fn, n_workers,
-                                pool=pool, seen=seen)
+                batch_stats = _batch_evaluate(
+                    population, fitness_fn, n_workers, pool=pool, seen=seen
+                )
+                total_cache_hits += batch_stats["cache_hits"]
+
                 for c in unevaluated_before:
                     if c.fitness is not None:
                         all_evaluated.append(c.copy())
 
-                population.sort(key=lambda c: c.fitness or float("-inf"), reverse=True)
+                population.sort(key=_fitness_value, reverse=True)
 
                 gen_best = population[0]
                 gen_avg = statistics.mean(
-                    c.fitness for c in population if c.fitness is not None)
+                    c.fitness for c in population if c.fitness is not None
+                )
 
-                prev_best = global_best.fitness if global_best else float("-inf")
                 if global_best is None or gen_best.fitness > global_best.fitness:
                     global_best = gen_best.copy()
                     gens_without_improvement = 0
                 else:
                     gens_without_improvement += 1
 
-                # Adaptive mutation: increase when stagnating
                 if gens_without_improvement >= 3:
-                    current_mutation_rate = min(0.5, self.mutation_rate * (1 + gens_without_improvement * 0.1))
+                    current_mutation_rate = min(
+                        0.5, self.mutation_rate * (1 + gens_without_improvement * 0.1)
+                    )
                 else:
                     current_mutation_rate = self.mutation_rate
 
@@ -547,27 +566,22 @@ class Genetic(Strategy):
                         f"{stag_str}"
                     )
 
-                # Early stopping
                 if gens_without_improvement >= self.patience:
                     if verbose:
                         print(f"  Early stop: no improvement for {self.patience} generations")
                     break
 
-                # Build next generation
                 next_gen = []
 
-                # Elitism
                 for elite in population[:n_elite]:
                     next_gen.append(elite.copy())
 
-                # Diversity injection when stagnating heavily
                 if gens_without_improvement >= self.patience // 2:
                     n_inject = max(1, self.population_size // 5)
                     next_gen.extend(self._inject_diversity(params, n_inject))
                     if verbose:
                         print(f"    Injected {n_inject} random candidates for diversity")
 
-                # Fill rest via selection + crossover + mutation
                 while len(next_gen) < self.population_size:
                     if random.random() < self.crossover_rate:
                         parent_a = self._tournament_select(population)
@@ -591,10 +605,8 @@ class Genetic(Strategy):
         if global_best is None and population:
             global_best = population[0].copy()
 
-        n_dupes = len(all_evaluated) - len(seen)
-        if verbose and n_dupes > 0:
-            print(f"  Duplicate evals skipped: ~{max(0, len(seen) - len(all_evaluated))} "
-                  f"(cache size: {len(seen)})")
+        if verbose and total_cache_hits > 0:
+            print(f"  Duplicate evals skipped from cache: {total_cache_hits}")
 
         return Report(
             best=global_best,

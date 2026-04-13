@@ -45,8 +45,18 @@ OPENING_POSITIONS = [
     "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3",
 ]
 
+def _get_engines():
+    if not hasattr(_thread_local, "eng_candidate"):
+        _thread_local.eng_candidate = _make_engine()
+        _thread_local.eng_opponent = _make_engine()
+    return _thread_local.eng_candidate, _thread_local.eng_opponent
+
 _thread_local = threading.local()
-_all_sf_engines = [];  _all_sf_lock = threading.Lock()
+_all_sf_engines = []
+_all_sf_lock = threading.Lock()
+
+_SF_EVAL_CACHE: dict[tuple[str, int], float] = {}
+_SF_EVAL_CACHE_LOCK = threading.Lock()
 
 def _register_sf(e):
     with _all_sf_lock: _all_sf_engines.append(e)
@@ -61,14 +71,11 @@ def _cleanup_all_sf():
 
 def _make_engine():
     spec = importlib.util.find_spec("team_goraieb")
-    mod = importlib.util.module_from_spec(spec);  spec.loader.exec_module(mod)
+    if spec is None or spec.loader is None:
+        raise ImportError("Could not locate team_goraieb module")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
     return mod
-
-def _get_engines():
-    if not hasattr(_thread_local, "eng_candidate"):
-        _thread_local.eng_candidate = _make_engine()
-        _thread_local.eng_opponent = _make_engine()
-    return _thread_local.eng_candidate, _thread_local.eng_opponent
 
 def _get_stockfish():
     if not hasattr(_thread_local, "sf_play"):
@@ -96,40 +103,79 @@ def _material_balance(board):
     return s
 
 def _sf_eval_cp(sf_eval, board, depth):
-    try: info = sf_eval.analyse(board, chess.engine.Limit(depth=depth))
-    except chess.engine.EngineTerminatedError: raise
-    except: return 0.0
+    key = (board.fen(), depth)
+
+    with _SF_EVAL_CACHE_LOCK:
+        cached = _SF_EVAL_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    try:
+        info = sf_eval.analyse(board, chess.engine.Limit(depth=depth))
+    except chess.engine.EngineTerminatedError:
+        raise
+    except Exception:
+        return 0.0
+
     sc = info["score"].white()
-    if sc.is_mate(): return 15000.0 if sc.mate() > 0 else -15000.0
-    return float(sc.score())
+    if sc.is_mate():
+        val = 15000.0 if sc.mate() > 0 else -15000.0
+    else:
+        val = float(sc.score())
+
+    with _SF_EVAL_CACHE_LOCK:
+        _SF_EVAL_CACHE[key] = val
+    return val
 
 
 def build_params(coarse=False):
+    """
+    Only tune POSITIONAL weights. Piece values, nn_weight, and policy_weight
+    are LOCKED — every optimizer run at depth 2 has gotten these wrong because
+    depth-2 systematically undervalues material and overvalues NN influence.
+    
+    Locked values (not tuned — optimizer at depth 2 consistently gets these wrong):
+      pawn=115, knight=305, bishop=360, rook=545, queen=935, nn_phase_boost=1.5
+    """
     s = 2 if coarse else 1
     return [
-        Parameter("pawn",             80,  120,  step=5*s,   dtype=int),
-        Parameter("knight",          270,  370,  step=10*s,  dtype=int),
-        Parameter("bishop",          280,  380,  step=10*s,  dtype=int),
-        Parameter("rook",            450,  560,  step=10*s,  dtype=int),
-        Parameter("queen",           820, 1000,  step=20*s,  dtype=int),
-        Parameter("mobility",        0.5,  4.0,  step=0.25*s),
-        Parameter("bishop_pair",    15.0, 50.0,  step=5.0*s),
-        Parameter("doubled_penalty", 8.0, 35.0,  step=3.0*s),
-        Parameter("isolated_penalty",5.0, 30.0,  step=3.0*s),
-        Parameter("rook_open_file", 10.0, 40.0,  step=5.0*s),
-        Parameter("rook_semi_open",  4.0, 25.0,  step=3.0*s),
-        Parameter("rook_doubled_file", 5.0, 40.0, step=5.0*s),
-        Parameter("hanging_piece",   20.0, 90.0, step=10.0*s),
-        Parameter("pin_penalty",     10.0, 50.0, step=5.0*s),
-        Parameter("center_control",   0.0, 20.0, step=2.0*s),
-        Parameter("king_shield",      0.0, 20.0, step=3.0*s),
-        Parameter("king_attack",      0.0, 30.0, step=3.0*s),
-        Parameter("uncastled_king",  15.0, 80.0, step=5.0*s),
-        Parameter("early_queen_pen", 10.0, 60.0, step=5.0*s),
-        Parameter("development",      0.0, 25.0, step=3.0*s),
-        Parameter("nn_weight",       0.15, 0.45, step=0.05*s),
-        Parameter("policy_weight",       0.01, 0.5, step=0.01*s),
-    ]  # 21 params
+        # Pawn structure (moderate impact)
+        Parameter("doubled_penalty",  5.0,  35.0,  step=3.0*s),
+        Parameter("isolated_penalty", 3.0,  25.0,  step=3.0*s),
+        Parameter("backward_penalty", 3.0,  25.0,  step=3.0*s),
+
+        # Rook placement
+        Parameter("rook_open_file",   5.0,  35.0,  step=5.0*s),
+        Parameter("rook_semi_open",   3.0,  20.0,  step=3.0*s),
+        Parameter("rook_doubled_file",3.0,  20.0,  step=3.0*s),
+        Parameter("connected_rooks",  5.0,  35.0,  step=5.0*s),
+
+        # King safety
+        Parameter("king_shield",      0.0,  20.0,  step=2.0*s),
+        Parameter("king_shield_miss", 0.0,  20.0,  step=2.0*s),
+        Parameter("king_attack",      0.0,  15.0,  step=3.0*s),
+        Parameter("uncastled_king",   5.0,  40.0,  step=3.0*s),
+
+        # Piece activity
+        Parameter("mobility",        0.5,   5.0,  step=0.25*s),
+        Parameter("bishop_pair",    10.0,  50.0,  step=5.0*s),
+        Parameter("knight_outpost",   5.0,  45.0,  step=5.0*s),
+        Parameter("king_tropism",     0.0,  8.0,   step=1.0*s),
+
+        # Tactical awareness
+        Parameter("hanging_piece",   15.0,  70.0,  step=5.0*s),
+        Parameter("pin_penalty",     10.0,  50.0,  step=5.0*s),
+
+        # Development / positional
+        Parameter("center_control",   2.0,  20.0,  step=2.0*s),
+        Parameter("early_queen_pen",  5.0,  40.0,  step=5.0*s),
+        Parameter("development",      3.0,  20.0,  step=3.0*s),
+        Parameter("tempo",            3.0,  15.0,  step=2.0*s),
+
+        # NN blending (safe to tune now that positional terms are capped)
+        #Parameter("nn_weight",       0.05, 0.50,  step=0.05*s),
+        #Parameter("policy_weight",   0.05, 0.50,  step=0.05*s),
+    ]# positional terms tuned; some optional NN weights remain commented out
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -204,9 +250,9 @@ def _play_one_move_quality(candidate_w, candidate_is_white, depth,
             except chess.engine.EngineTerminatedError:
                 try:
                     sf_play = chess.engine.SimpleEngine.popen_uci(SF_PATH)
-                    sf_play.configure({"Threads": 1, "Hash": 64,
-                                       "Skill Level": SF_PLAY_SKILL})
-                    _register_sf(sf_play);  _thread_local.sf_play = sf_play
+                    sf_play.configure({"Threads": 1, "Hash": 64, "Skill Level": SF_PLAY_SKILL})
+                    _register_sf(sf_play)
+                    _thread_local.sf_play = sf_play
                     result = sf_play.play(board, chess.engine.Limit(depth=SF_PLAY_DEPTH))
                     board.push(result.move)
                 except Exception:
@@ -268,11 +314,13 @@ def _play_one_vs_stockfish(candidate_w, candidate_is_white, depth,
             except chess.engine.EngineTerminatedError:
                 try:
                     sf_play = chess.engine.SimpleEngine.popen_uci(SF_PATH)
-                    sf_play.configure({"Threads":1,"Hash":64,"Skill Level":SF_PLAY_SKILL})
-                    _register_sf(sf_play); _thread_local.sf_play = sf_play
-                    r = sf_play.play(board, chess.engine.Limit(depth=SF_PLAY_DEPTH))
-                    board.push(r.move)
-                except: return 0.5
+                    sf_play.configure({"Threads": 1, "Hash": 64, "Skill Level": SF_PLAY_SKILL})
+                    _register_sf(sf_play)
+                    _thread_local.sf_play = sf_play
+                    result = sf_play.play(board, chess.engine.Limit(depth=SF_PLAY_DEPTH))
+                    board.push(result.move)
+                except Exception:
+                    break
         mat = _material_balance(board)
         if abs(mat) >= ADJUDICATE_MATERIAL: adj += 1
         else: adj = 0
@@ -350,15 +398,20 @@ def load_epd_suite(path):
                 positions.append((fp.strip(), bm))
     return positions
 
+def _norm_san(s: str) -> str:
+    return s.replace("+", "").replace("#", "")
+
 def testsuite_fitness(values, positions, depth=3):
     eng, _ = _get_engines()
     eng.WEIGHTS.update({**DEFAULT_WEIGHTS, **values})
     _reset_engine(eng)
     c = 0
     for fen, bm in positions:
-        b = chess.Board(fen); _reset_engine(eng)
+        b = chess.Board(fen)
+        _reset_engine(eng)
         m = eng.get_next_move(b, b.turn, depth=depth)
-        if b.san(m) == bm: c += 1
+        if _norm_san(b.san(m)) == _norm_san(bm):
+            c += 1
     return c / max(1, len(positions))
 
 def load_texel_data(path):
@@ -391,9 +444,10 @@ def demo_testsuite_fitness(values, depth=3):
         b = chess.Board(fen); _reset_engine(eng)
         try:
             m = eng.get_next_move(b, b.turn, depth=depth)
-            if b.san(m) == bm: c += 1
+            if _norm_san(b.san(m)) == _norm_san(bm):
+                c += 1
         except: pass
-    return c / len(BUILTIN_POSITIONS)
+    return c / max(1, len(BUILTIN_POSITIONS))
 
 
 # ══════════════════════════════════════════════════════════════════════════════

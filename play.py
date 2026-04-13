@@ -799,7 +799,7 @@ def main():
 
     try:
         team_creepers   = importlib.import_module("team_creepers")
-        team_goraieb = importlib.import_module("goraieb.unified.team_goraieb")
+        team_goraieb = importlib.import_module("goraieb.unified.temp.team_goraieb")
     except ModuleNotFoundError as e:
         print(f"Error importing bot: {e}")
         print("Make sure team_creepers.py and team_goraieb.py are "

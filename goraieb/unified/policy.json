@@ -2,10 +2,10 @@
   "arch": "PolicyEvaluator(773 -> 512 -> ResBlock(512) x2 -> 128 -> 1)",
   "source": "pgn",
   "delta_mode": true,
-  "teacher_depth": 2,
+  "teacher_depth": 3,
   "target_scale": 1.0,
   "rank_weight": 0.9,
-  "best_val_reg_loss": 0.06065530272722244,
+  "best_val_reg_loss": 0.1839692831993103,
   "epochs_trained": 48,
   "swa_start": 36,
   "seed": 1337

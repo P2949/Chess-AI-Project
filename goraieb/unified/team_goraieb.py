@@ -26,91 +26,106 @@ Eval:   PeSTO tapered + structure + NN correction (tunable blend)
 
 import chess
 import chess.polyglot
-import torch
-import numpy as np
 import sys
 from pathlib import Path
-import math
 
 # Ensure this file's directory is in sys.path so fast_chess.so can be found
 _THIS_DIR = str(Path(__file__).resolve().parent)
 if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 
-# ── Cython acceleration ──────────────────────────────────────────────────────
-try:
-    from fast_chess import board_to_vector_bitboard as board_to_vector
-    _HAVE_CYTHON = True
-except ImportError:
-    _HAVE_CYTHON = False
-    PIECE_ORDER = [
-        (chess.PAWN,   chess.WHITE), (chess.KNIGHT, chess.WHITE),
-        (chess.BISHOP, chess.WHITE), (chess.ROOK,   chess.WHITE),
-        (chess.QUEEN,  chess.WHITE), (chess.KING,   chess.WHITE),
-        (chess.PAWN,   chess.BLACK), (chess.KNIGHT, chess.BLACK),
-        (chess.BISHOP, chess.BLACK), (chess.ROOK,   chess.BLACK),
-        (chess.QUEEN,  chess.BLACK), (chess.KING,   chess.BLACK),
-    ]
-    def board_to_vector(board):
-        v = np.zeros(773, dtype=np.float32)
-        for plane, (pt, color) in enumerate(PIECE_ORDER):
-            for sq in board.pieces(pt, color):
-                v[plane * 64 + sq] = 1.0
-        v[768] = float(board.has_kingside_castling_rights(chess.WHITE))
-        v[769] = float(board.has_queenside_castling_rights(chess.WHITE))
-        v[770] = float(board.has_kingside_castling_rights(chess.BLACK))
-        v[771] = float(board.has_queenside_castling_rights(chess.BLACK))
-        v[772] = float(board.turn == chess.WHITE)
-        return v
+# ── Conditional NN imports ────────────────────────────────────────────────────
+# Only import torch/numpy when model files actually exist. This allows the
+# engine to run as a standalone single file (pure HCE) when no .pt files are
+# present, without requiring torch to be installed at all.
+_model_path = Path(__file__).resolve().parent / "model.pt"
+_policy_model_path = Path(__file__).resolve().parent / "policy.pt"
+_NEED_TORCH = _model_path.exists() or _policy_model_path.exists()
 
-# ── NN model (imported inline to avoid issues when optimizer reloads module) ─
-import torch.nn as nn
+_HAVE_CYTHON = False
+_HAS_NN = False
+_HAS_POLICY = False
+_model = None
+_policy_model = None
+_nn_input = None
+_policy_input = None
 
-class ChessEvaluator(nn.Module):
-    def __init__(self, input_dim=773):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 1024), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(1024, 512),       nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(512, 256),        nn.ReLU(), nn.Dropout(0.1),
-            nn.Linear(256, 128),        nn.ReLU(),
-            nn.Linear(128, 1),          nn.Tanh(),
-        )
-    def forward(self, x):
-        return self.net(x)
+if _NEED_TORCH:
+    import torch
+    import torch.nn as nn
+    import numpy as np
 
-class ResBlock(nn.Module):
-    def __init__(self, dims):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(dims, dims),
-            nn.BatchNorm1d(dims),
-            nn.ReLU(),
-            nn.Linear(dims, dims),
-            nn.BatchNorm1d(dims)
-        )
-        self.relu = nn.ReLU()
+    # ── Cython acceleration ──────────────────────────────────────────────
+    try:
+        from fast_chess import board_to_vector_bitboard as board_to_vector
+        _HAVE_CYTHON = True
+    except ImportError:
+        PIECE_ORDER = [
+            (chess.PAWN,   chess.WHITE), (chess.KNIGHT, chess.WHITE),
+            (chess.BISHOP, chess.WHITE), (chess.ROOK,   chess.WHITE),
+            (chess.QUEEN,  chess.WHITE), (chess.KING,   chess.WHITE),
+            (chess.PAWN,   chess.BLACK), (chess.KNIGHT, chess.BLACK),
+            (chess.BISHOP, chess.BLACK), (chess.ROOK,   chess.BLACK),
+            (chess.QUEEN,  chess.BLACK), (chess.KING,   chess.BLACK),
+        ]
+        def board_to_vector(board):
+            v = np.zeros(773, dtype=np.float32)
+            for plane, (pt, color) in enumerate(PIECE_ORDER):
+                for sq in board.pieces(pt, color):
+                    v[plane * 64 + sq] = 1.0
+            v[768] = float(board.has_kingside_castling_rights(chess.WHITE))
+            v[769] = float(board.has_queenside_castling_rights(chess.WHITE))
+            v[770] = float(board.has_kingside_castling_rights(chess.BLACK))
+            v[771] = float(board.has_queenside_castling_rights(chess.BLACK))
+            v[772] = float(board.turn == chess.WHITE)
+            return v
 
-    def forward(self, x):
-        return self.relu(x + self.net(x))
+    # ── NN model definitions ─────────────────────────────────────────────
+    class ChessEvaluator(nn.Module):
+        def __init__(self, input_dim=773):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(input_dim, 1024), nn.ReLU(), nn.Dropout(0.2),
+                nn.Linear(1024, 512),       nn.ReLU(), nn.Dropout(0.2),
+                nn.Linear(512, 256),        nn.ReLU(), nn.Dropout(0.1),
+                nn.Linear(256, 128),        nn.ReLU(),
+                nn.Linear(128, 1),          nn.Tanh(),
+            )
+        def forward(self, x):
+            return self.net(x)
 
-class PolicyEvaluator(nn.Module):
-    def __init__(self, input_dim: int = 773):
-        super().__init__()
-        self.stem = nn.Sequential(nn.Linear(input_dim, 512), nn.ReLU())
-        self.layer1 = ResBlock(512)
-        self.layer2 = ResBlock(512)
-        self.head = nn.Sequential(
-            nn.Linear(512, 128),
-            nn.ReLU(),
-            nn.Linear(128, 1)
-        )
+    class ResBlock(nn.Module):
+        def __init__(self, dims):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(dims, dims),
+                nn.BatchNorm1d(dims),
+                nn.ReLU(),
+                nn.Linear(dims, dims),
+                nn.BatchNorm1d(dims)
+            )
+            self.relu = nn.ReLU()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.stem(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        return self.head(x)
+        def forward(self, x):
+            return self.relu(x + self.net(x))
+
+    class PolicyEvaluator(nn.Module):
+        def __init__(self, input_dim: int = 773):
+            super().__init__()
+            self.stem = nn.Sequential(nn.Linear(input_dim, 512), nn.ReLU())
+            self.layer1 = ResBlock(512)
+            self.layer2 = ResBlock(512)
+            self.head = nn.Sequential(
+                nn.Linear(512, 128),
+                nn.ReLU(),
+                nn.Linear(128, 1)
+            )
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            x = self.stem(x)
+            x = self.layer1(x)
+            x = self.layer2(x)
+            return self.head(x)
 
 SCORE_CLAMP = 1500
 MATE_SCORE = 100_000
@@ -120,7 +135,7 @@ USE_OPENING_BOOK = False
 
 # ── Search tuning constants ───────────────────────────────────────────────────
 # Switch this later to "normal" or "aggressive" without touching the search code.
-PRUNING_PROFILE = "off"  # "off", "conservative", "normal", "aggressive"
+PRUNING_PROFILE = "normal"  # "off", "conservative", "normal", "aggressive"
 
 PRUNING_PRESETS = {
     "off": {
@@ -328,88 +343,82 @@ def _opening_book_move(board):
             return move
     return None
 
-# ── Load model ────────────────────────────────────────────────────────────────
-_device = torch.device("cpu")
-_model = ChessEvaluator()
-_model_path = Path(__file__).resolve().parent / "model.pt"
-if _model_path.exists():
-    _model.load_state_dict(torch.load(str(_model_path), map_location=_device))
-    _model.eval()
-    _HAS_NN = True
-else:
-    _HAS_NN = False
+# ── Load models (only if torch was imported) ──────────────────────────────────
+if _NEED_TORCH:
+    _device = torch.device("cpu")
 
-_policy_model = PolicyEvaluator()
-_policy_model_path = Path(__file__).resolve().parent / "policy.pt"
-if _policy_model_path.exists():
-    _policy_model.load_state_dict(torch.load(str(_policy_model_path), map_location=_device))
-    _policy_model.eval()
-    _HAS_POLICY = True
-else:
-    _HAS_POLICY = False
+    _model = ChessEvaluator()
+    if _model_path.exists():
+        _model.load_state_dict(torch.load(str(_model_path), map_location=_device))
+        _model.eval()
+        _HAS_NN = True
 
-_policy_input = torch.zeros(1, 773, dtype=torch.float32)
-_nn_input = torch.zeros(1, 773, dtype=torch.float32)
+    _policy_model = PolicyEvaluator()
+    if _policy_model_path.exists():
+        _policy_model.load_state_dict(torch.load(str(_policy_model_path), map_location=_device))
+        _policy_model.eval()
+        _HAS_POLICY = True
 
-# Warm up
-if _HAS_NN:
-    with torch.no_grad():
-        _model(_nn_input)
+    _policy_input = torch.zeros(1, 773, dtype=torch.float32)
+    _nn_input = torch.zeros(1, 773, dtype=torch.float32)
+
+    # Warm up
+    if _HAS_NN:
+        with torch.no_grad():
+            _model(_nn_input)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  TUNABLE WEIGHTS — optimizer patches this dict directly
 # ══════════════════════════════════════════════════════════════════════════════
 
-MATERIAL_MULT = 1.5
-
 WEIGHTS = {
-      "pawn": 100 * MATERIAL_MULT,
-      "knight": 320 * MATERIAL_MULT,
-      "bishop": 330 * MATERIAL_MULT,
-      "rook": 500 * MATERIAL_MULT,
-      "queen": 900 * MATERIAL_MULT,
+      "pawn": 115,
+      "knight": 335,
+      "bishop": 360,
+      "rook": 545,
+      "queen": 935,
       "king": 20000,
-      "mobility": 4.0,
-      "bishop_pair": 40.0,
-      "doubled_penalty": 32.0,
-      "isolated_penalty": 5.0,
-      "backward_penalty": 24.0,
-      "rook_open_file": 30.0,
-      "rook_semi_open": 10.0,
-      "connected_rooks": 25.0,
-      "king_shield": 12.0,
-      "king_shield_miss": 0.0,
-      "knight_outpost": 40.0,
-      "king_tropism": 4.0,
+      "mobility": 2.0,
+      "bishop_pair": 35.0,
+      "doubled_penalty": 15.0,
+      "isolated_penalty": 12.0,
+      "backward_penalty": 15.0,
+      "rook_open_file": 20.0,
+      "rook_semi_open": 12.0,
+      "connected_rooks": 20.0,
+      "king_shield": 6.0,
+      "king_shield_miss": 8.0,
+      "knight_outpost": 30.0,
+      "overextended_piece": 40.0,  # penalize unsupported pieces deep in enemy territory
+      "king_tropism": 2.5,
       "tempo": 10.0,
       "hanging_piece": 40.0,
-      "king_attack": 0.0,
-      "pin_penalty": 25.0,
-      "center_control": 0.0,
-      "uncastled_king": 50.0,
-      "rook_doubled_file": 35.0,
-      "policy_weight": 0.01,
+      "king_attack": 5.0,
+      "pin_penalty": 30.0,
+      "center_control": 8.0,
+      "uncastled_king": 18.0,
+      "rook_doubled_file": 8.0,
+      "policy_weight": 0.35,
       "nn_phase_boost": 1.5,
-      "early_queen_pen": 35.0,
-      "development": 12.0,
+      "early_queen_pen": 20.0,
+      "development": 10.0,
       "passed_r1": 0,
-      "passed_r2": 10,
-      "passed_r3": 20,
-      "passed_r4": 35,
-      "passed_r5": 60,
-      "passed_r6": 90,
-      "passed_r7": 130,
+      "passed_r2": 8,
+      "passed_r3": 16,
+      "passed_r4": 30,
+      "passed_r5": 50,
+      "passed_r6": 80,
+      "passed_r7": 120,
       "passed_r8": 0,
-      "nn_weight": 0.02,
+      "nn_weight": 0.15,
   }
-
 # ── Eval cache ────────────────────────────────────────────────────────────────
 # FIX #6: Cache is keyed by zobrist hash. Must be cleared whenever WEIGHTS
 # changes (the optimizer does this via _reset_engine). The cache only stores
 # HCE results which depend on WEIGHTS.
 EVAL_CACHE = {}
-EVAL_CACHE_MAX = 200_000_000_000_000_000
+EVAL_CACHE_MAX = 500_000
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -759,52 +768,69 @@ def _king_safety(board, color):
 
     enemy = not color
     score = 0.0
+    king_file = _SQ_FILE[king_sq]
+    king_rank = _SQ_RANK[king_sq]
 
-    # Pawn shield in front of the king.
-    shield_sqs = _SHIELD_SQUARES[king_sq].get(color, [])
     our_pawns = board.pieces(chess.PAWN, color)
-    shield_count = sum(1 for sq in shield_sqs if sq in our_pawns)
-    missing = len(shield_sqs) - shield_count
 
-    score += shield_count * WEIGHTS["king_shield"]
-    score -= missing * max(WEIGHTS["king_shield_miss"], 4.0)
-
-    # Direct attacks on the king square.
-    attackers = board.attackers(enemy, king_sq)
-    defenders = board.attackers(color, king_sq)
-    score -= 20.0 * len(attackers)
-    if attackers and not defenders:
-        score -= 18.0
-
-    # Weighted pressure on the king ring.
     piece_weight = {
         chess.PAWN: 1.0,
         chess.KNIGHT: 1.8,
         chess.BISHOP: 1.8,
-        chess.ROOK: 2.4,
-        chess.QUEEN: 3.2,
+        chess.ROOK: 2.6,
+        chess.QUEEN: 3.6,
     }
+
+    # Pawn shield around the king.
+    shield_sqs = _SHIELD_SQUARES[king_sq].get(color, [])
+    shield_count = sum(1 for sq in shield_sqs if sq in our_pawns)
+    missing = len(shield_sqs) - shield_count
+
+    score += shield_count * WEIGHTS["king_shield"]
+    score -= missing * max(WEIGHTS["king_shield_miss"], 6.0)
+
+    # Strong penalty for kings that are still on the back rank or in the center.
+    if king_sq in (chess.G1, chess.C1, chess.G8, chess.C8):
+        score += 10.0
+    elif king_sq in (chess.E1, chess.D1, chess.F1, chess.E8, chess.D8, chess.F8):
+        score -= 18.0
+    elif king_file in (2, 3, 4, 5):
+        score -= 8.0
+
+    # Penalize missing pawn cover on the king file and adjacent files.
+    own_pawn_files = {_SQ_FILE[s] for s in our_pawns}
+    for f in (king_file - 1, king_file, king_file + 1):
+        if 0 <= f <= 7 and f not in own_pawn_files:
+            score -= 5.0 if f == king_file else 3.0
+
+    # Direct attacks on the king square.
+    attackers = list(board.attackers(enemy, king_sq))
+    defenders = list(board.attackers(color, king_sq))
+
+    for atk_sq in attackers:
+        atk_piece = board.piece_at(atk_sq)
+        if atk_piece is not None:
+            score -= 18.0 * piece_weight.get(atk_piece.piece_type, 1.0)
+
+    if attackers and not defenders:
+        score -= 24.0
+
+    # Pressure on the king ring.
     ring_pressure = 0.0
     for sq in _KING_RING[king_sq]:
         for atk_sq in board.attackers(enemy, sq):
             atk_piece = board.piece_at(atk_sq)
             if atk_piece is not None:
                 ring_pressure += piece_weight.get(atk_piece.piece_type, 1.0)
-    score -= 2.0 * ring_pressure
 
-    # Missing pawns on the king file and adjacent files.
-    own_pawn_files = {_SQ_FILE[s] for s in our_pawns}
-    king_file = _SQ_FILE[king_sq]
-    for f in (king_file - 1, king_file, king_file + 1):
-        if 0 <= f <= 7 and f not in own_pawn_files:
-            score -= 3.5 if f == king_file else 2.0
+    score -= 4.5 * ring_pressure
 
-    # Enemy rook/queen aligned with the king on an open file.
-    for pt, weight in ((chess.ROOK, 8.0), (chess.QUEEN, 10.0)):
+    # Enemy rook/queen on the king file with a clear path.
+    for pt, weight in ((chess.ROOK, 14.0), (chess.QUEEN, 18.0)):
         for sq in board.pieces(pt, enemy):
             if _SQ_FILE[sq] != king_file:
                 continue
-            step = 8 if _SQ_RANK[sq] < _SQ_RANK[king_sq] else -8
+            step = 8 if _SQ_RANK[sq] < king_rank else -8
             clear = True
             for between in range(sq + step, king_sq, step):
                 if board.piece_at(between) is not None:
@@ -813,13 +839,14 @@ def _king_safety(board, color):
             if clear:
                 score -= weight
 
-    # Preference for actual castled squares; central king squares are worse.
-    if king_sq in (chess.G1, chess.C1, chess.G8, chess.C8):
-        score += 6.0
-    elif king_sq in (chess.E1, chess.D1, chess.F1, chess.E8, chess.D8, chess.F8):
-        score -= 8.0
-    elif king_file in (2, 3, 4, 5):
-        score -= 4.0
+    # Extra penalty when enemy pieces are actively controlling the king zone.
+    nearby_attackers = 0
+    for sq in _KING_RING[king_sq]:
+        if sq == king_sq:
+            continue
+        if board.attackers(enemy, sq):
+            nearby_attackers += 1
+    score -= 1.5 * nearby_attackers
 
     return score
 
@@ -877,8 +904,42 @@ def _knight_outposts(board, color):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  HANGING PIECES & SIMPLIFIED SEE
+#  OVEREXTENDED PIECE PENALTY
 # ══════════════════════════════════════════════════════════════════════════════
+def _overextended_pieces(board, color):
+    """
+    Penalize unsupported minor pieces that can be chased by enemy pawns.
+    Stronger than the old version so Ne4 is no longer mistaken for a good outpost.
+    """
+    score = 0.0
+    pen = WEIGHTS["overextended_piece"]
+
+    for pt in (chess.KNIGHT, chess.BISHOP):
+        for sq in board.pieces(pt, color):
+            if _pawn_supported(board, color, sq):
+                continue
+            if not _pawn_chaseable(board, color, sq):
+                continue
+
+            r = _SQ_RANK[sq]
+            rel_rank = r if color == chess.WHITE else 7 - r
+
+            # Rank 4 is already risky; rank 5-6 is much worse.
+            depth_factor = 1.0 + max(0, rel_rank - 3) * 0.25
+
+            # Knights are more likely than bishops to be trapped by pawn levers.
+            if pt == chess.KNIGHT:
+                depth_factor *= 1.15
+
+            # Center squares are especially dangerous when unsupported.
+            if sq in _CENTER_SQUARES:
+                depth_factor *= 1.20
+            elif sq in _EXTENDED_CENTER:
+                depth_factor *= 1.08
+
+            score -= pen * depth_factor
+
+    return score
 
 # Piece type to rough value for SEE ordering
 _SEE_VALUES = {
@@ -1069,6 +1130,76 @@ def _connected_rooks(board, color):
 
     return WEIGHTS["connected_rooks"] if connected else 0.0
 
+def _pawn_supported(board, color, sq):
+    """True if a friendly pawn directly supports `sq` from behind."""
+    pawn_dir = -1 if color == chess.WHITE else 1
+    f = _SQ_FILE[sq]
+    r = _SQ_RANK[sq]
+
+    for df in (-1, 1):
+        pf = f + df
+        pr = r + pawn_dir
+        if 0 <= pf <= 7 and 0 <= pr <= 7:
+            p = board.piece_at(chess.square(pf, pr))
+            if p and p.color == color and p.piece_type == chess.PAWN:
+                return True
+    return False
+
+
+def _pawn_chaseable(board, color, sq):
+    """
+    True if enemy pawns can advance and attack this square in one or two pawn steps.
+    """
+    enemy = not color
+    enemy_pawns = board.pieces(chess.PAWN, enemy)
+    r = _SQ_RANK[sq]
+    f = _SQ_FILE[sq]
+
+    pawn_advance = -1 if enemy == chess.WHITE else 1
+
+    for df in (-1, 1):
+        af = f + df
+        if not (0 <= af <= 7):
+            continue
+        for dist in (1, 2):
+            check_r = r + pawn_advance * dist
+            if 0 <= check_r <= 7 and chess.square(af, check_r) in enemy_pawns:
+                return True
+    return False
+
+def _unstable_minor_penalty(board, color):
+    """
+    Punish unsupported knights/bishops that sit in enemy territory and can be
+    chased by pawns. This is the pattern behind Ne4.
+    """
+    score = 0.0
+    pen = WEIGHTS["overextended_piece"]
+
+    for pt in (chess.KNIGHT, chess.BISHOP):
+        for sq in board.pieces(pt, color):
+            if _pawn_supported(board, color, sq):
+                continue
+            if not _pawn_chaseable(board, color, sq):
+                continue
+
+            rel_rank = _SQ_RANK[sq] if color == chess.WHITE else 7 - _SQ_RANK[sq]
+            if rel_rank < 4:
+                continue
+
+            if sq in _CENTER_SQUARES:
+                scale = 2.2
+            elif sq in _EXTENDED_CENTER:
+                scale = 1.2
+            else:
+                scale = 0.8
+
+            if pt == chess.KNIGHT:
+                scale *= 1.25
+
+            score -= pen * scale
+
+    return score
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  CENTER CONTROL
@@ -1083,29 +1214,25 @@ _EXTENDED_CENTER = {chess.C3, chess.D3, chess.E3, chess.F3,
 
 
 def _center_control(board, color):
-    """
-    Reward pieces and pawns that occupy or attack central squares.
-
-    Pieces on d4/d5/e4/e5 get full bonus. Pieces on extended center
-    (c3-f6) get half bonus. Pawns on center get extra bonus because
-    center pawns control space and restrict the opponent.
-
-    This directly addresses the a6-vs-Nxe4 problem: Nxe4 places
-    a knight on a central square, a6 is a flank move with no center impact.
-    """
     score = 0.0
     w = WEIGHTS["center_control"]
 
     for pt in (chess.PAWN, chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN):
         for sq in board.pieces(pt, color):
+            bonus = 0.0
             if sq in _CENTER_SQUARES:
-                # Piece/pawn on center: full bonus, extra for pawns
-                bonus = w * 2.0 if pt == chess.PAWN else w * 1.5
-                score += bonus
+                bonus = w * (2.0 if pt == chess.PAWN else 1.5)
             elif sq in _EXTENDED_CENTER:
-                score += w * 0.5
+                bonus = w * 0.5
+
+            if pt in (chess.KNIGHT, chess.BISHOP) and bonus > 0:
+                if _pawn_chaseable(board, color, sq) and not _pawn_supported(board, color, sq):
+                    bonus *= 0.2 if sq in _CENTER_SQUARES else 0.5
+
+            score += bonus
 
     return score
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1237,6 +1364,10 @@ def _hce(board):
     score += _knight_outposts(board, chess.WHITE)
     score -= _knight_outposts(board, chess.BLACK)
 
+    # Overextended pieces (unsupported minor pieces deep in enemy territory)
+    score += _overextended_pieces(board, chess.WHITE)
+    score -= _overextended_pieces(board, chess.BLACK)
+
     # King tropism
     score += _king_tropism(board, chess.WHITE)
     score -= _king_tropism(board, chess.BLACK)
@@ -1265,6 +1396,13 @@ def _hce(board):
     if game_phase > 6:  # at least some minor pieces still on board
         score += _uncastled_king_penalty(board, chess.WHITE)
         score -= _uncastled_king_penalty(board, chess.BLACK)
+    # Overextended pieces (unsupported minor pieces deep in enemy territory)
+    score += _overextended_pieces(board, chess.WHITE)
+    score -= _overextended_pieces(board, chess.BLACK)
+
+    # Unstable minor pieces in the center
+    score += _unstable_minor_penalty(board, chess.WHITE)
+    score -= _unstable_minor_penalty(board, chess.BLACK)
 
     # Tempo
     if board.turn == chess.WHITE:
@@ -1311,8 +1449,7 @@ def evaluate(board):
     if board.is_stalemate() or board.is_insufficient_material():
         return 0.0
     if board.is_repetition(3) or board.is_fifty_moves():
-        # Draw contempt: slightly penalize the side that could avoid the draw
-        return -DRAW_CONTEMPT_CP if board.turn == chess.WHITE else DRAW_CONTEMPT_CP
+        return 0.0  # Spec requires evaluate() returns 0 for all draws
 
     hce_score = _cached_hce(board)
 
@@ -1349,7 +1486,7 @@ def _fast_evaluate(board):
     if board.is_stalemate() or board.is_insufficient_material():
         return 0.0
     if board.is_repetition(3) or board.is_fifty_moves():
-        return -DRAW_CONTEMPT_CP if board.turn == chess.WHITE else DRAW_CONTEMPT_CP
+        return 0.0
     return _cached_hce(board)
 
 
@@ -1453,8 +1590,16 @@ def qsearch(board, alpha, beta, maximizing, qs_depth=0):
     if in_check:
         tactical = order_moves(board, list(board.legal_moves))
     else:
-        # Generates much faster by skipping quiet move validation entirely
-        tactical = [m for m in board.legal_moves if board.is_capture(m) or m.promotion == chess.QUEEN]
+        # Generate captures, queen promotions, AND quiet checks (first 3 qsearch plies).
+        # Quiet checks catch mate-in-1/2 threats that fall just below the main search horizon.
+        # Without this, qsearch misses quiet checkmates like Qg7# after Qh6.
+        if qs_depth <= 2:
+            tactical = [m for m in board.legal_moves
+                        if board.is_capture(m) or m.promotion == chess.QUEEN
+                        or board.gives_check(m)]
+        else:
+            tactical = [m for m in board.legal_moves
+                        if board.is_capture(m) or m.promotion == chess.QUEEN]
         tactical = order_moves(board, tactical)
 
     for move in tactical:
@@ -1488,10 +1633,13 @@ def qsearch(board, alpha, beta, maximizing, qs_depth=0):
 
 def minimax(board, depth, alpha, beta, maximizing, ply=0,
             prev_move=None, last_capture_sq=None, allow_null=True):
-    orig_alpha = alpha
-    orig_beta = beta
     alpha = max(alpha, -MATE_SCORE + ply)
-    beta = min(beta, MATE_SCORE - ply)
+    beta  = min(beta,  MATE_SCORE - ply)
+
+    # Save the actual window that will be searched
+    search_alpha = alpha
+    search_beta = beta
+
     if alpha >= beta:
         return alpha
 
@@ -1625,7 +1773,7 @@ def minimax(board, depth, alpha, beta, maximizing, ply=0,
                 # PVS: null-window probe
                 score = minimax(board, child_depth, alpha, alpha + 1, False,
                                 ply + 1, move, cap_sq, allow_null=True)
-                if alpha < score < beta:
+                if score > alpha:
                     score = minimax(board, child_depth, alpha, beta, False,
                                     ply + 1, move, cap_sq, allow_null=True)
 
@@ -1701,7 +1849,7 @@ def minimax(board, depth, alpha, beta, maximizing, ply=0,
             else:
                 score = minimax(board, child_depth, beta - 1, beta, True,
                                 ply + 1, move, cap_sq, allow_null=True)
-                if alpha < score < beta:
+                if score < beta:
                     score = minimax(board, child_depth, alpha, beta, True,
                                     ply + 1, move, cap_sq, allow_null=True)
 
@@ -1716,9 +1864,9 @@ def minimax(board, depth, alpha, beta, maximizing, ply=0,
             beta = min(beta, score)
             if beta <= alpha:
                 if is_quiet:
-                    if move != _KILLERS[ply][0]:
-                        _KILLERS[ply][1] = _KILLERS[ply][0]
-                        _KILLERS[ply][0] = move
+                    if move != _KILLERS[ply  % 64][0]:
+                        _KILLERS[ply % 64][1] = _KILLERS[ply % 64][0]
+                        _KILLERS[ply % 64][0] = move
                     _update_history(move, rem * rem)
                     malus = max(1, rem)
                     for qm in quiet_tried:
@@ -1735,10 +1883,11 @@ def minimax(board, depth, alpha, beta, maximizing, ply=0,
         return _fast_evaluate(board)
 
     tt_flag = TT_EXACT
-    if best_score <= orig_alpha:
+    if best_score <= search_alpha:
         tt_flag = TT_UPPER
-    elif best_score >= orig_beta:
+    elif best_score >= search_beta:
         tt_flag = TT_LOWER
+
     TRANSPOSITION_TABLE[hash_key] = (rem, tt_flag, best_score, best_move)
     return best_score
 
@@ -1765,13 +1914,13 @@ def _root_search(board, depth, maximizing, alpha, beta):
             if maximizing:
                 score = minimax(board, depth - 1, alpha, alpha + 1, False,
                                 1, move, cap_sq, allow_null=True)
-                if alpha < score < beta:
+                if score > alpha:
                     score = minimax(board, depth - 1, alpha, beta, False,
                                     1, move, cap_sq, allow_null=True)
             else:
                 score = minimax(board, depth - 1, beta - 1, beta, True,
                                 1, move, cap_sq, allow_null=True)
-                if alpha < score < beta:
+                if score < beta:
                     score = minimax(board, depth - 1, alpha, beta, True,
                                     1, move, cap_sq, allow_null=True)
 
